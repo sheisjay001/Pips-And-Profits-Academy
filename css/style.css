@@ -1,0 +1,213 @@
+:root {
+    --primary-color: #482583;
+    --primary-dark: #30155a;
+    --secondary-color: #6f42c1;
+    --light-purple: #f3f0ff;
+    --dark-bg: #1a0b2e;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+}
+
+/* Typography */
+.text-purple {
+    color: var(--primary-color) !important;
+}
+
+.bg-purple {
+    background-color: var(--primary-color) !important;
+}
+
+.bg-purple-light {
+    background-color: var(--light-purple) !important;
+}
+
+/* Navbar */
+.navbar {
+    background-color: rgba(26, 11, 46, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 1rem 0;
+}
+
+.nav-link {
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+    color: var(--secondary-color) !important;
+}
+
+.btn-join {
+    background-color: white;
+    color: var(--primary-color) !important;
+    font-weight: 600;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+}
+
+.btn-join:hover {
+    background-color: var(--secondary-color);
+    color: white !important;
+    transform: translateY(-2px);
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+    min-height: 100vh;
+    padding-top: 80px; /* For fixed navbar */
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); /* Subtle pattern */
+    opacity: 0.1;
+}
+
+/* Buttons */
+.btn-purple {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.btn-purple:hover {
+    background-color: var(--primary-dark);
+    color: white;
+}
+
+.btn-outline-purple {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-purple:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-purple-light {
+    background-color: var(--light-purple);
+    color: var(--primary-color);
+}
+
+.btn-purple-light:hover {
+    background-color: #e2d9fc;
+    color: var(--primary-dark);
+}
+
+/* Cards */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.hover-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 1rem 3rem rgba(111, 66, 193, 0.15) !important;
+}
+
+.icon-box {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Footer */
+footer {
+    background-color: #0f0518 !important;
+}
+
+footer a {
+    transition: color 0.3s ease;
+}
+
+footer a:hover {
+    color: var(--secondary-color) !important;
+}
+
+/* Dashboard Styles */
+#wrapper {
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+#sidebar-wrapper {
+    min-height: 100vh;
+    margin-left: -15rem;
+    transition: margin 0.25s ease-out;
+    width: 15rem;
+}
+
+#sidebar-wrapper .sidebar-heading {
+    padding: 0.875rem 1.25rem;
+    font-size: 1.2rem;
+}
+
+#sidebar-wrapper .list-group {
+    width: 15rem;
+}
+
+#sidebar-wrapper .list-group-item {
+    transition: all 0.3s ease;
+}
+
+#sidebar-wrapper .list-group-item:hover {
+    background-color: var(--primary-dark) !important;
+    padding-left: 1.5rem !important;
+}
+
+#sidebar-wrapper .list-group-item.active {
+    background-color: var(--primary-dark) !important;
+    border-left: 4px solid var(--secondary-color) !important;
+    font-weight: bold;
+}
+
+#page-content-wrapper {
+    min-width: 100vw;
+}
+
+#wrapper.toggled #sidebar-wrapper {
+    margin-left: 0;
+}
+
+.bg-purple-dark {
+    background-color: var(--primary-dark) !important;
+}
+
+@media (min-width: 768px) {
+    #sidebar-wrapper {
+        margin-left: 0;
+    }
+
+    #page-content-wrapper {
+        min-width: 0;
+        width: 100%;
+    }
+
+    #wrapper.toggled #sidebar-wrapper {
+        margin-left: -15rem;
+    }
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+    .hero-section {
+        text-align: center;
+        padding-top: 120px;
+    }
+}
