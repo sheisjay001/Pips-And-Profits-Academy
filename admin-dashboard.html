@@ -25,22 +25,22 @@
                 Admin Panel
             </div>
             <div class="list-group list-group-flush">
-                <a href="#" class="list-group-item list-group-item-action bg-dark text-white border-0 active p-3">
+                <a href="#" onclick="showSection('dashboard', this)" class="list-group-item list-group-item-action bg-dark text-white border-0 active p-3">
                     <i class="fa-solid fa-gauge me-2"></i> Dashboard
                 </a>
-                <a href="#" class="list-group-item list-group-item-action bg-dark text-white border-0 p-3">
+                <a href="#" onclick="showSection('users', this)" class="list-group-item list-group-item-action bg-dark text-white border-0 p-3">
                     <i class="fa-solid fa-users me-2"></i> Manage Users
                 </a>
-                <a href="#" class="list-group-item list-group-item-action bg-dark text-white border-0 p-3">
+                <a href="#" onclick="showSection('signals', this)" class="list-group-item list-group-item-action bg-dark text-white border-0 p-3">
                     <i class="fa-solid fa-signal me-2"></i> Post Signals
                 </a>
-                <a href="#" class="list-group-item list-group-item-action bg-dark text-white border-0 p-3">
+                <a href="#" onclick="showSection('courses', this)" class="list-group-item list-group-item-action bg-dark text-white border-0 p-3">
                     <i class="fa-solid fa-graduation-cap me-2"></i> Courses
                 </a>
-                <a href="#" class="list-group-item list-group-item-action bg-dark text-white border-0 p-3">
+                <a href="#" onclick="showSection('revenue', this)" class="list-group-item list-group-item-action bg-dark text-white border-0 p-3">
                     <i class="fa-solid fa-money-bill-wave me-2"></i> Revenue
                 </a>
-                <a href="#" class="list-group-item list-group-item-action bg-dark text-white border-0 p-3 mt-5">
+                <a href="#" onclick="showSection('settings', this)" class="list-group-item list-group-item-action bg-dark text-white border-0 p-3 mt-5">
                     <i class="fa-solid fa-gear me-2"></i> Settings
                 </a>
                 <a href="index.html" class="list-group-item list-group-item-action bg-dark text-white border-0 p-3">
@@ -63,6 +63,11 @@
 
                     <div class="collapse navbar-collapse" id="navbarSupportedContent">
                         <ul class="navbar-nav ms-auto mt-2 mt-lg-0 align-items-center">
+                            <li class="nav-item me-2">
+                                <a href="#" class="btn btn-outline-purple btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                                    <i class="fa-solid fa-plus me-1"></i> Add Course
+                                </a>
+                            </li>
                             <li class="nav-item me-3">
                                 <a href="#" class="btn btn-outline-danger btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#newSignalModal">
                                     <i class="fa-solid fa-plus me-1"></i> New Signal
@@ -86,7 +91,7 @@
             </nav>
 
             <!-- Dashboard Content -->
-            <div class="container-fluid p-4">
+            <div id="dashboard-section" class="section container-fluid p-4">
                 <div class="row mb-4">
                     <div class="col-12">
                         <h2 class="fw-bold text-dark">Admin Dashboard</h2>
@@ -160,7 +165,7 @@
                         <div class="card border-0 shadow-sm">
                             <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                                 <h5 class="fw-bold mb-0">Recent Registrations</h5>
-                                <a href="#" class="btn btn-sm btn-outline-dark">View All Users</a>
+                                <a href="#" onclick="showSection('users', document.querySelector('a[onclick*=\'users\']'))" class="btn btn-sm btn-outline-dark">View All Users</a>
                             </div>
                             <div class="card-body p-0">
                                 <div class="table-responsive">
@@ -266,7 +271,117 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
+            <!-- Manage Users Content (Hidden by default) -->
+            <div id="users-section" class="section container-fluid p-4 d-none">
+                <h2 class="fw-bold text-dark mb-4">Manage Users</h2>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <p class="text-muted">User management interface coming soon...</p>
+                        <!-- Reuse table structure or dynamic loading here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Post Signals Content (Hidden by default) -->
+            <div id="signals-section" class="section container-fluid p-4 d-none">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold text-dark">Post Signals</h2>
+                    <button class="btn btn-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#newSignalModal">
+                        <i class="fa-solid fa-plus me-1"></i> New Signal
+                    </button>
+                </div>
+                <div class="card border-0 shadow-sm">
+                     <div class="card-body">
+                        <p class="text-muted">Signal history and management...</p>
+                     </div>
+                </div>
+            </div>
+
+            <!-- Courses Content (Hidden by default) -->
+            <div id="courses-section" class="section container-fluid p-4 d-none">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold text-dark">Courses</h2>
+                    <button class="btn btn-purple rounded-pill" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                        <i class="fa-solid fa-plus me-1"></i> Add Course
+                    </button>
+                </div>
+                <div class="row g-4" id="admin-courses-list">
+                    <!-- Courses will be loaded here dynamically if needed, or just placeholder -->
+                    <div class="col-12">
+                        <div class="alert alert-info">Course management enabled. Use 'Add Course' to upload new content.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Revenue Content (Hidden by default) -->
+            <div id="revenue-section" class="section container-fluid p-4 d-none">
+                <h2 class="fw-bold text-dark mb-4">Revenue</h2>
+                 <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <p class="text-muted">Revenue analytics coming soon...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Content (Hidden by default) -->
+            <div id="settings-section" class="section container-fluid p-4 d-none">
+                <h2 class="fw-bold text-dark mb-4">Settings</h2>
+                 <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <form>
+                            <div class="mb-3">
+                                <label class="form-label">Site Name</label>
+                                <input type="text" class="form-control" value="Pips and Profit Academy">
+                            </div>
+                            <button class="btn btn-primary">Save Changes</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Course Modal -->
+    <div class="modal fade" id="addCourseModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Add New Course</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCourseForm">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Course Title</label>
+                            <input type="text" class="form-control" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Level</label>
+                            <select class="form-select" name="level">
+                                <option>Beginner</option>
+                                <option>Intermediate</option>
+                                <option>Advanced</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Thumbnail URL</label>
+                            <input type="url" class="form-control" name="thumbnail" placeholder="https://..." required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Video Embed URL</label>
+                            <input type="url" class="form-control" name="videoUrl" placeholder="https://www.youtube.com/embed/..." required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Description</label>
+                            <textarea class="form-control" name="desc" rows="3" required></textarea>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-purple">Add Course</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -296,6 +411,37 @@
     <script src="js/script.js"></script>
     <script src="js/app.js"></script>
     <script>
+        // Section Switching Logic
+        function showSection(sectionId, linkElement) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('d-none');
+            });
+            
+            // Show target section
+            document.getElementById(sectionId + '-section').classList.remove('d-none');
+            
+            // Update active state in sidebar
+            document.querySelectorAll('.list-group-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // If linkElement is passed (clicked from sidebar), make it active
+            // If called from "View All Users" button, find the sidebar link for 'users'
+            if (linkElement) {
+                linkElement.classList.add('active');
+            } else {
+                // Try to find the link that corresponds to this section
+                const sidebarLink = document.querySelector(`a[onclick*="'${sectionId}'"]`);
+                if (sidebarLink) sidebarLink.classList.add('active');
+            }
+
+            // Close sidebar on mobile after selection
+            if (window.innerWidth <= 768) {
+                 document.getElementById("wrapper").classList.remove("toggled");
+            }
+        }
+
         // Toggle Sidebar
         document.getElementById("sidebarToggle").addEventListener("click", function(e) {
             e.preventDefault();
@@ -307,6 +453,27 @@
             updateStats();
             renderRecentSignals(); // If you want to show them on admin dash too
             
+            // Handle Add Course
+            const addCourseForm = document.getElementById('addCourseForm');
+            if (addCourseForm) {
+                addCourseForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    
+                    const title = addCourseForm.title.value;
+                    const level = addCourseForm.level.value;
+                    const thumbnail = addCourseForm.thumbnail.value;
+                    const videoUrl = addCourseForm.videoUrl.value;
+                    const desc = addCourseForm.desc.value;
+
+                    App.addCourse({ title, level, thumbnail, videoUrl, desc });
+                    
+                    alert('Course Added Successfully!');
+                    addCourseForm.reset();
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addCourseModal'));
+                    modal.hide();
+                });
+            }
+
             // Handle Quick Signal Post
             const signalForm = document.querySelector('form');
             if (signalForm) {

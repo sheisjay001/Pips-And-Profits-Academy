@@ -137,7 +137,19 @@ const App = {
             const stored = storedCourses.find(c => c.id === initial.id);
             // Preserve progress if course exists, otherwise return initial
             return stored ? { ...initial, progress: stored.progress } : initial;
-        });
+        }).concat(storedCourses.filter(c => !this.initialCourses.find(ic => ic.id === c.id)));
+    },
+
+    addCourse(course) {
+        const courses = JSON.parse(localStorage.getItem(this.KEYS.COURSES) || '[]');
+        const newCourse = {
+            id: Date.now(),
+            progress: 0,
+            ...course
+        };
+        courses.push(newCourse);
+        localStorage.setItem(this.KEYS.COURSES, JSON.stringify(courses));
+        return newCourse;
     },
 
     // --- UI Rendering Helpers ---
