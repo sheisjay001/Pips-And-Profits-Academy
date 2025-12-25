@@ -20,9 +20,33 @@ const App = {
     ],
 
     initialCourses: [
-        { id: 1, title: 'Forex Basics 101', level: 'Beginner', progress: 0, thumbnail: 'https://images.unsplash.com/photo-1611974765270-ca1258634369?w=400', desc: 'Introduction to currency trading.' },
-        { id: 2, title: 'Technical Analysis Masterclass', level: 'Intermediate', progress: 0, thumbnail: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=400', desc: 'Chart patterns and indicators.' },
-        { id: 3, title: 'Risk Management & Psychology', level: 'Advanced', progress: 0, thumbnail: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400', desc: 'Protecting your capital.' }
+        { 
+            id: 1, 
+            title: 'Forex Basics 101', 
+            level: 'Beginner', 
+            progress: 0, 
+            thumbnail: 'https://images.unsplash.com/photo-1611974765270-ca1258634369?w=400', 
+            desc: 'Introduction to currency trading.',
+            videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' // Example YouTube Embed URL
+        },
+        { 
+            id: 2, 
+            title: 'Technical Analysis Masterclass', 
+            level: 'Intermediate', 
+            progress: 0, 
+            thumbnail: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=400', 
+            desc: 'Chart patterns and indicators.',
+            videoUrl: '' // Add your video URL here
+        },
+        { 
+            id: 3, 
+            title: 'Risk Management & Psychology', 
+            level: 'Advanced', 
+            progress: 0, 
+            thumbnail: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400', 
+            desc: 'Protecting your capital.',
+            videoUrl: '' // Add your video URL here
+        }
     ],
 
     init() {
@@ -107,7 +131,13 @@ const App = {
 
     // --- Course Methods ---
     getCourses() {
-        return JSON.parse(localStorage.getItem(this.KEYS.COURSES) || '[]');
+        // Merge stored progress with initial structure to ensure new fields (like videoUrl) appear
+        const storedCourses = JSON.parse(localStorage.getItem(this.KEYS.COURSES) || '[]');
+        return this.initialCourses.map(initial => {
+            const stored = storedCourses.find(c => c.id === initial.id);
+            // Preserve progress if course exists, otherwise return initial
+            return stored ? { ...initial, progress: stored.progress } : initial;
+        });
     },
 
     // --- UI Rendering Helpers ---

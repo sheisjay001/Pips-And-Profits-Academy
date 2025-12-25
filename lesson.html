@@ -38,12 +38,12 @@
             <div class="container-fluid px-4 py-5">
                 <div class="row">
                     <div class="col-lg-9">
-                        <!-- Video Player Placeholder -->
-                        <div class="ratio ratio-16x9 bg-dark rounded shadow mb-4 d-flex align-items-center justify-content-center">
-                            <div class="text-center text-white">
-                                <i class="fas fa-play-circle fa-4x mb-3"></i>
-                                <h4>Video Player Placeholder</h4>
-                                <p class="text-white-50">Integration with Vimeo/YouTube would go here.</p>
+                        <!-- Video Player -->
+                        <div class="ratio ratio-16x9 bg-dark rounded shadow mb-4" id="videoContainer">
+                            <div class="d-flex align-items-center justify-content-center h-100">
+                                <div class="text-center text-white">
+                                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                </div>
                             </div>
                         </div>
 
@@ -91,6 +91,22 @@
         
         if (course) {
             document.getElementById('lessonTitle').textContent = course.title + " - Introduction";
+            
+            // Load Video
+            const videoContainer = document.getElementById('videoContainer');
+            if (course.videoUrl) {
+                videoContainer.innerHTML = `<iframe src="${course.videoUrl}" title="${course.title}" allowfullscreen></iframe>`;
+            } else {
+                videoContainer.innerHTML = `
+                    <div class="d-flex align-items-center justify-content-center h-100">
+                        <div class="text-center text-white">
+                            <i class="fas fa-video-slash fa-4x mb-3"></i>
+                            <h4>No Video Available</h4>
+                            <p class="text-white-50">This lesson content is coming soon.</p>
+                        </div>
+                    </div>
+                `;
+            }
         }
     </script>
 </body>
