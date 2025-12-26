@@ -74,12 +74,6 @@
         // Check Auth
         App.checkAuth();
 
-        // Toggle Sidebar
-        document.getElementById("sidebarToggle").addEventListener("click", function(e) {
-            e.preventDefault();
-            document.getElementById("wrapper").classList.toggle("toggled");
-        });
-
         // Render Courses
         const courses = App.getCourses();
         const grid = document.getElementById('coursesGrid');

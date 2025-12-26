@@ -102,7 +102,42 @@ const App = {
         if (!user) {
             window.location.href = 'login.html';
         }
+        // Initialize sidebar if on a page with sidebar
+        this.initSidebar();
         return user;
+    },
+
+    initSidebar() {
+        const toggle = document.getElementById("sidebarToggle");
+        const wrapper = document.getElementById("wrapper");
+        const pageContent = document.getElementById("page-content-wrapper");
+
+        if (toggle && wrapper) {
+            // Remove existing listeners to prevent duplicates if called multiple times?
+            // A simple way is to clone and replace, but let's assume it's called once per page load.
+            
+            // Check if listener already attached? 
+            // Better to rely on the fact that checkAuth runs once.
+            
+            toggle.onclick = function(e) {
+                e.preventDefault();
+                wrapper.classList.toggle("toggled");
+                document.body.classList.toggle("sidebar-open");
+            };
+
+            // Close sidebar when clicking outside on mobile
+            if (pageContent) {
+                pageContent.onclick = function(e) {
+                    if (window.innerWidth <= 768 && wrapper.classList.contains("toggled")) {
+                        // Check if click is NOT on the toggle button
+                        if (!toggle.contains(e.target)) {
+                            wrapper.classList.remove("toggled");
+                            document.body.classList.remove("sidebar-open");
+                        }
+                    }
+                };
+            }
+        }
     },
 
     // --- Signal Methods ---

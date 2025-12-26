@@ -154,12 +154,6 @@
     <script>
         App.checkAuth();
 
-        // Toggle Sidebar
-        document.getElementById("sidebarToggle").addEventListener("click", function(e) {
-            e.preventDefault();
-            document.getElementById("wrapper").classList.toggle("toggled");
-        });
-
         // Simple Lot Size Calculator Logic
         function calculateSize() {
             const balance = parseFloat(document.getElementById('balance').value);
