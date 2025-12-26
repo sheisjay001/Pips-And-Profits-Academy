@@ -62,6 +62,44 @@ const App = {
             const adminUser = { id: 1, name: 'Admin', email: 'admin@pips.com', password: 'admin', role: 'admin' };
             localStorage.setItem(this.KEYS.USERS, JSON.stringify([adminUser]));
         }
+        
+        // Initialize UI components
+        this.initSidebar();
+    },
+
+    // --- UI/UX Methods ---
+    initSidebar() {
+        const trigger = document.getElementById('sidebarToggle');
+        const wrapper = document.getElementById('wrapper');
+        
+        if (trigger && wrapper) {
+            // Remove existing event listeners to prevent duplicates (if any)
+            const newTrigger = trigger.cloneNode(true);
+            trigger.parentNode.replaceChild(newTrigger, trigger);
+            
+            newTrigger.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Prevent bubbling to pageContent which closes the sidebar
+                wrapper.classList.toggle('toggled');
+                
+                // Toggle body scroll for mobile overlay
+                if (window.innerWidth <= 768) {
+                    document.body.classList.toggle('sidebar-open');
+                }
+            });
+
+            // Close sidebar when clicking outside (on backdrop)
+            // Note: The backdrop is a pseudo-element on #page-content-wrapper, so clicks on it register as clicks on #page-content-wrapper
+            const pageContent = document.getElementById('page-content-wrapper');
+            if (pageContent) {
+                pageContent.addEventListener('click', (e) => {
+                    if (window.innerWidth <= 768 && wrapper.classList.contains('toggled')) {
+                        wrapper.classList.remove('toggled');
+                        document.body.classList.remove('sidebar-open');
+                    }
+                });
+            }
+        }
     },
 
     // --- Authentication Methods ---
