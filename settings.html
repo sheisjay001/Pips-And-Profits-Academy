@@ -53,8 +53,8 @@
                     <div class="col-lg-4">
                         <div class="card shadow-sm border-0 mb-4">
                             <div class="card-body text-center">
-                                <img src="https://ui-avatars.com/api/?name=Trader+Joe&background=6f42c1&color=fff&size=128" alt="Profile" class="rounded-circle mb-3 img-thumbnail">
-                                <h5 class="fw-bold">Trader Joe</h5>
+                                <img src="https://ui-avatars.com/api/?name=Trader+Joe&background=6f42c1&color=fff&size=128" alt="Profile" class="rounded-circle mb-3 img-thumbnail" id="settingsProfileImage">
+                                <h5 class="fw-bold" id="settingsProfileName">Trader Joe</h5>
                                 <p class="text-muted small">Pro Member</p>
                                 <button class="btn btn-outline-purple btn-sm">Change Avatar</button>
                             </div>
@@ -71,11 +71,11 @@
                                     <div class="row mb-3">
                                         <div class="col-md-6">
                                             <label class="form-label small fw-bold">Full Name</label>
-                                            <input type="text" class="form-control" value="Trader Joe">
+                                            <input type="text" class="form-control" id="settingsFullName" value="Trader Joe">
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label small fw-bold">Email Address</label>
-                                            <input type="email" class="form-control" value="joe@example.com">
+                                            <input type="email" class="form-control" id="settingsEmail" value="joe@example.com">
                                         </div>
                                     </div>
                                     <div class="mb-3">
@@ -227,7 +227,22 @@
     <script src="js/app.js"></script>
     <script>
         App.checkAuth();
-        
+
+        document.addEventListener('DOMContentLoaded', () => {
+             const user = App.getCurrentUser();
+             if (user) {
+                 const settingsProfileName = document.getElementById('settingsProfileName');
+                 const settingsProfileImage = document.getElementById('settingsProfileImage');
+                 const settingsFullName = document.getElementById('settingsFullName');
+                 const settingsEmail = document.getElementById('settingsEmail');
+                 
+                 if (settingsProfileName) settingsProfileName.textContent = user.name;
+                 if (settingsProfileImage) settingsProfileImage.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff&size=128`;
+                 if (settingsFullName) settingsFullName.value = user.name;
+                 if (settingsEmail) settingsEmail.value = user.email;
+             }
+        });
+
         // Toggle Sidebar
         document.getElementById("sidebarToggle").addEventListener("click", function(e) {
             e.preventDefault();

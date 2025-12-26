@@ -75,8 +75,8 @@
                             </li>
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                    <img src="https://ui-avatars.com/api/?name=Trader+Joe&background=6f42c1&color=fff" alt="User" class="rounded-circle me-2" width="32" height="32">
-                                    <span class="fw-bold text-dark">Trader Joe</span>
+                                    <img src="https://ui-avatars.com/api/?name=Trader+Joe&background=6f42c1&color=fff" alt="User" class="rounded-circle me-2" width="32" height="32" id="navUserAvatar">
+                                    <span class="fw-bold text-dark" id="navUserName">Trader Joe</span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end border-0 shadow">
                                     <li><a class="dropdown-item" href="settings.html">Profile</a></li>
@@ -187,6 +187,14 @@
         document.addEventListener('DOMContentLoaded', () => {
             App.checkAuth();
             renderSignals('all');
+
+            const user = App.getCurrentUser();
+            if (user) {
+                const navUserName = document.getElementById('navUserName');
+                const navUserAvatar = document.getElementById('navUserAvatar');
+                if (navUserName) navUserName.textContent = user.name;
+                if (navUserAvatar) navUserAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff`;
+            }
         });
 
         function renderSignals(filter) {

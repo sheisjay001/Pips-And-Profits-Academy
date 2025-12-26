@@ -75,8 +75,8 @@
                             </li>
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                    <img src="https://ui-avatars.com/api/?name=Trader+Joe&background=6f42c1&color=fff" alt="User" class="rounded-circle me-2" width="32" height="32">
-                                    <span class="fw-bold text-dark">Trader Joe</span>
+                                    <img src="https://ui-avatars.com/api/?name=Trader+Joe&background=6f42c1&color=fff" alt="User" class="rounded-circle me-2" width="32" height="32" id="navUserAvatar">
+                                    <span class="fw-bold text-dark" id="navUserName">Trader Joe</span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end border-0 shadow">
                                     <li><a class="dropdown-item" href="settings.html">Profile</a></li>
@@ -94,7 +94,7 @@
             <div class="container-fluid p-4">
                 <div class="row mb-4">
                     <div class="col-12">
-                        <h2 class="fw-bold text-purple">Welcome back, Joe! 👋</h2>
+                        <h2 class="fw-bold text-purple" id="welcomeMessage">Welcome back, Joe! 👋</h2>
                         <p class="text-secondary">Here's what's happening in the markets today.</p>
                     </div>
                 </div>
@@ -270,7 +270,27 @@
         document.addEventListener('DOMContentLoaded', () => {
             renderSignals();
             updateStats();
+            updateUserInfo();
         });
+
+        function updateUserInfo() {
+            const user = App.getCurrentUser();
+            if (user) {
+                // Update navigation
+                const navUserName = document.getElementById('navUserName');
+                const navUserAvatar = document.getElementById('navUserAvatar');
+                
+                if (navUserName) navUserName.textContent = user.name;
+                if (navUserAvatar) navUserAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff`;
+
+                // Update welcome message
+                const welcomeMessage = document.getElementById('welcomeMessage');
+                if (welcomeMessage) {
+                    const firstName = user.name.split(' ')[0];
+                    welcomeMessage.textContent = `Welcome back, ${firstName}! 👋`;
+                }
+            }
+        }
 
         function updateStats() {
             const activeCount = App.getActiveSignalsCount();
