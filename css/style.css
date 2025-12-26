@@ -96,6 +96,11 @@ body {
     color: white;
 }
 
+.btn-check:checked + .btn-outline-purple {
+    background-color: var(--primary-color);
+    color: white;
+}
+
 .btn-purple-light {
     background-color: var(--light-purple);
     color: var(--primary-color);
