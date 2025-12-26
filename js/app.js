@@ -152,6 +152,52 @@ const App = {
         return newCourse;
     },
 
+    // --- User Methods ---
+    getUsers() {
+        return JSON.parse(localStorage.getItem(this.KEYS.USERS) || '[]');
+    },
+
+    deleteUser(userId) {
+        let users = this.getUsers();
+        users = users.filter(u => u.id !== userId);
+        localStorage.setItem(this.KEYS.USERS, JSON.stringify(users));
+        return true;
+    },
+
+    // --- Revenue Methods ---
+    getRevenueStats() {
+        // Mock revenue data calculation
+        const users = this.getUsers();
+        // Assume 20% of users are Pro ($49) and 5% are Elite ($199)
+        // This is just for demonstration purposes
+        let totalRevenue = 0;
+        let monthlyRevenue = 0;
+        
+        users.forEach(user => {
+            if (user.role !== 'admin') {
+                // Randomly assign simulated revenue to users for display
+                const rand = user.id % 10;
+                if (rand > 7) {
+                    totalRevenue += 199; // Elite
+                } else if (rand > 4) {
+                    totalRevenue += 49; // Pro
+                }
+            }
+        });
+
+        return {
+            total: totalRevenue,
+            monthly: Math.floor(totalRevenue * 0.15), // Mock monthly growth
+            transactions: [
+                { id: 101, user: 'Alice Smith', amount: 49, date: '2023-10-24', plan: 'Pro Trader' },
+                { id: 102, user: 'Bob Jones', amount: 199, date: '2023-10-23', plan: 'Elite Mentorship' },
+                { id: 103, user: 'Charlie Brown', amount: 49, date: '2023-10-22', plan: 'Pro Trader' },
+                { id: 104, user: 'David Lee', amount: 49, date: '2023-10-20', plan: 'Pro Trader' },
+                { id: 105, user: 'Eva Green', amount: 199, date: '2023-10-18', plan: 'Elite Mentorship' }
+            ]
+        };
+    },
+
     // --- UI Rendering Helpers ---
 
     formatDate(isoString) {

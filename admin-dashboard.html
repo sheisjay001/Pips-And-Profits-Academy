@@ -277,9 +277,22 @@
             <div id="users-section" class="section container-fluid p-4 d-none">
                 <h2 class="fw-bold text-dark mb-4">Manage Users</h2>
                 <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <p class="text-muted">User management interface coming soon...</p>
-                        <!-- Reuse table structure or dynamic loading here -->
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="border-0 ps-4">Name</th>
+                                        <th class="border-0">Email</th>
+                                        <th class="border-0">Role</th>
+                                        <th class="border-0">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -317,10 +330,44 @@
 
             <!-- Revenue Content (Hidden by default) -->
             <div id="revenue-section" class="section container-fluid p-4 d-none">
-                <h2 class="fw-bold text-dark mb-4">Revenue</h2>
-                 <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <p class="text-muted">Revenue analytics coming soon...</p>
+                <h2 class="fw-bold text-dark mb-4">Revenue Overview</h2>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100 bg-primary text-white">
+                            <div class="card-body">
+                                <h6 class="text-white-50 text-uppercase small fw-bold">Total Revenue</h6>
+                                <h2 class="fw-bold mb-0" id="totalRevenue">$0.00</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100 bg-success text-white">
+                            <div class="card-body">
+                                <h6 class="text-white-50 text-uppercase small fw-bold">Monthly Growth</h6>
+                                <h2 class="fw-bold mb-0" id="monthlyRevenue">$0.00</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 class="fw-bold text-dark mb-3">Recent Transactions</h4>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="border-0 ps-4">User</th>
+                                        <th class="border-0">Plan</th>
+                                        <th class="border-0">Amount</th>
+                                        <th class="border-0">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="revenueTableBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -452,6 +499,8 @@
         // Initialize Dashboard
         document.addEventListener('DOMContentLoaded', () => {
             updateStats();
+            renderUsers();
+            renderRevenue();
             renderRecentSignals(); // If you want to show them on admin dash too
             
             // Handle Add Course
@@ -504,6 +553,56 @@
                 });
             }
         });
+
+        // --- User Management Logic ---
+        function renderUsers() {
+            const users = App.getUsers();
+            const tbody = document.getElementById('usersTableBody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = users.map(user => `
+                <tr>
+                    <td class="ps-4 fw-bold">${user.name}</td>
+                    <td>${user.email}</td>
+                    <td><span class="badge bg-${user.role === 'admin' ? 'danger' : 'secondary'}">${user.role}</span></td>
+                    <td>
+                        ${user.role !== 'admin' ? 
+                        `<button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.id})">Delete</button>` : 
+                        '<span class="text-muted">-</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.deleteUser = function(id) {
+            if(confirm('Are you sure you want to delete this user?')) {
+                App.deleteUser(id);
+                renderUsers();
+                renderRevenue(); // Update revenue as it depends on users
+            }
+        };
+
+        // --- Revenue Logic ---
+        function renderRevenue() {
+            const stats = App.getRevenueStats();
+            const totalEl = document.getElementById('totalRevenue');
+            const monthlyEl = document.getElementById('monthlyRevenue');
+            
+            if (totalEl) totalEl.textContent = '$' + stats.total.toLocaleString();
+            if (monthlyEl) monthlyEl.textContent = '+$' + stats.monthly.toLocaleString();
+            
+            const tbody = document.getElementById('revenueTableBody');
+            if (!tbody) return;
+
+            tbody.innerHTML = stats.transactions.map(tx => `
+                <tr>
+                    <td class="ps-4 fw-bold">${tx.user}</td>
+                    <td><span class="badge bg-info text-dark">${tx.plan}</span></td>
+                    <td class="fw-bold">$${tx.amount}</td>
+                    <td class="text-muted small">${tx.date}</td>
+                </tr>
+            `).join('');
+        }
 
         function updateStats() {
             const activeCount = App.getActiveSignalsCount();
