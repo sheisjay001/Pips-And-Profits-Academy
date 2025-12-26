@@ -95,7 +95,19 @@
             // Load Video
             const videoContainer = document.getElementById('videoContainer');
             if (course.videoUrl) {
-                videoContainer.innerHTML = `<iframe src="${course.videoUrl}" title="${course.title}" allowfullscreen></iframe>`;
+                // Check if it's a YouTube or Vimeo Embed
+                if (course.videoUrl.includes('youtube.com/embed') || course.videoUrl.includes('player.vimeo.com')) {
+                    videoContainer.innerHTML = `<iframe src="${course.videoUrl}" title="${course.title}" allowfullscreen></iframe>`;
+                } 
+                // Assume it's a direct video file (local or remote)
+                else {
+                    videoContainer.innerHTML = `
+                        <video controls class="w-100 h-100" style="object-fit: cover;">
+                            <source src="${course.videoUrl}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    `;
+                }
             } else {
                 videoContainer.innerHTML = `
                     <div class="d-flex align-items-center justify-content-center h-100">
