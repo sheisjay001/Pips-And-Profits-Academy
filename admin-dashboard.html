@@ -353,6 +353,34 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Crypto Approvals -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="fw-bold">Pending Crypto Payments</h5>
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th class="border-0 ps-4">User</th>
+                                                <th class="border-0">Amount</th>
+                                                <th class="border-0">Date</th>
+                                                <th class="border-0">Proof</th>
+                                                <th class="border-0">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="cryptoApprovalsTable">
+                                            <!-- Populated by JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white border-0 py-3">
                         <h5 class="fw-bold mb-0">Transaction History</h5>
@@ -416,6 +444,21 @@
                             <button class="btn btn-primary">Save Changes</button>
                         </form>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Proof Modal -->
+    <div class="modal fade" id="proofModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Payment Proof</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="proofImage" src="" class="img-fluid" alt="Proof">
                 </div>
             </div>
         </div>
@@ -730,6 +773,8 @@
             const monthlyEl = document.getElementById('monthlyRevenue');
             if (monthlyEl) monthlyEl.textContent = '+$' + stats.monthly.toLocaleString();
             
+            renderCryptoApprovals(); // Render Pending Crypto Payments
+
             const tbody = document.getElementById('revenueTableBody');
             if (!tbody) return;
 
@@ -747,6 +792,86 @@
                 </tr>
             `).join('');
         }
+
+        function renderCryptoApprovals() {
+            const pending = JSON.parse(localStorage.getItem('ppa_crypto_pending') || '[]');
+            const tbody = document.getElementById('cryptoApprovalsTable');
+            if (!tbody) return;
+
+            if (pending.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No pending payments</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = pending.map(p => `
+                <tr>
+                    <td class="ps-4 fw-bold">${p.userName}</td>
+                    <td class="fw-bold">$${p.amount}</td>
+                    <td class="text-muted small">${new Date(p.date).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewProof(${p.id})">
+                            <i class="fa-solid fa-eye"></i> View
+                        </button>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-success me-1" onclick="approvePayment(${p.id})"><i class="fa-solid fa-check"></i></button>
+                        <button class="btn btn-sm btn-danger" onclick="rejectPayment(${p.id})"><i class="fa-solid fa-times"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.viewProof = function(id) {
+            const pending = JSON.parse(localStorage.getItem('ppa_crypto_pending') || '[]');
+            const item = pending.find(p => p.id === id);
+            if (item && item.proof) {
+                document.getElementById('proofImage').src = item.proof;
+                const modal = new bootstrap.Modal(document.getElementById('proofModal'));
+                modal.show();
+            }
+        };
+
+        window.approvePayment = function(id) {
+            if(!confirm('Approve this payment?')) return;
+
+            const pending = JSON.parse(localStorage.getItem('ppa_crypto_pending') || '[]');
+            const item = pending.find(p => p.id === id);
+            
+            if (item) {
+                // Remove from pending
+                const newPending = pending.filter(p => p.id !== id);
+                localStorage.setItem('ppa_crypto_pending', JSON.stringify(newPending));
+
+                // Add to Revenue/Transactions (Simulated logic in App or here)
+                // Since App.getRevenueStats returns static or mocked structure, we need to update it properly.
+                // For now, let's just assume we store "transactions" in LocalStorage too if we want persistence.
+                // But App.js has getRevenueStats returning an object. Let's create a 'ppa_transactions' key.
+                
+                const transactions = JSON.parse(localStorage.getItem('ppa_transactions') || '[]');
+                transactions.unshift({
+                    id: Date.now(),
+                    user: item.userName,
+                    plan: 'Pro Plan (Crypto)',
+                    amount: item.amount,
+                    date: new Date().toLocaleDateString()
+                });
+                localStorage.setItem('ppa_transactions', JSON.stringify(transactions));
+
+                alert('Payment Approved!');
+                renderRevenue();
+            }
+        };
+
+        window.rejectPayment = function(id) {
+            if(!confirm('Reject this payment?')) return;
+            
+            const pending = JSON.parse(localStorage.getItem('ppa_crypto_pending') || '[]');
+            const newPending = pending.filter(p => p.id !== id);
+            localStorage.setItem('ppa_crypto_pending', JSON.stringify(newPending));
+            
+            renderCryptoApprovals();
+        };
+
 
         function updateStats() {
             const activeCount = App.getActiveSignalsCount();

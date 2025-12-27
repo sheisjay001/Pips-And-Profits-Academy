@@ -246,6 +246,51 @@
     <script src="js/app.js"></script>
     <!-- Paystack Inline JS -->
     <script src="https://js.paystack.co/v1/inline.js"></script>
+
+    <!-- Crypto Payment Modal -->
+    <div class="modal fade" id="cryptoPaymentModal" tabindex="-1" aria-labelledby="cryptoPaymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title fw-bold" id="cryptoPaymentModalLabel"><i class="fa-brands fa-bitcoin me-2"></i> Pay via Crypto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">Please transfer <strong>$199.00</strong> to one of the following addresses and upload your payment proof.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">USDT (BEP20)</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-sm" value="0xe1a7991c6e3a74f50f834cecb2eaebbc2080feac" readonly id="walletBep20">
+                            <button class="btn btn-outline-secondary btn-sm" type="button" onclick="App.copyToClipboard('walletBep20')"><i class="fa-regular fa-copy"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">USDT (TRC20)</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-sm" value="TSxgRzR7UiXrnUnPdU57jZxFzsEdm9LJtC" readonly id="walletTrc20">
+                            <button class="btn btn-outline-secondary btn-sm" type="button" onclick="App.copyToClipboard('walletTrc20')"><i class="fa-regular fa-copy"></i></button>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <form id="cryptoPaymentForm" onsubmit="App.submitCryptoPayment(event)">
+                        <div class="mb-3">
+                            <label for="paymentProof" class="form-label fw-bold">Upload Payment Screenshot</label>
+                            <input class="form-control" type="file" id="paymentProof" accept="image/*" required>
+                            <div class="form-text">Supported formats: JPG, PNG. Max size: 2MB.</div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-purple fw-bold">Submit Payment for Verification</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Initialize User Dashboard
         document.addEventListener('DOMContentLoaded', () => {

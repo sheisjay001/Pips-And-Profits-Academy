@@ -173,11 +173,21 @@ const App = {
 
     // --- Revenue ---
     getRevenueStats() {
-        // Real Revenue Data (Currently Empty until Payments are stored)
+        const transactions = JSON.parse(localStorage.getItem('ppa_transactions') || '[]');
+        
+        const total = transactions.reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
+        
+        // Calculate this month's revenue
+        const now = new Date();
+        const thisMonth = transactions.filter(tx => {
+            const txDate = new Date(tx.date);
+            return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
+        }).reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
+
         return {
-            total: 0.00,
-            monthly: 0.00,
-            transactions: []
+            total: total.toFixed(2),
+            monthly: thisMonth.toFixed(2),
+            transactions: transactions
         };
     },
 
@@ -231,8 +241,71 @@ const App = {
             handler.openIframe();
 
         } else if (method === 'crypto') {
-            alert('Generating Crypto Payment Address (USDT/BTC)...\n(Integration Pending)');
+            // Show Crypto Modal
+            const cryptoModal = new bootstrap.Modal(document.getElementById('cryptoPaymentModal'));
+            cryptoModal.show();
         }
+    },
+
+    copyToClipboard(elementId) {
+        const copyText = document.getElementById(elementId);
+        copyText.select();
+        copyText.setSelectionRange(0, 99999); // For mobile devices
+        navigator.clipboard.writeText(copyText.value).then(() => {
+            alert("Address copied to clipboard!");
+        });
+    },
+
+    async submitCryptoPayment(event) {
+        event.preventDefault();
+        
+        const fileInput = document.getElementById('paymentProof');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            alert('Please upload a screenshot of your payment.');
+            return;
+        }
+
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit
+            alert('File is too large. Max size is 2MB.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64Image = e.target.result;
+            const user = App.getCurrentUser();
+            
+            const pendingPayment = {
+                id: Date.now(),
+                userId: user.id,
+                userName: user.name,
+                userEmail: user.email,
+                amount: 199.00,
+                currency: 'USD',
+                method: 'Crypto',
+                proof: base64Image,
+                status: 'Pending',
+                date: new Date().toISOString()
+            };
+
+            const pending = JSON.parse(localStorage.getItem('ppa_crypto_pending') || '[]');
+            pending.push(pendingPayment);
+            localStorage.setItem('ppa_crypto_pending', JSON.stringify(pending));
+
+            alert('Payment proof submitted successfully! Admin will verify shortly.');
+            
+            // Close modal
+            const modalEl = document.getElementById('cryptoPaymentModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            modal.hide();
+            
+            // Reset form
+            document.getElementById('cryptoPaymentForm').reset();
+        };
+        
+        reader.readAsDataURL(file);
     },
 
     // --- Ticket Methods ---
