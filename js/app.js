@@ -14,11 +14,7 @@ const App = {
     },
 
     // Initial Mock Data
-    initialSignals: [
-        { id: 1, pair: 'EUR/USD', type: 'BUY', entry: '1.0850', sl: '1.0820', tp: '1.0900', status: 'Profit (+25 Pips)', date: new Date().toISOString() },
-        { id: 2, pair: 'GBP/JPY', type: 'SELL', entry: '182.40', sl: '182.80', tp: '181.50', status: 'Running', date: new Date(Date.now() - 7200000).toISOString() },
-        { id: 3, pair: 'XAU/USD', type: 'BUY', entry: '2035.50', sl: '2030.00', tp: '2050.00', status: 'Profit (+120 Pips)', date: new Date(Date.now() - 86400000).toISOString() }
-    ],
+    initialSignals: [],
 
     initialCourses: [
         { 
