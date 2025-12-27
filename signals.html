@@ -117,7 +117,7 @@
                         <div class="card border-0 shadow-sm bg-purple text-white h-100">
                             <div class="card-body p-4">
                                 <h6 class="text-white text-uppercase small fw-bold">Total Pips (This Month)</h6>
-                                <h2 class="fw-bold mb-0">+1,240</h2>
+                                <h2 class="fw-bold mb-0" id="totalPipsCount">0</h2>
                             </div>
                         </div>
                     </div>
@@ -125,7 +125,7 @@
                         <div class="card border-0 shadow-sm h-100">
                             <div class="card-body p-4">
                                 <h6 class="text-muted text-uppercase small fw-bold">Win Rate</h6>
-                                <h2 class="fw-bold text-success mb-0">78%</h2>
+                                <h2 class="fw-bold text-success mb-0" id="signalWinRate">0%</h2>
                             </div>
                         </div>
                     </div>
@@ -204,6 +204,14 @@
             // Update Active Count
             const activeCount = allSignals.filter(s => s.status === 'Running' || s.status === 'Pending').length;
             document.getElementById('activeTradesCount').textContent = activeCount;
+
+            // Update Win Rate
+            const winRate = App.getWinRate();
+            document.getElementById('signalWinRate').textContent = winRate;
+            
+            // Update Total Pips (Placeholder logic or calculated if data exists)
+            // For now, we'll leave it as 0 since we don't track pips explicitly in the object
+            document.getElementById('totalPipsCount').textContent = '0';
 
             const tbody = document.getElementById('signalsTableBody');
             tbody.innerHTML = '';

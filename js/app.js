@@ -5,7 +5,7 @@ const App = {
     KEYS: {
         USERS: 'ppa_users',
         CURRENT_USER: 'ppa_current_user',
-        SIGNALS: 'ppa_signals',
+        SIGNALS: 'ppa_signals_v2', // Changed to clear old mock data
         TICKETS: 'ppa_tickets'
     },
 
