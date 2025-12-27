@@ -98,7 +98,7 @@
                         <p class="text-secondary mb-0">Here's what's happening in the markets today.</p>
                     </div>
                     <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                        <button class="btn btn-warning fw-bold text-dark shadow-sm" onclick="App.initiatePayment('paystack')">
+                        <button class="btn btn-warning fw-bold text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#paymentMethodModal">
                             <i class="fa-solid fa-crown me-2"></i> Upgrade to Pro
                         </button>
                     </div>
@@ -246,6 +246,35 @@
     <script src="js/app.js"></script>
     <!-- Paystack Inline JS -->
     <script src="https://js.paystack.co/v1/inline.js"></script>
+
+    <!-- Payment Method Selection Modal -->
+    <div class="modal fade" id="paymentMethodModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-purple text-white">
+                    <h5 class="modal-title fw-bold">Choose Payment Method</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <p class="mb-4">Select your preferred payment method to upgrade your plan.</p>
+                    
+                    <div class="d-grid gap-3">
+                        <button class="btn btn-lg btn-outline-purple fw-bold d-flex align-items-center justify-content-center" onclick="bootstrap.Modal.getInstance(document.getElementById('paymentMethodModal')).hide(); App.initiatePayment('paystack')">
+                            <i class="fa-regular fa-credit-card me-3 fa-lg"></i>
+                            Pay with Card / Bank (Paystack)
+                        </button>
+                        
+                        <div class="text-muted small">OR</div>
+                        
+                        <button class="btn btn-lg btn-warning text-dark fw-bold d-flex align-items-center justify-content-center" onclick="bootstrap.Modal.getInstance(document.getElementById('paymentMethodModal')).hide(); App.initiatePayment('crypto')">
+                            <i class="fa-brands fa-bitcoin me-3 fa-lg"></i>
+                            Pay with Crypto (USDT)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Crypto Payment Modal -->
     <div class="modal fade" id="cryptoPaymentModal" tabindex="-1" aria-labelledby="cryptoPaymentModalLabel" aria-hidden="true">
