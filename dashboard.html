@@ -111,7 +111,7 @@
                             <div class="card-body d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted text-uppercase small fw-bold">Active Signals</h6>
-                                    <h3 class="fw-bold text-dark mb-0">5</h3>
+                                    <h3 class="fw-bold text-dark mb-0" id="dashActiveSignals">0</h3>
                                 </div>
                                 <div class="icon-box bg-purple-light text-purple rounded-circle p-3">
                                     <i class="fa-solid fa-signal fa-lg"></i>
@@ -124,7 +124,7 @@
                             <div class="card-body d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted text-uppercase small fw-bold">Course Progress</h6>
-                                    <h3 class="fw-bold text-dark mb-0">65%</h3>
+                                    <h3 class="fw-bold text-dark mb-0" id="dashCourseProgress">0%</h3>
                                 </div>
                                 <div class="icon-box bg-info bg-opacity-10 text-info rounded-circle p-3">
                                     <i class="fa-solid fa-bars-progress fa-lg"></i>
@@ -137,7 +137,7 @@
                             <div class="card-body d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted text-uppercase small fw-bold">Win Rate</h6>
-                                    <h3 class="fw-bold text-success mb-0">72%</h3>
+                                    <h3 class="fw-bold text-success mb-0" id="dashWinRate">0%</h3>
                                 </div>
                                 <div class="icon-box bg-success bg-opacity-10 text-success rounded-circle p-3">
                                     <i class="fa-solid fa-trophy fa-lg"></i>
@@ -352,11 +352,20 @@
 
         function updateStats() {
             const activeCount = App.getActiveSignalsCount();
-            // Update Active Signals Card
-            const activeSignalEl = Array.from(document.querySelectorAll('h6')).find(el => el.textContent.includes('ACTIVE SIGNALS'));
-            if (activeSignalEl) {
-                activeSignalEl.nextElementSibling.textContent = activeCount;
-            }
+            const winRate = App.getWinRate();
+            const courseProgress = App.getCourseProgress();
+
+            // Update Active Signals
+            const activeEl = document.getElementById('dashActiveSignals');
+            if (activeEl) activeEl.textContent = activeCount;
+
+            // Update Win Rate
+            const winRateEl = document.getElementById('dashWinRate');
+            if (winRateEl) winRateEl.textContent = winRate;
+
+            // Update Course Progress
+            const progressEl = document.getElementById('dashCourseProgress');
+            if (progressEl) progressEl.textContent = courseProgress;
         }
 
         function renderSignals() {
@@ -366,6 +375,11 @@
             if (tbody) {
                 tbody.innerHTML = ''; // Clear existing rows
                 
+                if (signals.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No active signals</td></tr>';
+                    return;
+                }
+
                 signals.slice(0, 5).forEach(signal => { // Show last 5
                     const isBuy = signal.type === 'BUY';
                     const badgeClass = isBuy ? 'bg-success' : 'bg-danger';

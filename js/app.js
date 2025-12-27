@@ -148,6 +148,26 @@ const App = {
         return signals.filter(s => s.status === 'Active').length;
     },
 
+    getWinRate() {
+        const signals = this.getSignals();
+        const closedSignals = signals.filter(s => s.status !== 'Active' && s.status !== 'Running');
+        
+        if (closedSignals.length === 0) return '0%';
+        
+        const wins = closedSignals.filter(s => 
+            s.status.toLowerCase().includes('profit') || 
+            s.status.toLowerCase().includes('won') || 
+            s.status.toLowerCase().includes('tp')
+        ).length;
+
+        return Math.round((wins / closedSignals.length) * 100) + '%';
+    },
+
+    getCourseProgress() {
+        // Placeholder for future course tracking
+        return '0%'; 
+    },
+
     // --- Utilities ---
     formatDate(isoString) {
         return new Date(isoString).toLocaleDateString('en-US', {
