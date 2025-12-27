@@ -401,7 +401,14 @@
                 tbody.innerHTML = tickets.length ? tickets.map(t => `
                     <tr>
                         <td>${t.subject}</td>
-                        <td><span class="badge ${t.status === 'Open' ? 'bg-warning text-dark' : 'bg-success'}">${t.status}</span></td>
+                        <td>
+                            <span class="badge ${
+                                t.status === 'Open' ? 'bg-warning text-dark' : 
+                                t.status === 'Pending' ? 'bg-info text-dark' :
+                                t.status === 'Resolved' ? 'bg-success' : 
+                                'bg-secondary'
+                            }">${t.status}</span>
+                        </td>
                         <td class="text-end text-muted small">${new Date(t.date).toLocaleDateString()}</td>
                     </tr>
                 `).join('') : '<tr><td colspan="3" class="text-center text-muted">No tickets found</td></tr>';

@@ -527,6 +527,50 @@
         </div>
     </div>
 
+    <!-- Ticket Details Modal -->
+    <div class="modal fade" id="ticketDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Ticket Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="small text-muted fw-bold">Subject</label>
+                        <p id="ticketSubject" class="fw-bold mb-0"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-muted fw-bold">From</label>
+                        <p class="mb-0"><span id="ticketUser"></span> (<span id="ticketEmail"></span>)</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-muted fw-bold">Date</label>
+                        <p id="ticketDate" class="mb-0"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-muted fw-bold">Message</label>
+                        <div id="ticketMessage" class="p-3 bg-light rounded border"></div>
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Update Status</label>
+                        <select id="ticketStatusSelect" class="form-select">
+                            <option value="Open">Open</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Resolved">Resolved</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveTicketStatus()">Save Status</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
@@ -671,14 +715,65 @@
                     </td>
                     <td class="fw-bold text-dark">${t.subject}</td>
                     <td class="text-muted small" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${t.message}</td>
-                    <td><span class="badge ${t.status === 'Open' ? 'bg-warning text-dark' : 'bg-success'}">${t.status}</span></td>
+                    <td>
+                        <span class="badge ${
+                            t.status === 'Open' ? 'bg-warning text-dark' : 
+                            t.status === 'Pending' ? 'bg-info text-dark' :
+                            t.status === 'Resolved' ? 'bg-success' : 
+                            'bg-secondary'
+                        }">${t.status}</span>
+                    </td>
                     <td class="text-muted small">${new Date(t.date).toLocaleDateString()}</td>
                     <td>
-                        <button class="btn btn-sm btn-outline-success" onclick="closeTicket(${t.id})">Close</button>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewTicket(${t.id})">
+                            <i class="fa-solid fa-eye"></i> View
+                        </button>
                     </td>
                 </tr>
             `).join('') : '<tr><td colspan="6" class="text-center py-4">No tickets found</td></tr>';
         }
+
+        let currentTicketId = null;
+
+        window.viewTicket = function(id) {
+            const tickets = App.getTickets();
+            const ticket = tickets.find(t => t.id === id);
+            
+            if (ticket) {
+                currentTicketId = ticket.id;
+                document.getElementById('ticketSubject').textContent = ticket.subject;
+                document.getElementById('ticketUser').textContent = ticket.userName;
+                document.getElementById('ticketEmail').textContent = ticket.userEmail;
+                document.getElementById('ticketDate').textContent = new Date(ticket.date).toLocaleString();
+                document.getElementById('ticketMessage').textContent = ticket.message;
+                document.getElementById('ticketStatusSelect').value = ticket.status;
+                
+                const modal = new bootstrap.Modal(document.getElementById('ticketDetailsModal'));
+                modal.show();
+            }
+        };
+
+        window.saveTicketStatus = function() {
+            if (!currentTicketId) return;
+            
+            const newStatus = document.getElementById('ticketStatusSelect').value;
+            const success = App.updateTicketStatus(currentTicketId, newStatus);
+            
+            if (success) {
+                // Update UI
+                renderTickets();
+                
+                // Close modal
+                const modalEl = document.getElementById('ticketDetailsModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                modal.hide();
+                
+                // Alert
+                alert(`Ticket status updated to ${newStatus}`);
+            } else {
+                alert('Failed to update ticket status');
+            }
+        };
 
         window.closeTicket = function(id) {
             let tickets = App.getTickets();

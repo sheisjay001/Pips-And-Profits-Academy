@@ -373,6 +373,17 @@ const App = {
         tickets.unshift(newTicket);
         localStorage.setItem(this.KEYS.TICKETS, JSON.stringify(tickets));
         return newTicket;
+    },
+
+    updateTicketStatus(ticketId, newStatus) {
+        const tickets = this.getTickets();
+        const index = tickets.findIndex(t => t.id === ticketId);
+        if (index !== -1) {
+            tickets[index].status = newStatus;
+            localStorage.setItem(this.KEYS.TICKETS, JSON.stringify(tickets));
+            return true;
+        }
+        return false;
     }
 };
 
