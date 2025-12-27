@@ -173,15 +173,11 @@ const App = {
 
     // --- Revenue ---
     getRevenueStats() {
-        // Mock revenue data
+        // Real Revenue Data (Currently Empty until Payments are stored)
         return {
-            total: 12500.00,
-            monthly: 1200.00,
-            transactions: [
-                { user: 'John Doe', plan: 'Pro', amount: 199, date: 'Oct 24, 2023' },
-                { user: 'Jane Smith', plan: 'Pro', amount: 199, date: 'Oct 22, 2023' },
-                { user: 'Mike Ross', plan: 'Pro', amount: 199, date: 'Oct 20, 2023' }
-            ]
+            total: 0.00,
+            monthly: 0.00,
+            transactions: []
         };
     },
 
@@ -195,30 +191,40 @@ const App = {
                 return;
             }
 
-            // Client-Side Paystack Implementation (No PHP Required)
-            // Warning: Requires Public Key
-            const publicKey = 'pk_live_YOUR_PUBLIC_KEY_HERE'; // <--- REPLACE THIS WITH YOUR PUBLIC KEY
-
-            if (publicKey.includes('YOUR_PUBLIC_KEY_HERE')) {
-                alert('Configuration Error: Public Key Missing.\n\nPlease open js/app.js and replace "pk_live_YOUR_PUBLIC_KEY_HERE" with your actual Paystack Public Key (starts with pk_live_ or pk_test_).');
-                return;
-            }
+            // Public Key is safe to be on the frontend
+            const publicKey = 'pk_live_YOUR_PUBLIC_KEY_HERE'; // <--- REPLACE WITH YOUR LIVE PUBLIC KEY (starts with pk_live_)
 
             const handler = PaystackPop.setup({
                 key: publicKey, 
                 email: user.email,
                 amount: 19900, // 199.00 NGN/USD in kobo/cents
-                currency: 'USD', // Change to NGN if using Naira
+                currency: 'USD', 
                 ref: '' + Math.floor((Math.random() * 1000000000) + 1), 
                 onClose: function() {
                     alert('Transaction was not completed, window closed.');
                 },
                 callback: function(response) {
-                    // Payment successful!
-                    alert('Payment successful! Reference: ' + response.reference);
-                    // Here you would typically verify the transaction on your backend
-                    // For this static version, we'll redirect to success
-                    window.location.href = 'dashboard.html?payment=success';
+                    // Send reference to backend for secure verification
+                    fetch('http://localhost:3000/api/verify-payment', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reference: response.reference })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status) {
+                            alert('Payment verified successfully!');
+                            window.location.href = 'dashboard.html?payment=success';
+                        } else {
+                            alert('Payment verification failed: ' + data.message);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error verifying payment:', err);
+                        alert('Error verifying payment. Please contact support.');
+                    });
                 }
             });
 

@@ -1,1 +1,3 @@
 api/config.php
+backend/.env
+backend/node_modules
