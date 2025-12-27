@@ -86,20 +86,20 @@
                                 <h5 class="mb-0 fw-bold">Profile Information</h5>
                             </div>
                             <div class="card-body">
-                                <form>
+                                <form id="profileForm" onsubmit="handleProfileUpdate(event)">
                                     <div class="row mb-3">
                                         <div class="col-md-6">
                                             <label class="form-label small fw-bold">Full Name</label>
-                                            <input type="text" class="form-control" id="settingsFullName" value="Trader Joe">
+                                            <input type="text" class="form-control" id="settingsFullName">
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label small fw-bold">Email Address</label>
-                                            <input type="email" class="form-control" id="settingsEmail" value="joe@example.com">
+                                            <input type="email" class="form-control" id="settingsEmail">
                                         </div>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Bio</label>
-                                        <textarea class="form-control" rows="3">Forex enthusiast learning to trade EUR/USD.</textarea>
+                                        <textarea class="form-control" id="settingsBio" rows="3"></textarea>
                                     </div>
                                     <button type="submit" class="btn btn-purple">Save Changes</button>
                                 </form>
@@ -366,6 +366,21 @@
             }
         }
 
+        function handleProfileUpdate(e) {
+            e.preventDefault();
+            const name = document.getElementById('settingsFullName').value;
+            const email = document.getElementById('settingsEmail').value;
+            const bio = document.getElementById('settingsBio').value;
+
+            if (name && email) {
+                App.updateUserProfile(name, email, bio);
+                alert('Profile updated successfully!');
+                window.location.reload();
+            } else {
+                alert('Name and Email are required.');
+            }
+        }
+
         function handleTicketSubmit(e) {
             e.preventDefault();
             const subject = document.getElementById('ticketSubject').value;
@@ -400,11 +415,13 @@
                  const settingsProfileImage = document.getElementById('settingsProfileImage');
                  const settingsFullName = document.getElementById('settingsFullName');
                  const settingsEmail = document.getElementById('settingsEmail');
+                 const settingsBio = document.getElementById('settingsBio');
                  
                  if (settingsProfileName) settingsProfileName.textContent = user.name;
                  if (settingsProfileImage) settingsProfileImage.src = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff&size=128`;
                  if (settingsFullName) settingsFullName.value = user.name;
                  if (settingsEmail) settingsEmail.value = user.email;
+                 if (settingsBio) settingsBio.value = user.bio || '';
                  
                  renderUserTickets();
              }

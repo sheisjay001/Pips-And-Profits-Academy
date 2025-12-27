@@ -104,6 +104,27 @@ const App = {
         }
     },
 
+    updateUserProfile(name, email, bio) {
+        const currentUser = this.getCurrentUser();
+        if (!currentUser) return;
+
+        currentUser.name = name;
+        currentUser.email = email;
+        currentUser.bio = bio;
+        
+        this.setCurrentUser(currentUser);
+
+        // Update in main users list
+        const users = this.getUsers();
+        const index = users.findIndex(u => u.id === currentUser.id);
+        if (index !== -1) {
+            users[index].name = name;
+            users[index].email = email;
+            users[index].bio = bio;
+            localStorage.setItem(this.KEYS.USERS, JSON.stringify(users));
+        }
+    },
+
     checkAuth() {
         const user = this.getCurrentUser();
         if (!user) {
