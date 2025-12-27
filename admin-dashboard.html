@@ -717,10 +717,16 @@
         // --- Revenue Logic ---
         function renderRevenue() {
             const stats = App.getRevenueStats();
-            const totalEl = document.getElementById('totalRevenue');
-            const monthlyEl = document.getElementById('monthlyRevenue');
             
-            if (totalEl) totalEl.textContent = '$' + stats.total.toLocaleString();
+            // Update Dashboard Card
+            const totalElDash = document.getElementById('totalRevenueDash');
+            if (totalElDash) totalElDash.textContent = '$' + stats.total.toLocaleString();
+            
+            // Update Revenue Section
+            const totalElPage = document.getElementById('totalRevenue');
+            if (totalElPage) totalElPage.textContent = '$' + stats.total.toLocaleString();
+
+            const monthlyEl = document.getElementById('monthlyRevenue');
             if (monthlyEl) monthlyEl.textContent = '+$' + stats.monthly.toLocaleString();
             
             const tbody = document.getElementById('revenueTableBody');
@@ -743,20 +749,15 @@
 
         function updateStats() {
             const activeCount = App.getActiveSignalsCount();
-            // Find the element for active signals count
-            const activeSignalEl = Array.from(document.querySelectorAll('h6')).find(el => el.textContent.includes('ACTIVE SIGNALS'));
+            const activeSignalEl = document.getElementById('activeSignalsCount');
             if (activeSignalEl) {
-                activeSignalEl.nextElementSibling.textContent = activeCount;
+                activeSignalEl.textContent = activeCount;
             }
         }
         
         function renderRecentSignals() {
              // Optional: Implementation if we want to list signals on admin dash
         }
-            DasheDash');
-            if (totalElDash) totalElDash.txtContent = $' + stats.total.toLocaleString(
-            
-    </script>taPagetaePag
-ody></hPagePageng();
-
-            cost monthlyEl = document.etElementById'monthlyRevenue'
+    </script>
+</body>
+</html>
