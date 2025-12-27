@@ -262,6 +262,7 @@
     <script>
         // Initialize User Dashboard
         document.addEventListener('DOMContentLoaded', () => {
+            App.checkAuth();
             renderSignals();
             updateStats();
             updateUserInfo();
@@ -275,7 +276,9 @@
                 const navUserAvatar = document.getElementById('navUserAvatar');
                 
                 if (navUserName) navUserName.textContent = user.name;
-                if (navUserAvatar) navUserAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff`;
+                if (navUserAvatar) {
+                    navUserAvatar.src = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff`;
+                }
 
                 // Update welcome message
                 const welcomeMessage = document.getElementById('welcomeMessage');
