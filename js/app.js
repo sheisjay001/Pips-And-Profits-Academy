@@ -347,7 +347,19 @@ const App = {
                     })
                 });
 
-                const data = await response.json();
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server Error (${response.status}): ${errorText.substring(0, 100)}`);
+                }
+
+                const responseText = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    console.error('Raw Server Response:', responseText);
+                    throw new Error('Invalid JSON response from server. Check console for details.');
+                }
                 
                 if (data.status && data.data.authorization_url) {
                     // Redirect to Paystack Checkout
@@ -358,7 +370,7 @@ const App = {
                 }
             } catch (error) {
                 console.error('Payment Error:', error);
-                alert('Error connecting to payment server. Please ensure you are running on a PHP server (XAMPP).');
+                alert(`Connection Error: ${error.message}\n\nPlease ensure you are accessing via http://localhost/`);
                 if (btn) btn.innerHTML = originalText;
             }
 

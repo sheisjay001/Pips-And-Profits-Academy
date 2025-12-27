@@ -41,6 +41,11 @@ if (file_exists(__DIR__ . '/config.php')) {
     exit;
 }
 
+if (!function_exists('curl_init')) {
+    echo json_encode(['status' => false, 'message' => 'CURL is not enabled in your PHP installation.']);
+    exit;
+}
+
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_POST, true);
