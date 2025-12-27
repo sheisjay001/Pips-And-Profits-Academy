@@ -22,4 +22,34 @@ document.addEventListener('DOMContentLoaded', function() {
             navbar.classList.remove('shadow-sm');
         }
     });
+
+    // Sidebar Toggle Logic
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener("click", function(e) {
+            e.preventDefault();
+            document.getElementById("wrapper").classList.toggle("toggled");
+            
+            // Handle mobile body scroll
+            if (window.innerWidth <= 768) {
+                document.body.classList.toggle("sidebar-open");
+            }
+        });
+    }
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(e) {
+        const wrapper = document.getElementById('wrapper');
+        const sidebarWrapper = document.getElementById('sidebar-wrapper');
+        const toggleBtn = document.getElementById('sidebarToggle');
+        
+        if (window.innerWidth <= 768 && 
+            wrapper.classList.contains('toggled') && 
+            !sidebarWrapper.contains(e.target) && 
+            !toggleBtn.contains(e.target)) {
+            
+            wrapper.classList.remove('toggled');
+            document.body.classList.remove('sidebar-open');
+        }
+    });
 });
