@@ -109,8 +109,8 @@
                             <div class="card-body d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted text-uppercase small fw-bold">Total Students</h6>
-                                    <h3 class="fw-bold text-dark mb-0">1,245</h3>
-                                    <small class="text-success"><i class="fa-solid fa-arrow-up"></i> 12% this month</small>
+                                    <h3 class="fw-bold text-dark mb-0" id="totalStudents">0</h3>
+                                    <small class="text-success"><i class="fa-solid fa-arrow-up"></i> <span id="studentsGrowth">0</span>% this month</small>
                                 </div>
                                 <div class="icon-box bg-primary bg-opacity-10 text-primary rounded-circle p-3">
                                     <i class="fa-solid fa-users fa-lg"></i>
@@ -123,8 +123,8 @@
                             <div class="card-body d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted text-uppercase small fw-bold">Active Signals</h6>
-                                    <h3 class="fw-bold text-dark mb-0">8</h3>
-                                    <small class="text-muted">3 pending closure</small>
+                                    <h3 class="fw-bold text-dark mb-0" id="activeSignalsCount">0</h3>
+                                    <small class="text-muted">Running now</small>
                                 </div>
                                 <div class="icon-box bg-danger bg-opacity-10 text-danger rounded-circle p-3">
                                     <i class="fa-solid fa-signal fa-lg"></i>
@@ -137,8 +137,8 @@
                             <div class="card-body d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted text-uppercase small fw-bold">Total Revenue</h6>
-                                    <h3 class="fw-bold text-success mb-0">$45.2k</h3>
-                                    <small class="text-success"><i class="fa-solid fa-arrow-up"></i> 8% this week</small>
+                                    <h3 class="fw-bold text-success mb-0" id="totalRevenue">$0.00</h3>
+                                    <small class="text-success"><i class="fa-solid fa-arrow-up"></i> 0% this week</small>
                                 </div>
                                 <div class="icon-box bg-success bg-opacity-10 text-success rounded-circle p-3">
                                     <i class="fa-solid fa-dollar-sign fa-lg"></i>
@@ -151,8 +151,8 @@
                             <div class="card-body d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted text-uppercase small fw-bold">New Support Tickets</h6>
-                                    <h3 class="fw-bold text-dark mb-0">12</h3>
-                                    <small class="text-warning">Needs attention</small>
+                                    <h3 class="fw-bold text-dark mb-0" id="newTicketsCount">0</h3>
+                                    <small class="text-warning">Open tickets</small>
                                 </div>
                                 <div class="icon-box bg-warning bg-opacity-10 text-warning rounded-circle p-3">
                                     <i class="fa-solid fa-ticket fa-lg"></i>
@@ -236,11 +236,47 @@
                                 <form>
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Pair</label>
-                                        <select class="form-select">
-                                            <option>EUR/USD</option>
-                                            <option>GBP/JPY</option>
-                                            <option>XAU/USD</option>
-                                            <option>BTC/USD</option>
+                                        <select class="form-select" id="quickSignalPair">
+                                            <optgroup label="Majors">
+                                                <option value="EURUSD">EUR/USD</option>
+                                                <option value="GBPUSD">GBP/USD</option>
+                                                <option value="USDJPY">USD/JPY</option>
+                                                <option value="USDCHF">USD/CHF</option>
+                                                <option value="USDCAD">USD/CAD</option>
+                                                <option value="AUDUSD">AUD/USD</option>
+                                                <option value="NZDUSD">NZD/USD</option>
+                                            </optgroup>
+                                            <optgroup label="Minors">
+                                                <option value="EURGBP">EUR/GBP</option>
+                                                <option value="EURJPY">EUR/JPY</option>
+                                                <option value="GBPJPY">GBP/JPY</option>
+                                                <option value="AUDJPY">AUD/JPY</option>
+                                                <option value="CADJPY">CAD/JPY</option>
+                                                <option value="CHFJPY">CHF/JPY</option>
+                                                <option value="NZDJPY">NZD/JPY</option>
+                                                <option value="EURAUD">EUR/AUD</option>
+                                                <option value="GBPAUD">GBP/AUD</option>
+                                                <option value="AUDCAD">AUD/CAD</option>
+                                                <option value="AUDCHF">AUD/CHF</option>
+                                            </optgroup>
+                                            <optgroup label="Commodities">
+                                                <option value="XAUUSD">XAU/USD (Gold)</option>
+                                                <option value="XAGUSD">XAG/USD (Silver)</option>
+                                                <option value="WTIUSD">WTI/USD (Oil)</option>
+                                            </optgroup>
+                                            <optgroup label="Crypto">
+                                                <option value="BTCUSD">BTC/USD</option>
+                                                <option value="ETHUSD">ETH/USD</option>
+                                                <option value="LTCUSD">LTC/USD</option>
+                                                <option value="XRPUSD">XRP/USD</option>
+                                            </optgroup>
+                                            <optgroup label="Indices">
+                                                <option value="US30">US30 (Dow Jones)</option>
+                                                <option value="NAS100">NAS100 (Nasdaq)</option>
+                                                <option value="SPX500">SPX500 (S&P 500)</option>
+                                                <option value="GER30">GER30 (DAX)</option>
+                                                <option value="UK100">UK100 (FTSE)</option>
+                                            </optgroup>
                                         </select>
                                     </div>
                                     <div class="mb-3">
@@ -653,11 +689,65 @@
 
         window.deleteUser = function(id) {
             if(confirm('Are you sure you want to delete this user?')) {
-                App.deleteUser(id);
+                let users = App.getUsers();
+                users = users.filter(u => u.id !== id);
+                localStorage.setItem(App.KEYS.USERS, JSON.stringify(users));
                 renderUsers();
-                renderRevenue(); // Update revenue as it depends on users
+                updateDashboardStats();
             }
         };
+
+        function updateDashboardStats() {
+            // Students
+            const users = App.getUsers();
+            const students = users.filter(u => u.role !== 'admin');
+            const totalStudentsEl = document.getElementById('totalStudents');
+            if (totalStudentsEl) totalStudentsEl.textContent = students.length;
+            
+            // Active Signals
+            const signals = App.getSignals();
+            const activeSignals = signals.filter(s => s.status === 'Running');
+            const activeSignalsEl = document.getElementById('activeSignalsCount');
+            if (activeSignalsEl) activeSignalsEl.textContent = activeSignals.length;
+            
+            // Tickets
+            const tickets = App.getTickets();
+            const openTickets = tickets.filter(t => t.status === 'Open');
+            const ticketsEl = document.getElementById('newTicketsCount');
+            if (ticketsEl) ticketsEl.textContent = openTickets.length;
+
+            // Update Recent Registrations table on Dashboard
+            const recentUsers = users.slice(-5).reverse(); // Last 5 users
+            const recentTable = document.querySelector('#dashboard-section table tbody');
+            if (recentTable) {
+                recentTable.innerHTML = recentUsers.map(user => `
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
+                                <img src="${user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`}" class="rounded-circle me-2" width="30">
+                                <span class="fw-bold">${user.name}</span>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-purple">Student</span></td>
+                        <td><span class="text-success fw-bold">Active</span></td>
+                        <td class="text-muted small">Just now</td>
+                        <td><button class="btn btn-sm btn-light text-secondary"><i class="fa-solid fa-ellipsis-vertical"></i></button></td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = App.getCurrentUser();
+            if (!user || user.role !== 'admin') {
+                window.location.href = 'index.html';
+                return;
+            }
+            updateDashboardStats();
+            // Initial render if needed
+            renderUsers(); 
+        });
 
         // --- Revenue Logic ---
         function renderRevenue() {
