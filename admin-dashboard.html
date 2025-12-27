@@ -40,6 +40,9 @@
                 <a href="#" onclick="showSection('revenue', this)" class="list-group-item list-group-item-action bg-dark text-white border-0 p-3">
                     <i class="fa-solid fa-money-bill-wave me-2"></i> Revenue
                 </a>
+                <a href="#" onclick="showSection('crypto-proofs', this)" class="list-group-item list-group-item-action bg-dark text-white border-0 p-3">
+                    <i class="fa-brands fa-bitcoin me-2"></i> Crypto Proofs
+                </a>
                 <a href="#" onclick="showSection('tickets', this)" class="list-group-item list-group-item-action bg-dark text-white border-0 p-3">
                     <i class="fa-solid fa-ticket me-2"></i> Support Tickets
                 </a>
@@ -332,32 +335,11 @@
                 </div>
             </div>
 
-            <!-- Revenue Content (Hidden by default) -->
-            <div id="revenue-section" class="section container-fluid p-4 d-none">
-                <h2 class="fw-bold text-dark mb-4">Revenue</h2>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-body">
-                                <h6 class="text-muted text-uppercase small fw-bold">Total Revenue</h6>
-                                <h3 class="fw-bold text-success mb-0" id="totalRevenue">$0.00</h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-body">
-                                <h6 class="text-muted text-uppercase small fw-bold">This Month</h6>
-                                <h3 class="fw-bold text-dark mb-0" id="monthlyRevenue">$0.00</h3>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Crypto Approvals -->
+            <!-- Crypto Proofs Content (Hidden by default) -->
+            <div id="crypto-proofs-section" class="section container-fluid p-4 d-none">
+                <h2 class="fw-bold text-dark mb-4">Crypto Payment Proofs</h2>
                 <div class="row mb-4">
                     <div class="col-12">
-                        <h5 class="fw-bold">Pending Crypto Payments</h5>
                         <div class="card border-0 shadow-sm">
                             <div class="card-body p-0">
                                 <div class="table-responsive">
@@ -376,6 +358,29 @@
                                         </tbody>
                                     </table>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Revenue Content (Hidden by default) -->
+            <div id="revenue-section" class="section container-fluid p-4 d-none">
+                <h2 class="fw-bold text-dark mb-4">Revenue</h2>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted text-uppercase small fw-bold">Total Revenue</h6>
+                                <h3 class="fw-bold text-success mb-0" id="totalRevenue">$0.00</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted text-uppercase small fw-bold">This Month</h6>
+                                <h3 class="fw-bold text-dark mb-0" id="monthlyRevenue">$0.00</h3>
                             </div>
                         </div>
                     </div>
