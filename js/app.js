@@ -192,7 +192,7 @@ const App = {
             }
 
             // Public Key is safe to be on the frontend
-            const publicKey = 'pk_live_YOUR_PUBLIC_KEY_HERE'; // <--- REPLACE WITH YOUR LIVE PUBLIC KEY (starts with pk_live_)
+            const publicKey = 'pk_live_764b7c6590906e7aade5d4baac08b7d711bbf2fe'; // <--- REPLACE WITH YOUR LIVE PUBLIC KEY (starts with pk_live_)
 
             const handler = PaystackPop.setup({
                 key: publicKey, 
