@@ -56,7 +56,21 @@
                                 <img src="https://ui-avatars.com/api/?name=Trader+Joe&background=6f42c1&color=fff&size=128" alt="Profile" class="rounded-circle mb-3 img-thumbnail" id="settingsProfileImage">
                                 <h5 class="fw-bold" id="settingsProfileName">Trader Joe</h5>
                                 <p class="text-muted small">Pro Member</p>
-                                <button class="btn btn-outline-purple btn-sm">Change Avatar</button>
+                                <button class="btn btn-outline-purple btn-sm" onclick="toggleAvatarSelection()">Change Avatar</button>
+                                
+                                <div id="avatarSelection" class="mt-3 d-none">
+                                    <p class="small text-muted mb-2">Select an Avatar:</p>
+                                    <div class="d-flex justify-content-center flex-wrap gap-2 mb-2">
+                                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="rounded-circle cursor-pointer avatar-option" style="width: 40px; height: 40px; cursor: pointer;" onclick="selectAvatar(this.src)">
+                                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka" class="rounded-circle cursor-pointer avatar-option" style="width: 40px; height: 40px; cursor: pointer;" onclick="selectAvatar(this.src)">
+                                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Bob" class="rounded-circle cursor-pointer avatar-option" style="width: 40px; height: 40px; cursor: pointer;" onclick="selectAvatar(this.src)">
+                                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Coco" class="rounded-circle cursor-pointer avatar-option" style="width: 40px; height: 40px; cursor: pointer;" onclick="selectAvatar(this.src)">
+                                    </div>
+                                    <div class="input-group input-group-sm mb-2">
+                                        <input type="text" class="form-control" id="customAvatarUrl" placeholder="Or paste image URL">
+                                        <button class="btn btn-purple" type="button" onclick="saveCustomAvatar()">Save</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -111,6 +125,41 @@
                                 </form>
                             </div>
                         </div>
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="mb-0 fw-bold">Support & Tickets</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="ticketForm" onsubmit="handleTicketSubmit(event)">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Subject</label>
+                                        <input type="text" class="form-control" id="ticketSubject" placeholder="e.g., Billing Issue" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Message</label>
+                                        <textarea class="form-control" id="ticketMessage" rows="3" placeholder="Describe your issue..." required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-purple">Submit Ticket</button>
+                                </form>
+                                <hr class="my-4">
+                                <h6 class="fw-bold mb-3 small text-uppercase text-muted">Your Recent Tickets</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th class="border-0">Subject</th>
+                                                <th class="border-0">Status</th>
+                                                <th class="border-0 text-end">Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="userTicketsTable">
+                                            <!-- Filled by JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="card shadow-sm border-0 mb-4" id="billing">
                             <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0 fw-bold">Billing & Subscription</h5>
@@ -228,6 +277,51 @@
     <script>
         App.checkAuth();
 
+        function toggleAvatarSelection() {
+            const el = document.getElementById('avatarSelection');
+            if (el) el.classList.toggle('d-none');
+        }
+
+        function selectAvatar(url) {
+            App.updateAvatar(url);
+            window.location.reload();
+        }
+
+        function saveCustomAvatar() {
+            const url = document.getElementById('customAvatarUrl').value;
+            if (url) {
+                App.updateAvatar(url);
+                window.location.reload();
+            }
+        }
+
+        function handleTicketSubmit(e) {
+            e.preventDefault();
+            const subject = document.getElementById('ticketSubject').value;
+            const message = document.getElementById('ticketMessage').value;
+            
+            if (subject && message) {
+                App.createTicket(subject, message);
+                alert('Ticket submitted successfully!');
+                document.getElementById('ticketForm').reset();
+                renderUserTickets();
+            }
+        }
+
+        function renderUserTickets() {
+            const tickets = App.getUserTickets();
+            const tbody = document.getElementById('userTicketsTable');
+            if (tbody) {
+                tbody.innerHTML = tickets.length ? tickets.map(t => `
+                    <tr>
+                        <td>${t.subject}</td>
+                        <td><span class="badge ${t.status === 'Open' ? 'bg-warning text-dark' : 'bg-success'}">${t.status}</span></td>
+                        <td class="text-end text-muted small">${new Date(t.date).toLocaleDateString()}</td>
+                    </tr>
+                `).join('') : '<tr><td colspan="3" class="text-center text-muted">No tickets found</td></tr>';
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
              const user = App.getCurrentUser();
              if (user) {
@@ -237,9 +331,11 @@
                  const settingsEmail = document.getElementById('settingsEmail');
                  
                  if (settingsProfileName) settingsProfileName.textContent = user.name;
-                 if (settingsProfileImage) settingsProfileImage.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff&size=128`;
+                 if (settingsProfileImage) settingsProfileImage.src = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff&size=128`;
                  if (settingsFullName) settingsFullName.value = user.name;
                  if (settingsEmail) settingsEmail.value = user.email;
+                 
+                 renderUserTickets();
              }
         });
     </script>

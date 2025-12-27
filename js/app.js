@@ -9,7 +9,8 @@ const App = {
         SIGNALS: 'ppa_signals',
         USERS: 'ppa_users',
         CURRENT_USER: 'ppa_current_user',
-        COURSES: 'ppa_courses'
+        COURSES: 'ppa_courses',
+        TICKETS: 'ppa_tickets'
     },
 
     // Initial Mock Data
@@ -240,6 +241,22 @@ const App = {
         return JSON.parse(localStorage.getItem(this.KEYS.USERS) || '[]');
     },
 
+    updateAvatar(url) {
+        let user = this.getCurrentUser();
+        if (user) {
+            user.avatar = url;
+            localStorage.setItem(this.KEYS.CURRENT_USER, JSON.stringify(user));
+            
+            // Update in main Users list too
+            let users = this.getUsers();
+            const index = users.findIndex(u => u.id === user.id);
+            if (index !== -1) {
+                users[index].avatar = url;
+                localStorage.setItem(this.KEYS.USERS, JSON.stringify(users));
+            }
+        }
+    },
+
     deleteUser(userId) {
         let users = this.getUsers();
         users = users.filter(u => u.id !== userId);
@@ -348,6 +365,38 @@ const App = {
         } else if (method === 'crypto') {
             alert('Generating Crypto Payment Address (USDT/BTC)...\n(Integration Pending)');
         }
+    },
+
+    // --- Ticket Methods ---
+    getTickets() {
+        return JSON.parse(localStorage.getItem(this.KEYS.TICKETS) || '[]');
+    },
+
+    getUserTickets() {
+        const user = this.getCurrentUser();
+        if (!user) return [];
+        const tickets = this.getTickets();
+        return tickets.filter(t => t.userId === user.id);
+    },
+
+    createTicket(subject, message) {
+        const user = this.getCurrentUser();
+        if (!user) return;
+
+        const tickets = this.getTickets();
+        const newTicket = {
+            id: Date.now(),
+            userId: user.id,
+            userName: user.name,
+            userEmail: user.email,
+            subject,
+            message,
+            status: 'Open',
+            date: new Date().toISOString()
+        };
+        tickets.unshift(newTicket);
+        localStorage.setItem(this.KEYS.TICKETS, JSON.stringify(tickets));
+        return newTicket;
     }
 };
 
