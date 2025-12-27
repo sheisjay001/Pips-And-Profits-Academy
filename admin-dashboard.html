@@ -761,6 +761,11 @@
             const tbody = document.getElementById('revenueTableBody');
             if (!tbody) return;
 
+            if (stats.transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No transaction history found</td></tr>';
+                return;
+            }
+
             tbody.innerHTML = stats.transactions.map(tx => `
                 <tr>
                     <td class="ps-4 fw-bold">${tx.user}</td>
