@@ -65,6 +65,16 @@ const App = {
         
         // Initialize UI components
         this.initSidebar();
+        this.checkPaymentStatus();
+    },
+
+    checkPaymentStatus() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('payment') === 'success') {
+            alert('Payment Successful! Your transaction has been processed.');
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
     },
 
     // --- UI/UX Methods ---
@@ -295,9 +305,46 @@ const App = {
     },
 
     // --- Payment Methods ---
-    initiatePayment(method) {
+    async initiatePayment(method) {
         if (method === 'paystack') {
-            alert('Redirecting to Paystack Secure Checkout...\n(Integration Pending)');
+            const user = this.getCurrentUser();
+            if (!user) {
+                alert('Please login first to make a payment.');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Show loading state
+            const btn = document.activeElement;
+            const originalText = btn ? btn.innerHTML : '';
+            if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            try {
+                // Call backend to initialize transaction
+                const response = await fetch('api/paystack_init.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: user.email,
+                        amount: 19900 // $199.00 in cents/kobo (Adjust currency as needed)
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.status && data.data.authorization_url) {
+                    // Redirect to Paystack Checkout
+                    window.location.href = data.data.authorization_url;
+                } else {
+                    alert('Payment initialization failed: ' + (data.message || 'Unknown error'));
+                    if (btn) btn.innerHTML = originalText;
+                }
+            } catch (error) {
+                console.error('Payment Error:', error);
+                alert('Error connecting to payment server. Please ensure you are running on a PHP server (XAMPP).');
+                if (btn) btn.innerHTML = originalText;
+            }
+
         } else if (method === 'crypto') {
             alert('Generating Crypto Payment Address (USDT/BTC)...\n(Integration Pending)');
         }
