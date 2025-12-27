@@ -70,6 +70,11 @@
                                         <input type="text" class="form-control" id="customAvatarUrl" placeholder="Or paste image URL">
                                         <button class="btn btn-purple" type="button" onclick="saveCustomAvatar()">Save</button>
                                     </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small text-muted">Or Upload Image:</label>
+                                        <input type="file" class="form-control form-control-sm" id="avatarUpload" accept="image/*" onchange="handleAvatarUpload(event)">
+                                        <div class="form-text x-small">Max size 500KB.</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -340,6 +345,24 @@
             if (url) {
                 App.updateAvatar(url);
                 window.location.reload();
+            }
+        }
+
+        function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.size > 500 * 1024) { // 500KB limit
+                    alert('File too large. Please choose an image under 500KB.');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    App.updateUserAvatar(base64);
+                    window.location.reload();
+                };
+                reader.readAsDataURL(file);
             }
         }
 

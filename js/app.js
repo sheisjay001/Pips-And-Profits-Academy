@@ -204,12 +204,26 @@ const App = {
             // Public Key is safe to be on the frontend
             const publicKey = 'pk_live_764b7c6590906e7aade5d4baac08b7d711bbf2fe'; // <--- REPLACE WITH YOUR LIVE PUBLIC KEY (starts with pk_live_)
 
+            // Exchange rate: 1 USD = 1500 NGN (Example rate, adjust as needed)
+            const exchangeRate = 1600; 
+            const amountInUSD = 199;
+            const amountInNGN = amountInUSD * exchangeRate * 100; // Convert to kobo
+
             const handler = PaystackPop.setup({
                 key: publicKey, 
                 email: user.email,
-                amount: 19900, // 199.00 NGN/USD in kobo/cents
-                currency: 'USD', 
+                amount: amountInNGN, 
+                currency: 'NGN', 
                 ref: '' + Math.floor((Math.random() * 1000000000) + 1), 
+                metadata: {
+                    custom_fields: [
+                        {
+                            display_name: "Plan",
+                            variable_name: "plan",
+                            value: "Pro Trader Plan ($199)"
+                        }
+                    ]
+                },
                 onClose: function() {
                     alert('Transaction was not completed, window closed.');
                 },
