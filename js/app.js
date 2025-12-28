@@ -11,6 +11,14 @@ const App = {
         if (window.location.protocol === 'file:') {
             alert('Warning: You are running this site directly from a file. Please use a local server (like XAMPP) and access via http://localhost/... to ensure database connections work.');
         }
+        // Detect Live Server ports (5500-5510)
+        if (window.location.port >= 5500 && window.location.port <= 5510) {
+            const phpUrl = 'http://localhost:8000';
+            const msg = `⚠️ Incorrect Server Detected!\n\nYou are running on "Live Server" (Port ${window.location.port}), which cannot execute PHP.\n\nPlease click OK to be redirected to the correct PHP Server: ${phpUrl}`;
+            if (confirm(msg)) {
+                window.location.href = phpUrl + window.location.pathname;
+            }
+        }
     },
 
     // --- API Helper ---
