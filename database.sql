@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS user_progress (
 -- Initial Admin User (Password: admin123)
 -- Note: In a real app, you must hash passwords using password_hash() in PHP
 INSERT INTO users (name, email, password_hash, role) VALUES 
-('Admin User', 'admin@pips.com', '$2y$10$YourHashedPasswordHere', 'admin');
+('Admin User', 'admin@pips.com', '$2y$10$LrYyijQRksYk5bVVGAs2U.ap54YbNFC5HTvEVNzIEDiM.OS0CGmPq', 'admin');
 
 -- Sample Signals
 INSERT INTO signals (pair, type, entry_price, stop_loss, take_profit, status) VALUES 
