@@ -56,18 +56,23 @@
 
     <script src="js/app.js"></script>
     <script>
-        document.getElementById('registerForm').addEventListener('submit', (e) => {
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = e.target.name.value;
             const email = e.target.email.value;
             const password = e.target.password.value;
 
-            const result = App.register(name, email, password);
-            if (result.success) {
-                alert('Registration successful! Redirecting to dashboard...');
-                window.location.href = 'dashboard.html';
-            } else {
-                alert(result.message);
+            try {
+                const result = await App.register(name, email, password);
+                if (result.success) {
+                    alert('Registration successful! Please login.');
+                    window.location.href = 'login.html';
+                } else {
+                    alert(result.message || 'Registration failed');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('An error occurred during registration. Please try again.');
             }
         });
     </script>

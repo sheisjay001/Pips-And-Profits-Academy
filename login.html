@@ -55,20 +55,25 @@
 
     <script src="js/app.js"></script>
     <script>
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = e.target.email.value;
-            const password = e.target.password.value;
+            const email = document.querySelector('input[type="email"]').value;
+            const password = document.querySelector('input[type="password"]').value;
 
-            const result = App.login(email, password);
-            if (result.success) {
-                if (result.role === 'admin') {
-                    window.location.href = 'admin-dashboard.html';
+            try {
+                const result = await App.login(email, password);
+                if (result.success) {
+                    if (result.user.role === 'admin') {
+                        window.location.href = 'admin-dashboard.html';
+                    } else {
+                        window.location.href = 'dashboard.html';
+                    }
                 } else {
-                    window.location.href = 'dashboard.html';
+                    alert(result.message || 'Login failed');
                 }
-            } else {
-                alert(result.message);
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('An error occurred during login. Please try again.');
             }
         });
     </script>

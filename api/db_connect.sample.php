@@ -27,11 +27,10 @@ try {
     // Add SSL options if a CA certificate is provided (Common for TiDB Cloud)
     if (!empty($ssl_ca) && file_exists($ssl_ca)) {
         $options[PDO::MYSQL_ATTR_SSL_CA] = $ssl_ca;
-        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false; 
-    } 
-    
-    if ($port == '4000') {
-         $options[PDO::MYSQL_ATTR_SSL_CA] = true; // Trigger SSL usage
+        // $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false; // Enable if needed
+    } elseif ($port == '4000') {
+        // Fallback if CA not found but we need SSL (might fail if server requires trusted cert)
+        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
     }
 
     $conn = new PDO($dsn, $username, $password, $options);
