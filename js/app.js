@@ -8,7 +8,9 @@ const App = {
 
     // --- Initialization ---
     init() {
-        // Any init logic
+        if (window.location.protocol === 'file:') {
+            alert('Warning: You are running this site directly from a file. Please use a local server (like XAMPP) and access via http://localhost/... to ensure database connections work.');
+        }
     },
 
     // --- API Helper ---
@@ -21,11 +23,19 @@ const App = {
         
         try {
             const res = await fetch(`api/${endpoint}`, options);
-            if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
+            if (!res.ok) {
+                // Try to get text error if possible
+                const text = await res.text();
+                throw new Error(`Server Error (${res.status}): ${text.substring(0, 100)}...`);
+            }
             return await res.json();
         } catch (error) {
             console.error('API Call Failed:', error);
-            return { success: false, message: 'Network error or server unreachable' };
+            // Check for syntax error (often means PHP error output instead of JSON)
+            if (error instanceof SyntaxError) {
+                return { success: false, message: 'Server returned invalid data. Possible PHP error.' };
+            }
+            return { success: false, message: `Network/Server Error: ${error.message}` };
         }
     },
 

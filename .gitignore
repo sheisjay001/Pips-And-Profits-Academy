@@ -1,4 +1,4 @@
 api/config.php
-api/db_connect.php
+api/db_connect.local.php
 backend/.env
 backend/node_modules
