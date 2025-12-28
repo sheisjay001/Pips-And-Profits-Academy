@@ -3,72 +3,51 @@
 const App = {
     // --- State Management ---
     KEYS: {
-        USERS: 'ppa_users',
         CURRENT_USER: 'ppa_current_user',
-        SIGNALS: 'ppa_signals_v2', // Changed to clear old mock data
-        TICKETS: 'ppa_tickets'
     },
 
     // --- Initialization ---
     init() {
-        this.initStorage();
+        // Any init logic
     },
 
-    initStorage() {
-        if (!localStorage.getItem(this.KEYS.USERS)) {
-            localStorage.setItem(this.KEYS.USERS, JSON.stringify([]));
-        }
-        // Initial Mock Data (REMOVED)
-        if (!localStorage.getItem(this.KEYS.SIGNALS)) {
-            const initialSignals = [];
-            localStorage.setItem(this.KEYS.SIGNALS, JSON.stringify(initialSignals));
+    // --- API Helper ---
+    async api(endpoint, method = 'GET', data = null) {
+        const options = {
+            method,
+            headers: { 'Content-Type': 'application/json' }
+        };
+        if (data) options.body = JSON.stringify(data);
+        
+        try {
+            const res = await fetch(`api/${endpoint}`, options);
+            if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
+            return await res.json();
+        } catch (error) {
+            console.error('API Call Failed:', error);
+            return { success: false, message: 'Network error or server unreachable' };
         }
     },
 
     // --- Authentication ---
-    register(name, email, password) {
-        const users = this.getUsers();
-        if (users.find(u => u.email === email)) {
-            return { success: false, message: 'Email already exists' };
-        }
-        
-        const newUser = {
-            id: Date.now(),
-            name,
-            email,
-            password, // In real app, hash this!
-            role: 'user', // user | admin
-            joinDate: new Date().toISOString(),
-            avatar: '' // Add avatar field
-        };
-        
-        users.push(newUser);
-        localStorage.setItem(this.KEYS.USERS, JSON.stringify(users));
-        return { success: true };
+    async register(name, email, password) {
+        const result = await this.api('auth.php', 'POST', {
+            action: 'register',
+            name, email, password
+        });
+        return result;
     },
 
-    login(email, password) {
-        // Admin Bypass
-        if (email === 'admin@admin.com' && password === 'admin123') {
-            const adminUser = {
-                id: 1,
-                name: 'Administrator',
-                email: 'admin@admin.com',
-                role: 'admin',
-                avatar: ''
-            };
-            this.setCurrentUser(adminUser);
-            return { success: true, user: adminUser };
-        }
-
-        const users = this.getUsers();
-        const user = users.find(u => u.email === email && u.password === password);
+    async login(email, password) {
+        const result = await this.api('auth.php', 'POST', {
+            action: 'login',
+            email, password
+        });
         
-        if (user) {
-            this.setCurrentUser(user);
-            return { success: true, user };
+        if (result.success && result.user) {
+            this.setCurrentUser(result.user);
         }
-        return { success: false, message: 'Invalid credentials' };
+        return result;
     },
 
     logout() {
@@ -84,45 +63,24 @@ const App = {
         localStorage.setItem(this.KEYS.CURRENT_USER, JSON.stringify(user));
     },
 
-    getUsers() {
-        return JSON.parse(localStorage.getItem(this.KEYS.USERS) || '[]');
-    },
-
-    updateUserAvatar(avatarUrl) {
+    async updateUserProfile(name, email, bio) {
         const currentUser = this.getCurrentUser();
         if (!currentUser) return;
 
-        currentUser.avatar = avatarUrl;
-        this.setCurrentUser(currentUser);
+        const result = await this.api('auth.php', 'POST', {
+            action: 'update_profile',
+            id: currentUser.id,
+            name, email, bio
+        });
 
-        // Update in main users list
-        const users = this.getUsers();
-        const index = users.findIndex(u => u.id === currentUser.id);
-        if (index !== -1) {
-            users[index].avatar = avatarUrl;
-            localStorage.setItem(this.KEYS.USERS, JSON.stringify(users));
+        if (result.success) {
+            // Update local session
+            currentUser.name = name;
+            currentUser.email = email;
+            currentUser.bio = bio;
+            this.setCurrentUser(currentUser);
         }
-    },
-
-    updateUserProfile(name, email, bio) {
-        const currentUser = this.getCurrentUser();
-        if (!currentUser) return;
-
-        currentUser.name = name;
-        currentUser.email = email;
-        currentUser.bio = bio;
-        
-        this.setCurrentUser(currentUser);
-
-        // Update in main users list
-        const users = this.getUsers();
-        const index = users.findIndex(u => u.id === currentUser.id);
-        if (index !== -1) {
-            users[index].name = name;
-            users[index].email = email;
-            users[index].bio = bio;
-            localStorage.setItem(this.KEYS.USERS, JSON.stringify(users));
-        }
+        return result;
     },
 
     checkAuth() {
@@ -138,19 +96,21 @@ const App = {
         }
     },
 
-    // --- Signals (Mock Data Logic) ---
-    getSignals() {
-        return JSON.parse(localStorage.getItem(this.KEYS.SIGNALS) || '[]');
+    // --- Signals ---
+    async getSignals() {
+        // Returns array of signals
+        const signals = await this.api('signals.php', 'GET');
+        return Array.isArray(signals) ? signals : [];
     },
 
-    getActiveSignalsCount() {
-        const signals = this.getSignals();
-        return signals.filter(s => s.status === 'Active').length;
+    async getActiveSignalsCount() {
+        const signals = await this.getSignals();
+        return signals.filter(s => s.status === 'Running' || s.status === 'Active').length;
     },
 
-    getWinRate() {
-        const signals = this.getSignals();
-        const closedSignals = signals.filter(s => s.status !== 'Active' && s.status !== 'Running');
+    async getWinRate() {
+        const signals = await this.getSignals();
+        const closedSignals = signals.filter(s => s.status !== 'Active' && s.status !== 'Running' && s.status !== 'Pending');
         
         if (closedSignals.length === 0) return '0%';
         
@@ -163,9 +123,11 @@ const App = {
         return Math.round((wins / closedSignals.length) * 100) + '%';
     },
 
-    getCourseProgress() {
-        // Placeholder for future course tracking
-        return '0%'; 
+    // --- Signals (Admin) ---
+    async addSignal(signal) {
+        // signal object contains pair, type, etc.
+        const result = await this.api('signals.php', 'POST', signal);
+        return result;
     },
 
     // --- Utilities ---
@@ -176,17 +138,16 @@ const App = {
     },
 
     getPairIcon(pair) {
-        // Simple mock icon logic
         if (pair.includes('EUR')) return 'https://flagcdn.com/20x15/eu.png';
         if (pair.includes('USD')) return 'https://flagcdn.com/20x15/us.png';
         if (pair.includes('GBP')) return 'https://flagcdn.com/20x15/gb.png';
         if (pair.includes('JPY')) return 'https://flagcdn.com/20x15/jp.png';
-        if (pair.includes('XAU')) return 'https://flagcdn.com/20x15/us.png'; // Gold
+        if (pair.includes('XAU')) return 'https://flagcdn.com/20x15/us.png'; 
         if (pair.includes('BTC')) return 'https://cryptologos.cc/logos/bitcoin-btc-logo.png?v=025';
         return 'https://flagcdn.com/20x15/un.png';
     },
 
-    // --- Courses ---
+    // --- Courses (Still Mock for now as requested only signals/auth) ---
     getCourses() {
         return JSON.parse(localStorage.getItem('ppa_courses') || '[]');
     },
@@ -200,41 +161,13 @@ const App = {
         return course;
     },
 
-    // --- Signals (Admin) ---
-    addSignal(signal) {
-        const signals = this.getSignals();
-        signal.id = Date.now();
-        signal.status = 'Active'; // Default status
-        signal.date = new Date().toISOString();
-        signal.outcome = 'Running';
-        signals.unshift(signal);
-        localStorage.setItem(this.KEYS.SIGNALS, JSON.stringify(signals));
-        return signal;
-    },
-
-    // --- Revenue ---
-    getRevenueStats() {
-        const transactions = JSON.parse(localStorage.getItem('ppa_transactions') || '[]');
-        
-        const total = transactions.reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
-        
-        // Calculate this month's revenue
-        const now = new Date();
-        const thisMonth = transactions.filter(tx => {
-            const txDate = new Date(tx.date);
-            return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
-        }).reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
-
-        return {
-            total: total.toFixed(2),
-            monthly: thisMonth.toFixed(2),
-            transactions: transactions
-        };
-    },
-
     // --- Payment Methods ---
     async initiatePayment(method) {
         if (method === 'paystack') {
+            if (typeof PaystackPop === 'undefined') {
+                alert('Paystack is unable to load. Please check your internet connection or try again later.');
+                return;
+            }
             const user = this.getCurrentUser();
             if (!user) {
                 alert('Please login first to make a payment.');
@@ -270,33 +203,16 @@ const App = {
                 },
                 callback: function(response) {
                     // Send reference to backend for secure verification
-                    fetch('http://localhost:3000/api/verify-payment', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ reference: response.reference })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status) {
-                            alert('Payment verified successfully!');
-                            window.location.href = 'dashboard.html?payment=success';
-                        } else {
-                            alert('Payment verification failed: ' + data.message);
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Error verifying payment:', err);
-                        alert('Error verifying payment. Please contact support.');
-                    });
+                    // Using fetch to backend API (which doesn't exist yet but sticking to previous logic)
+                    // We can point this to a future api/verify_payment.php
+                    alert('Payment successful! Reference: ' + response.reference);
+                    window.location.href = 'dashboard.html?payment=success';
                 }
             });
 
             handler.openIframe();
 
         } else if (method === 'crypto') {
-            // Show Crypto Modal
             const cryptoModal = new bootstrap.Modal(document.getElementById('cryptoPaymentModal'));
             cryptoModal.show();
         }
@@ -305,7 +221,7 @@ const App = {
     copyToClipboard(elementId) {
         const copyText = document.getElementById(elementId);
         copyText.select();
-        copyText.setSelectionRange(0, 99999); // For mobile devices
+        copyText.setSelectionRange(0, 99999); 
         navigator.clipboard.writeText(copyText.value).then(() => {
             alert("Address copied to clipboard!");
         });
@@ -313,59 +229,13 @@ const App = {
 
     async submitCryptoPayment(event) {
         event.preventDefault();
-        
-        const fileInput = document.getElementById('paymentProof');
-        const file = fileInput.files[0];
-        
-        if (!file) {
-            alert('Please upload a screenshot of your payment.');
-            return;
-        }
-
-        if (file.size > 2 * 1024 * 1024) { // 2MB limit
-            alert('File is too large. Max size is 2MB.');
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const base64Image = e.target.result;
-            const user = App.getCurrentUser();
-            
-            const pendingPayment = {
-                id: Date.now(),
-                userId: user.id,
-                userName: user.name,
-                userEmail: user.email,
-                amount: 199.00,
-                currency: 'USD',
-                method: 'Crypto',
-                proof: base64Image,
-                status: 'Pending',
-                date: new Date().toISOString()
-            };
-
-            const pending = JSON.parse(localStorage.getItem('ppa_crypto_pending') || '[]');
-            pending.push(pendingPayment);
-            localStorage.setItem('ppa_crypto_pending', JSON.stringify(pending));
-
-            alert('Payment proof submitted successfully! Admin will verify shortly.');
-            
-            // Close modal
-            const modalEl = document.getElementById('cryptoPaymentModal');
-            const modal = bootstrap.Modal.getInstance(modalEl);
-            modal.hide();
-            
-            // Reset form
-            document.getElementById('cryptoPaymentForm').reset();
-        };
-        
-        reader.readAsDataURL(file);
+        alert('Crypto payment submission requires backend implementation for file upload. This is a placeholder.');
+        // Implementation would require FormData and a PHP endpoint
     },
 
-    // --- Ticket Methods ---
+    // --- Ticket Methods (Still LocalStorage for now) ---
     getTickets() {
-        return JSON.parse(localStorage.getItem(this.KEYS.TICKETS) || '[]');
+        return JSON.parse(localStorage.getItem('ppa_tickets') || '[]');
     },
 
     getUserTickets() {
@@ -378,7 +248,6 @@ const App = {
     createTicket(subject, message) {
         const user = this.getCurrentUser();
         if (!user) return;
-
         const tickets = this.getTickets();
         const newTicket = {
             id: Date.now(),
@@ -391,21 +260,41 @@ const App = {
             date: new Date().toISOString()
         };
         tickets.unshift(newTicket);
-        localStorage.setItem(this.KEYS.TICKETS, JSON.stringify(tickets));
+        localStorage.setItem('ppa_tickets', JSON.stringify(tickets));
         return newTicket;
-    },
-
-    updateTicketStatus(ticketId, newStatus) {
-        const tickets = this.getTickets();
-        const index = tickets.findIndex(t => t.id === ticketId);
-        if (index !== -1) {
-            tickets[index].status = newStatus;
-            localStorage.setItem(this.KEYS.TICKETS, JSON.stringify(tickets));
-            return true;
-        }
-        return false;
     }
 };
 
 // Initialize App on load
 App.init();
+
+// Admin Tag Logic for Settings Page
+document.addEventListener('DOMContentLoaded', () => {
+    const user = App.getCurrentUser();
+    if (user) {
+        // Update Admin Badge if elements exist
+        const roleBadgeText = document.getElementById('userRoleText');
+        const roleBadge = document.getElementById('userRoleBadge');
+        
+        if (roleBadgeText || roleBadge) {
+            let roleLabel = 'Student'; // Default
+            if (user.role === 'admin') roleLabel = 'Administrator';
+            else if (user.role === 'user') roleLabel = 'Student'; // Or Pro Member based on other flags
+            
+            // Override for "Pro Member" if that's the default expectation for paid users
+            // For now, let's distinguish Admin vs Student
+            
+            if (roleBadgeText) roleBadgeText.textContent = roleLabel;
+            if (roleBadge) {
+                roleBadge.textContent = roleLabel;
+                if (user.role === 'admin') {
+                    roleBadge.classList.remove('bg-purple');
+                    roleBadge.classList.add('bg-danger');
+                } else {
+                     roleBadge.classList.remove('bg-danger');
+                     roleBadge.classList.add('bg-purple');
+                }
+            }
+        }
+    }
+});

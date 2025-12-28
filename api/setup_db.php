@@ -1,0 +1,79 @@
+<?php
+/**
+ * Setup Database Script
+ * Runs the schema creation against the connected database (TiDB/MySQL)
+ */
+
+header('Content-Type: application/json');
+require_once 'db_connect.php';
+
+try {
+    // 1. Users Table
+    $conn->exec("CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(100) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        role ENUM('user', 'admin') DEFAULT 'user',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    // 2. Signals Table
+    $conn->exec("CREATE TABLE IF NOT EXISTS signals (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        pair VARCHAR(20) NOT NULL,
+        type ENUM('BUY', 'SELL') NOT NULL,
+        entry_price DECIMAL(10, 5) NOT NULL,
+        stop_loss DECIMAL(10, 5) NOT NULL,
+        take_profit DECIMAL(10, 5) NOT NULL,
+        status ENUM('Pending', 'Running', 'Profit', 'Loss') DEFAULT 'Pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    // 3. Courses Table
+    $conn->exec("CREATE TABLE IF NOT EXISTS courses (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        level ENUM('Beginner', 'Intermediate', 'Advanced') NOT NULL,
+        thumbnail_url VARCHAR(255),
+        price DECIMAL(10, 2) DEFAULT 0.00,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    // 4. User Progress Table
+    $conn->exec("CREATE TABLE IF NOT EXISTS user_progress (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        course_id INT NOT NULL,
+        progress_percentage INT DEFAULT 0,
+        last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+    )");
+
+    // 5. Seed Initial Data (if empty)
+    
+    // Check if admin exists
+    $stmt = $conn->query("SELECT COUNT(*) FROM users WHERE email = 'admin@pips.com'");
+    if ($stmt->fetchColumn() == 0) {
+        // Create Admin (Password: admin123)
+        $password = password_hash('admin123', PASSWORD_DEFAULT);
+        $stmt = $conn->prepare("INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)");
+        $stmt->execute(['Admin User', 'admin@pips.com', $password, 'admin']);
+    }
+
+    // Check if signals exist
+    $stmt = $conn->query("SELECT COUNT(*) FROM signals");
+    if ($stmt->fetchColumn() == 0) {
+        $conn->exec("INSERT INTO signals (pair, type, entry_price, stop_loss, take_profit, status) VALUES 
+        ('EUR/USD', 'BUY', 1.0850, 1.0820, 1.0900, 'Profit'),
+        ('GBP/JPY', 'SELL', 182.40, 182.80, 181.50, 'Running')");
+    }
+
+    echo json_encode(['success' => true, 'message' => 'Database tables created and seeded successfully!']);
+
+} catch(PDOException $e) {
+    echo json_encode(['success' => false, 'message' => 'Setup failed: ' . $e->getMessage()]);
+}
+?>
