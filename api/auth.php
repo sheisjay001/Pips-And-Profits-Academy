@@ -74,5 +74,10 @@ if ($action === 'register') {
     } else {
         echo json_encode(['success' => false, 'message' => 'Update failed']);
     }
+} elseif ($action === 'forgot_password') {
+    // In a real application, you would generate a token and email it.
+    // For this prototype, we'll just return success to simulate the flow.
+    // We do NOT confirm if the email exists or not to prevent user enumeration.
+    echo json_encode(['success' => true, 'message' => 'Reset link sent']);
 }
 ?>
