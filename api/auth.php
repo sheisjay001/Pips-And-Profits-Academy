@@ -4,13 +4,25 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
+// For CLI testing (allows simulation of request method)
+if (php_sapi_name() === 'cli') {
+    if (!isset($_SERVER['REQUEST_METHOD'])) {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
 require_once 'db_connect.php';
 
-$data = json_decode(file_get_contents("php://input"));
+// CLI Support: Read from stdin if php://input is empty (common in PowerShell pipes)
+$input = file_get_contents("php://input");
+if (empty($input) && php_sapi_name() === 'cli') {
+    $input = file_get_contents("php://stdin");
+}
+$data = json_decode($input);
 
 if (!isset($data->action)) {
     echo json_encode(['success' => false, 'message' => 'No action specified']);
