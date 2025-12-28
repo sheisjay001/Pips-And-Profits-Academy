@@ -292,6 +292,7 @@
                                         <th class="border-0 ps-4">Name</th>
                                         <th class="border-0">Email</th>
                                         <th class="border-0">Role</th>
+                                        <th class="border-0">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="usersTableBody">
@@ -695,6 +696,9 @@
                     </td>
                     <td>${user.email}</td>
                     <td><span class="badge ${user.role === 'admin' ? 'bg-danger' : 'bg-primary'}">${user.role}</span></td>
+                    <td>
+                        ${user.role !== 'admin' ? `<button class="btn btn-sm btn-light text-danger" onclick="deleteUser(${user.id})"><i class="fa-solid fa-trash"></i></button>` : ''}
+                    </td>
                 </tr>
             `).join('');
         }
