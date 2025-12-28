@@ -178,9 +178,9 @@
     <script src="js/app.js"></script>
     <script>
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             App.checkAuth();
-            renderSignals('all');
+            await renderSignals('all');
 
             const user = App.getCurrentUser();
             if (user) {
@@ -191,8 +191,8 @@
             }
         });
 
-        function renderSignals(filter) {
-            const allSignals = App.getSignals();
+        async function renderSignals(filter) {
+            const allSignals = await App.getSignals();
             let signals = allSignals;
 
             if (filter === 'active') {
@@ -206,7 +206,7 @@
             document.getElementById('activeTradesCount').textContent = activeCount;
 
             // Update Win Rate
-            const winRate = App.getWinRate();
+            const winRate = await App.getWinRate();
             document.getElementById('signalWinRate').textContent = winRate;
             
             // Update Total Pips (Placeholder logic or calculated if data exists)

@@ -322,10 +322,10 @@
 
     <script>
         // Initialize User Dashboard
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             App.checkAuth();
-            renderSignals();
-            updateStats();
+            await renderSignals();
+            await updateStats();
             updateUserInfo();
         });
 
@@ -350,10 +350,10 @@
             }
         }
 
-        function updateStats() {
-            const activeCount = App.getActiveSignalsCount();
-            const winRate = App.getWinRate();
-            const courseProgress = App.getCourseProgress();
+        async function updateStats() {
+            const activeCount = await App.getActiveSignalsCount();
+            const winRate = await App.getWinRate();
+            // const courseProgress = App.getCourseProgress(); // Removed as it is missing in app.js
 
             // Update Active Signals
             const activeEl = document.getElementById('dashActiveSignals');
@@ -364,12 +364,12 @@
             if (winRateEl) winRateEl.textContent = winRate;
 
             // Update Course Progress
-            const progressEl = document.getElementById('dashCourseProgress');
-            if (progressEl) progressEl.textContent = courseProgress;
+            // const progressEl = document.getElementById('dashCourseProgress');
+            // if (progressEl) progressEl.textContent = courseProgress;
         }
 
-        function renderSignals() {
-            const signals = App.getSignals();
+        async function renderSignals() {
+            const signals = await App.getSignals();
             const tbody = document.querySelector('tbody');
             
             if (tbody) {

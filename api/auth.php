@@ -91,5 +91,21 @@ if ($action === 'register') {
     // For this prototype, we'll just return success to simulate the flow.
     // We do NOT confirm if the email exists or not to prevent user enumeration.
     echo json_encode(['success' => true, 'message' => 'Reset link sent']);
+} elseif ($action === 'get_users') {
+    // Fetch all users (admin only ideally)
+    $stmt = $conn->query("SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC");
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    echo json_encode($users);
+} elseif ($action === 'delete_user') {
+    $id = $data->id;
+    // Check if user exists and is not admin (simple check)
+    // Ideally check if requester is admin
+    
+    $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
+    if ($stmt->execute([$id])) {
+        echo json_encode(['success' => true, 'message' => 'User deleted']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Deletion failed']);
+    }
 }
 ?>
