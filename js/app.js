@@ -26,6 +26,12 @@ const App = {
             if (!res.ok) {
                 // Try to get text error if possible
                 const text = await res.text();
+                
+                // Specific help for 405 Method Not Allowed (Common when using Live Server instead of PHP)
+                if (res.status === 405) {
+                    throw new Error(`Server Error (405): You are likely using "Live Server" or a static file viewer. Please use the PHP server URL (http://localhost:8000/...) to run this app.`);
+                }
+
                 throw new Error(`Server Error (${res.status}): ${text.substring(0, 100)}...`);
             }
             return await res.json();
