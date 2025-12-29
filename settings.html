@@ -171,12 +171,13 @@
                                 <span class="badge bg-purple" id="userPlanBadge">Pro Member</span>
                             </div>
                             <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
+                                <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded" id="currentPlanContainer">
                                     <div>
-                                        <h6 class="fw-bold mb-1">Pro Trader Plan</h6>
-                                        <p class="text-muted small mb-0">$49.00 • One-time Payment</p>
+                                        <h6 class="fw-bold mb-1" id="planName">Free Plan</h6>
+                                        <p class="text-muted small mb-0" id="planCost">Free Forever</p>
                                     </div>
-                                    <button class="btn btn-outline-danger btn-sm">Cancel</button>
+                                    <!-- Cancel button hidden for Free plan -->
+                                    <button class="btn btn-outline-danger btn-sm d-none" id="cancelPlanBtn">Cancel</button>
                                 </div>
 
 
@@ -286,20 +287,9 @@
                                 <h6 class="fw-bold mb-3 small text-uppercase text-muted">Billing History</h6>
                                 <div class="table-responsive">
                                     <table class="table table-borderless table-sm align-middle">
-                                        <tbody>
+                                        <tbody id="billingHistoryBody">
                                             <tr>
-                                                <td class="text-muted small">Dec 25, 2025</td>
-                                                <td class="small fw-bold">Pro Trader Plan</td>
-                                                <td class="small">$49.00</td>
-                                                <td><span class="badge bg-light text-success border border-success">Paid</span></td>
-                                                <td class="text-end"><a href="#" class="text-purple"><i class="fas fa-download"></i></a></td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted small">Nov 25, 2025</td>
-                                                <td class="small fw-bold">Pro Trader Plan</td>
-                                                <td class="small">$49.00</td>
-                                                <td><span class="badge bg-light text-success border border-success">Paid</span></td>
-                                                <td class="text-end"><a href="#" class="text-purple"><i class="fas fa-download"></i></a></td>
+                                                <td colspan="5" class="text-center text-muted small py-3">No payment history available</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -461,6 +451,10 @@
                  const settingsBio = document.getElementById('settingsBio');
                  const planBadge = document.getElementById('userPlanBadge');
                  const eliteBenefits = document.getElementById('eliteBenefits');
+                 const planName = document.getElementById('planName');
+                 const planCost = document.getElementById('planCost');
+                 const cancelPlanBtn = document.getElementById('cancelPlanBtn');
+                 const billingHistoryBody = document.getElementById('billingHistoryBody');
                  
                  if (settingsProfileName) settingsProfileName.textContent = user.name;
                  if (settingsProfileImage) settingsProfileImage.src = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff&size=128`;
@@ -473,6 +467,52 @@
                      planBadge.classList.toggle('bg-purple', (user.plan || 'free') !== 'elite');
                      planBadge.classList.toggle('bg-success', (user.plan || 'free') === 'elite');
                  }
+
+                 // Update Plan Details Card
+                 if (planName && planCost) {
+                     if ((user.plan || 'free') === 'elite') {
+                         planName.textContent = 'Elite Mentorship Plan';
+                         planCost.textContent = '$199.00 • One-time Payment';
+                         if (cancelPlanBtn) cancelPlanBtn.classList.remove('d-none');
+                         // Show payment history
+                         if (billingHistoryBody) {
+                             billingHistoryBody.innerHTML = `
+                                <tr>
+                                    <td class="text-muted small">${new Date().toLocaleDateString()}</td>
+                                    <td class="small fw-bold">Elite Mentorship Plan</td>
+                                    <td class="small">$199.00</td>
+                                    <td><span class="badge bg-light text-success border border-success">Paid</span></td>
+                                    <td class="text-end"><a href="#" class="text-purple"><i class="fas fa-download"></i></a></td>
+                                </tr>
+                             `;
+                         }
+                     } else if ((user.plan || 'free') === 'pro') {
+                         planName.textContent = 'Pro Trader Plan';
+                         planCost.textContent = '$49.00 • One-time Payment';
+                         if (cancelPlanBtn) cancelPlanBtn.classList.remove('d-none');
+                         // Show payment history
+                         if (billingHistoryBody) {
+                             billingHistoryBody.innerHTML = `
+                                <tr>
+                                    <td class="text-muted small">${new Date().toLocaleDateString()}</td>
+                                    <td class="small fw-bold">Pro Trader Plan</td>
+                                    <td class="small">$49.00</td>
+                                    <td><span class="badge bg-light text-success border border-success">Paid</span></td>
+                                    <td class="text-end"><a href="#" class="text-purple"><i class="fas fa-download"></i></a></td>
+                                </tr>
+                             `;
+                         }
+                     } else {
+                         planName.textContent = 'Free Plan';
+                         planCost.textContent = 'Free Forever';
+                         if (cancelPlanBtn) cancelPlanBtn.classList.add('d-none');
+                         // Hide payment history or show empty
+                         if (billingHistoryBody) {
+                             billingHistoryBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted small py-3">No payment history available</td></tr>';
+                         }
+                     }
+                 }
+
                  if (eliteBenefits) {
                      if ((user.plan || 'free') === 'elite') {
                          eliteBenefits.classList.remove('d-none');

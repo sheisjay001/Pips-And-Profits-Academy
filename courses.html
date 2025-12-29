@@ -80,14 +80,33 @@
             const courses = await App.getCourses();
             const grid = document.getElementById('coursesGrid');
             grid.innerHTML = '';
+            const user = App.getCurrentUser();
+            const hasPremium = user && (user.role === 'admin' || user.plan === 'pro' || user.plan === 'elite');
 
             courses.forEach(course => {
+                const isAdvanced = (course.level || '').toLowerCase() === 'advanced';
+                const locked = isAdvanced && !hasPremium;
+                const actionBtn = locked
+                    ? `<button class="btn btn-warning text-dark mt-3 w-100" onclick="App.initiatePayment('paystack','pro')">Upgrade to Pro</button>`
+                    : `<a href="lesson.html?id=${course.id}" class="btn btn-outline-purple mt-3 w-100">${(course.progress || 0) > 0 ? 'Continue Learning' : 'Start Course'}</a>`;
+                const badgeClass = locked ? 'bg-secondary' : 'bg-purple';
+                const overlay = locked ? `
+                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light bg-opacity-75">
+                        <div class="text-center">
+                            <div class="mb-2"><i class="fa-solid fa-lock text-danger"></i></div>
+                            <div class="small fw-bold">Advanced Strategy (Pro)</div>
+                        </div>
+                    </div>
+                ` : '';
                 const card = `
                     <div class="col-md-4">
                         <div class="card h-100 shadow-sm border-0">
                             <img src="${course.thumbnail_url || 'images/course-default.jpg'}" class="card-img-top" alt="${course.title}" style="height: 200px; object-fit: cover;">
+                            <div class="position-relative">
+                                ${overlay}
+                            </div>
                             <div class="card-body d-flex flex-column">
-                                <span class="badge bg-purple w-auto align-self-start mb-2">${course.level}</span>
+                                <span class="badge ${badgeClass} w-auto align-self-start mb-2">${course.level}</span>
                                 <h5 class="card-title fw-bold">${course.title}</h5>
                                 <p class="card-text text-muted small flex-grow-1">${course.description || course.desc || ''}</p>
                                 
@@ -101,9 +120,7 @@
                                     </div>
                                 </div>
                                 
-                                <a href="lesson.html?id=${course.id}" class="btn btn-outline-purple mt-3 w-100">
-                                    ${(course.progress || 0) > 0 ? 'Continue Learning' : 'Start Course'}
-                                </a>
+                                ${actionBtn}
                             </div>
                         </div>
                     </div>

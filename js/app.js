@@ -60,12 +60,12 @@ const App = {
             'courses',
             'community',
             'market_analysis',
-            'settings'
+            'settings',
+            'tools'
         ];
         const pro = [
             'premium_signals',
             'live_trading',
-            'tools',
             'advanced_courses'
         ];
         const elite = [
