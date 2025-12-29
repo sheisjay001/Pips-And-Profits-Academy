@@ -45,11 +45,17 @@ $fields_string = http_build_query($fields);
 
 // Paystack Secret Key
 // Load from config if available, otherwise fail
-if (file_exists(__DIR__ . '/config.php')) {
-    require_once __DIR__ . '/config.php';
-    $sk = $paystack_secret_key;
+$config_path = __DIR__ . '/config.php';
+if (file_exists($config_path)) {
+    require_once $config_path;
+    if (isset($paystack_secret_key)) {
+        $sk = $paystack_secret_key;
+    } else {
+        echo json_encode(['status' => false, 'message' => 'Configuration file found but key is missing']);
+        exit;
+    }
 } else {
-    echo json_encode(['status' => false, 'message' => 'Server configuration missing (config.php)']);
+    echo json_encode(['status' => false, 'message' => 'Server configuration missing (config.php) at ' . $config_path]);
     exit;
 }
 
