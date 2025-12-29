@@ -479,13 +479,12 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">Thumbnail URL</label>
-                            <input type="url" class="form-control" name="thumbnail" placeholder="https://..." required>
+                            <label class="form-label small fw-bold">Thumbnail Image</label>
+                            <input type="file" class="form-control" name="thumbnail" accept="image/*">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">Video URL or Path</label>
-                            <input type="text" class="form-control" name="videoUrl" placeholder="https://... OR videos/myvideo.mp4" required>
-                            <div class="form-text">For local videos, upload to 'videos' folder and type 'videos/filename.mp4'</div>
+                            <label class="form-label small fw-bold">Course Video</label>
+                            <input type="file" class="form-control" name="video" accept="video/*" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Description</label>
@@ -616,21 +615,20 @@
             // Handle Add Course
             const addCourseForm = document.getElementById('addCourseForm');
             if (addCourseForm) {
-                addCourseForm.addEventListener('submit', (e) => {
+                addCourseForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     
-                    const title = addCourseForm.title.value;
-                    const level = addCourseForm.level.value;
-                    const thumbnail = addCourseForm.thumbnail.value;
-                    const videoUrl = addCourseForm.videoUrl.value;
-                    const desc = addCourseForm.desc.value;
-
-                    App.addCourse({ title, level, thumbnail, videoUrl, desc });
-                    
-                    alert('Course Added Successfully!');
-                    addCourseForm.reset();
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('addCourseModal'));
-                    modal.hide();
+                    const fd = new FormData(addCourseForm);
+                    const res = await fetch('api/courses.php', { method: 'POST', body: fd });
+                    const data = await res.json();
+                    if (data && data.success) {
+                        alert('Course Added Successfully!');
+                        addCourseForm.reset();
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('addCourseModal'));
+                        modal.hide();
+                    } else {
+                        alert((data && data.message) || 'Failed to add course');
+                    }
                 });
             }
 

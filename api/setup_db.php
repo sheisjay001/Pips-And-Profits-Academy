@@ -38,6 +38,7 @@ try {
         description TEXT,
         level ENUM('Beginner', 'Intermediate', 'Advanced') NOT NULL,
         thumbnail_url VARCHAR(255),
+        video_path VARCHAR(255),
         price DECIMAL(10, 2) DEFAULT 0.00,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
@@ -52,6 +53,13 @@ try {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
     )");
+
+    // Ensure 'video_path' exists
+    try {
+        $conn->query("SELECT video_path FROM courses LIMIT 1");
+    } catch (Exception $e) {
+        $conn->exec("ALTER TABLE courses ADD COLUMN video_path VARCHAR(255)");
+    }
 
     // 5. Password Resets Table
     $conn->exec("CREATE TABLE IF NOT EXISTS password_resets (

@@ -207,18 +207,15 @@ const App = {
         return 'https://flagcdn.com/20x15/un.png';
     },
 
-    // --- Courses (Still Mock for now as requested only signals/auth) ---
-    getCourses() {
-        return JSON.parse(localStorage.getItem('ppa_courses') || '[]');
+    // --- Courses ---
+    async getCourses() {
+        const result = await this.api('courses.php', 'GET');
+        return Array.isArray(result) ? result : [];
     },
-    
-    addCourse(course) {
-        const courses = this.getCourses();
-        course.id = Date.now();
-        course.date = new Date().toISOString();
-        courses.push(course);
-        localStorage.setItem('ppa_courses', JSON.stringify(courses));
-        return course;
+
+    async uploadCourse(formData) {
+        const res = await fetch('api/courses.php', { method: 'POST', body: formData });
+        return await res.json();
     },
 
     // --- Payment Methods ---
