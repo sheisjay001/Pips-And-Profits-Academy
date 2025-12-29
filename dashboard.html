@@ -324,8 +324,22 @@
             const planEl = document.getElementById('userPlanLabel');
             if (user && planEl) planEl.textContent = (user.plan || 'free').replace(/^./, c => c.toUpperCase());
             window.selectedPlan = 'pro';
+            // Check for Payment Success/Verify from URL
             const params = new URLSearchParams(window.location.search);
-            if (params.get('payment') === 'success') {
+            if (params.has('payment') && params.get('payment') === 'verify' && params.has('reference')) {
+                const reference = params.get('reference');
+                const plan = params.get('plan');
+                
+                // Clean URL immediately to prevent re-verification on reload
+                window.history.replaceState({}, document.title, window.location.pathname);
+
+                App.verifyPayment(reference, plan).then(success => {
+                    if (success) {
+                        alert('Payment successful! Your plan has been upgraded to ' + (plan || 'premium').toUpperCase());
+                        window.location.href = 'dashboard.html'; // Refresh to update UI
+                    }
+                });
+            } else if (params.get('payment') === 'success') {
                 const plan = params.get('plan');
                 if (plan) {
                     alert('Payment successful. Your plan is now ' + plan.toUpperCase());

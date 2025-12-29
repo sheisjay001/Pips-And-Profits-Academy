@@ -8,6 +8,7 @@ header('Access-Control-Allow-Headers: Content-Type');
 $input = json_decode(file_get_contents('php://input'), true);
 $email = $input['email'] ?? '';
 $amount = $input['amount'] ?? 0;
+$plan = $input['plan'] ?? 'pro'; // Default to pro if not set
 
 if (!$email || !$amount) {
     echo json_encode(['status' => false, 'message' => 'Email and amount required']);
@@ -21,12 +22,23 @@ $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "
 $host = $_SERVER['HTTP_HOST'];
 // Assuming the app is in "Pips And Profits Academy" folder based on file path
 // We want to redirect back to dashboard.html or a success page
-$callback_url = "$protocol://$host/Pips And Profits Academy/dashboard.html?payment=success";
+// Append plan to callback so frontend knows what was purchased
+$callback_url = "$protocol://$host/Pips And Profits Academy/dashboard.html?payment=verify&plan=" . urlencode($plan);
 
 $fields = [
     'email' => $email,
     'amount' => $amount,
-    'callback_url' => $callback_url
+    'callback_url' => $callback_url,
+    'metadata' => [
+        'plan_code' => $plan,
+        'custom_fields' => [
+            [
+                'display_name' => "Plan",
+                'variable_name' => "plan",
+                'value' => ucfirst($plan) . " Plan"
+            ]
+        ]
+    ]
 ];
 
 $fields_string = http_build_query($fields);

@@ -191,6 +191,47 @@ const App = {
     },
 
     // --- Utilities ---
+    async verifyPayment(reference, plan) {
+        try {
+            // Verify with Node.js backend or PHP proxy if Node is not available
+            // Assuming we use Node backend on port 3000 as per previous setup
+            // Or we can create a PHP verify endpoint if Node is not running on user machine
+            // Let's use the Node backend as established
+            
+            const verifyRes = await fetch('http://localhost:3000/api/verify-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reference: reference })
+            });
+            
+            const verifyData = await verifyRes.json();
+            
+            if (!verifyRes.ok || !verifyData.status) {
+                alert(verifyData.message || 'Payment verification failed');
+                return false;
+            }
+
+            // Update Plan
+            const user = this.getCurrentUser();
+            if (user && plan) {
+                const update = await this.api('auth.php', 'POST', { action: 'update_plan', id: user.id, plan });
+                if (update && update.success) {
+                    user.plan = plan;
+                    this.setCurrentUser(user);
+                    return true;
+                } else {
+                    alert('Payment verified but plan update failed. Contact support.');
+                    return false;
+                }
+            }
+            return true;
+        } catch (e) {
+            console.error('Verification error:', e);
+            alert('Network error verifying payment.');
+            return false;
+        }
+    },
+
     formatDate(isoString) {
         return new Date(isoString).toLocaleDateString('en-US', {
             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -225,10 +266,6 @@ const App = {
         const planName = plan === 'elite' ? 'Elite Plan' : 'Pro Plan';
 
         if (method === 'paystack') {
-            if (typeof PaystackPop === 'undefined') {
-                alert('Paystack is unable to load. Please check your internet connection or try again later.');
-                return;
-            }
             const user = this.getCurrentUser();
             if (!user) {
                 alert('Please login first to make a payment.');
@@ -236,61 +273,34 @@ const App = {
                 return;
             }
 
-            // Public Key is safe to be on the frontend
-            const publicKey = 'pk_live_764b7c6590906e7aade5d4baac08b7d711b'; // Live Public Key
-
             // Exchange rate: adjust as needed
             const exchangeRate = 1600; 
             const amountInNGN = amountInUSD * exchangeRate * 100; // Convert to kobo
 
-            const handler = PaystackPop.setup({
-                key: publicKey, 
-                email: user.email,
-                amount: amountInNGN, 
-                currency: 'NGN', 
-                ref: '' + Math.floor((Math.random() * 1000000000) + 1), 
-                metadata: {
-                    custom_fields: [
-                        {
-                            display_name: "Plan",
-                            variable_name: "plan",
-                            value: `${planName} ($${amountInUSD})`
-                        }
-                    ],
-                    plan_code: plan
-                },
-                onClose: function() {
-                    alert('Transaction was not completed, window closed.');
-                },
-                callback: async (response) => {
-                    try {
-                        const verifyRes = await fetch('http://localhost:3000/api/verify-payment', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ reference: response.reference })
-                        });
-                        const verifyData = await verifyRes.json();
-                        if (!verifyRes.ok || !verifyData.status) {
-                            alert(verifyData.message || 'Payment verification failed');
-                            return;
-                        }
-                        const update = await this.api('auth.php', 'POST', { action: 'update_plan', id: user.id, plan });
-                        if (update && update.success) {
-                            user.plan = plan;
-                            this.setCurrentUser(user);
-                            alert('Payment verified. Your plan is now ' + plan.toUpperCase());
-                            window.location.href = 'dashboard.html?payment=success&plan=' + encodeURIComponent(plan);
-                        } else {
-                            alert(update.message || 'Verified, but failed to update plan. Contact support.');
-                        }
-                    } catch (e) {
-                        console.error(e);
-                        alert('Network error during verification. Please contact support with your reference: ' + response.reference);
-                    }
+            // Use Standard Paystack Redirect (Server-side Init)
+            try {
+                const response = await fetch('api/paystack_init.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: user.email,
+                        amount: amountInNGN,
+                        plan: plan
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status && data.data && data.data.authorization_url) {
+                    // Redirect to Paystack
+                    window.location.href = data.data.authorization_url;
+                } else {
+                    alert('Failed to initialize payment: ' + (data.message || 'Unknown error'));
                 }
-            });
-
-            handler.openIframe();
+            } catch (e) {
+                console.error('Payment initialization error:', e);
+                alert('Network error initializing payment. Please try again.');
+            }
 
         } else if (method === 'crypto') {
             const cryptoModal = new bootstrap.Modal(document.getElementById('cryptoPaymentModal'));
