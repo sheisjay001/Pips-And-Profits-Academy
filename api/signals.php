@@ -4,6 +4,13 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
+// CLI fallback for testing
+if (php_sapi_name() === 'cli') {
+    if (!isset($_SERVER['REQUEST_METHOD'])) {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
@@ -20,13 +27,18 @@ if ($method === 'GET') {
 
 } elseif ($method === 'POST') {
     // Add new signal
-    $data = json_decode(file_get_contents("php://input"));
+    $input = file_get_contents("php://input");
+    if (empty($input) && php_sapi_name() === 'cli') {
+        $input = file_get_contents("php://stdin");
+    }
+    $data = json_decode($input);
     
     $pair = $data->pair;
     $type = $data->type;
-    $entry = $data->entry_price;
-    $sl = $data->stop_loss;
-    $tp = $data->take_profit;
+    // Accept both admin form keys and API keys
+    $entry = $data->entry_price ?? $data->entry ?? null;
+    $sl = $data->stop_loss ?? $data->sl ?? null;
+    $tp = $data->take_profit ?? $data->tp ?? null;
     $status = $data->status ?? 'Active'; // 'Active' maps to 'Running' or 'Pending' in DB? 
     // DB schema has ENUM('Pending', 'Running', 'Profit', 'Loss')
     // App.js uses 'Active' as a status in some places, let's align.

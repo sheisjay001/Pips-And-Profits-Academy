@@ -31,6 +31,13 @@ if (!isset($data->action)) {
 
 $action = $data->action;
 
+// Helper: Base URL for reset links
+$baseUrl = getenv('BASE_URL') ?: (
+    isset($_SERVER['HTTP_HOST']) 
+    ? ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'])
+    : 'http://localhost:8000'
+);
+
 if ($action === 'register') {
     $name = $data->name;
     $email = $data->email;
@@ -47,9 +54,10 @@ if ($action === 'register') {
     // Hash password
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
     $role = 'user'; // Default role
+    $plan = 'free'; // Default plan
 
-    $stmt = $conn->prepare("INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)");
-    if ($stmt->execute([$name, $email, $password_hash, $role])) {
+    $stmt = $conn->prepare("INSERT INTO users (name, email, password_hash, role, plan) VALUES (?, ?, ?, ?, ?)");
+    if ($stmt->execute([$name, $email, $password_hash, $role, $plan])) {
         echo json_encode(['success' => true, 'message' => 'Registration successful']);
     } else {
         echo json_encode(['success' => false, 'message' => 'Registration failed']);
@@ -58,7 +66,7 @@ if ($action === 'register') {
     $email = $data->email;
     $password = $data->password;
 
-    $stmt = $conn->prepare("SELECT id, name, email, password_hash, role, created_at FROM users WHERE email = ?");
+    $stmt = $conn->prepare("SELECT id, name, email, password_hash, role, plan, created_at FROM users WHERE email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -87,10 +95,58 @@ if ($action === 'register') {
         echo json_encode(['success' => false, 'message' => 'Update failed']);
     }
 } elseif ($action === 'forgot_password') {
-    // In a real application, you would generate a token and email it.
-    // For this prototype, we'll just return success to simulate the flow.
-    // We do NOT confirm if the email exists or not to prevent user enumeration.
-    echo json_encode(['success' => true, 'message' => 'Reset link sent']);
+    $email = $data->email ?? '';
+    // Find user by email (do not reveal existence)
+    $stmt = $conn->prepare("SELECT id, name FROM users WHERE email = ?");
+    $stmt->execute([$email]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($user) {
+        // Create token
+        $token = bin2hex(random_bytes(32));
+        $expires = date('Y-m-d H:i:s', time() + 3600); // 1 hour expiry
+        $stmt = $conn->prepare("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)");
+        $stmt->execute([$user['id'], $token, $expires]);
+
+        // Send email (best-effort)
+        $resetLink = $baseUrl . "/reset_password.html?token=" . urlencode($token);
+        $subject = "Password Reset - Pips and Profit Academy";
+        $message = "Hello " . ($user['name'] ?: 'User') . ",\n\n"
+                 . "We received a request to reset your password.\n"
+                 . "Use the link below to set a new password. This link expires in 1 hour.\n\n"
+                 . $resetLink . "\n\n"
+                 . "If you did not request this, please ignore this email.";
+        @mail($email, $subject, $message, "From: no-reply@pips-and-profits-academy");
+    }
+
+    // Always return success to avoid user enumeration
+    echo json_encode(['success' => true, 'message' => 'If the email exists, a reset link was sent']);
+} elseif ($action === 'reset_password') {
+    $token = $data->token ?? '';
+    $newPassword = $data->password ?? '';
+    if (!$token || !$newPassword) {
+        echo json_encode(['success' => false, 'message' => 'Invalid request']);
+        exit;
+    }
+    // Validate token
+    $stmt = $conn->prepare("SELECT pr.user_id, pr.expires_at FROM password_resets pr WHERE pr.token = ?");
+    $stmt->execute([$token]);
+    $reset = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$reset) {
+        echo json_encode(['success' => false, 'message' => 'Invalid or expired token']);
+        exit;
+    }
+    if (strtotime($reset['expires_at']) < time()) {
+        echo json_encode(['success' => false, 'message' => 'Token expired']);
+        exit;
+    }
+    // Update password
+    $hash = password_hash($newPassword, PASSWORD_DEFAULT);
+    $stmt = $conn->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
+    $stmt->execute([$hash, $reset['user_id']]);
+    // Remove used token(s)
+    $conn->prepare("DELETE FROM password_resets WHERE user_id = ?")->execute([$reset['user_id']]);
+    echo json_encode(['success' => true, 'message' => 'Password updated']);
 } elseif ($action === 'get_users') {
     // Fetch all users (admin only ideally)
     $stmt = $conn->query("SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC");
@@ -106,6 +162,20 @@ if ($action === 'register') {
         echo json_encode(['success' => true, 'message' => 'User deleted']);
     } else {
         echo json_encode(['success' => false, 'message' => 'Deletion failed']);
+    }
+} elseif ($action === 'update_plan') {
+    $id = $data->id ?? null;
+    $plan = $data->plan ?? '';
+    $allowed = ['free', 'pro', 'elite'];
+    if (!$id || !in_array($plan, $allowed)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid plan update']);
+        exit;
+    }
+    $stmt = $conn->prepare("UPDATE users SET plan = ? WHERE id = ?");
+    if ($stmt->execute([$plan, $id])) {
+        echo json_encode(['success' => true, 'message' => 'Plan updated']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to update plan']);
     }
 }
 ?>

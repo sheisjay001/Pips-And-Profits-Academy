@@ -162,23 +162,32 @@ const App = {
 
     // --- Signals (Admin) ---
     async addSignal(signal) {
-        // signal object contains pair, type, etc.
-        const result = await this.api('signals.php', 'POST', signal);
+        // Normalize keys for API
+        const payload = {
+            pair: signal.pair,
+            type: signal.type,
+            entry_price: signal.entry ?? signal.entry_price,
+            stop_loss: signal.sl ?? signal.stop_loss,
+            take_profit: signal.tp ?? signal.take_profit,
+            status: signal.status ?? 'Running'
+        };
+        const result = await this.api('signals.php', 'POST', payload);
         return result;
     },
 
-    // --- Revenue (Mock) ---
-    getRevenueStats() {
-        const transactions = JSON.parse(localStorage.getItem('ppa_transactions') || '[]');
-        const total = transactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
-        // Calculate monthly (simplified: just take 20% of total for demo)
-        const monthly = Math.round(total * 0.2); 
-        
-        return {
-            total: total,
-            monthly: monthly,
-            transactions: transactions
-        };
+    // --- Plans ---
+    async upgradePlan(plan) {
+        const user = this.getCurrentUser();
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        const result = await this.api('auth.php', 'POST', { action: 'update_plan', id: user.id, plan });
+        if (result.success) {
+            user.plan = plan;
+            this.setCurrentUser(user);
+        }
+        return result;
     },
 
     // --- Utilities ---
