@@ -385,7 +385,7 @@ const App = {
             return;
         }
 
-        const plan = this.currentPaymentPlan || 'pro'; // Default to pro if lost
+        const plan = this.currentPaymentPlan || 'pro'; 
         const amount = plan === 'elite' ? 199 : 49;
 
         const fileInput = document.getElementById('paymentProof');
@@ -394,57 +394,82 @@ const App = {
             alert('Please upload a screenshot of your payment.');
             return;
         }
-        const reader = new FileReader();
-        reader.onload = () => {
-            const pending = JSON.parse(localStorage.getItem('ppa_crypto_pending') || '[]');
-            const item = {
-                id: Date.now(),
-                userId: user.id,
-                userName: user.name,
-                amount: amount,
-                plan: plan,
-                proof: reader.result,
-                date: new Date().toISOString()
-            };
-            pending.unshift(item);
-            localStorage.setItem('ppa_crypto_pending', JSON.stringify(pending));
-            alert('Payment submitted for verification. You will be upgraded after admin approval.');
-            const modalEl = document.getElementById('cryptoPaymentModal');
-            const modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) modal.hide();
-        };
-        reader.readAsDataURL(file);
+
+        const formData = new FormData();
+        formData.append('proof', file);
+        formData.append('user_id', user.id);
+        formData.append('amount', amount);
+        formData.append('plan', plan);
+
+        try {
+            const res = await fetch('api/payments.php', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await res.json();
+            
+            if (result.success) {
+                alert('Payment submitted for verification. You will be upgraded after admin approval.');
+                const modalEl = document.getElementById('cryptoPaymentModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            } else {
+                alert('Submission failed: ' + result.message);
+            }
+        } catch (e) {
+            console.error('Payment submit error:', e);
+            alert('Network error submitting payment.');
+        }
     },
 
-    // --- Ticket Methods (Still LocalStorage for now) ---
-    getTickets() {
-        return JSON.parse(localStorage.getItem('ppa_tickets') || '[]');
+    async getPendingPayments() {
+        const payments = await this.api('payments.php', 'GET');
+        return Array.isArray(payments) ? payments.filter(p => p.status === 'Pending') : [];
     },
 
-    getUserTickets() {
+    async updatePaymentStatus(id, status) {
+        const result = await this.api('payments.php', 'POST', {
+            action: 'update_status',
+            id,
+            status
+        });
+        return result;
+    },
+
+    // --- Ticket Methods ---
+    async getTickets() {
+        const tickets = await this.api('tickets.php', 'GET');
+        return Array.isArray(tickets) ? tickets : [];
+    },
+
+    async getUserTickets() {
         const user = this.getCurrentUser();
         if (!user) return [];
-        const tickets = this.getTickets();
-        return tickets.filter(t => t.userId === user.id);
+        const tickets = await this.api(`tickets.php?user_id=${user.id}`, 'GET');
+        return Array.isArray(tickets) ? tickets : [];
     },
 
-    createTicket(subject, message) {
+    async createTicket(subject, message) {
         const user = this.getCurrentUser();
         if (!user) return;
-        const tickets = this.getTickets();
-        const newTicket = {
-            id: Date.now(),
-            userId: user.id,
-            userName: user.name,
-            userEmail: user.email,
+        
+        const result = await this.api('tickets.php', 'POST', {
+            action: 'create',
+            user_id: user.id,
             subject,
-            message,
-            status: 'Open',
-            date: new Date().toISOString()
-        };
-        tickets.unshift(newTicket);
-        localStorage.setItem('ppa_tickets', JSON.stringify(tickets));
-        return newTicket;
+            message
+        });
+        
+        return result;
+    },
+
+    async updateTicketStatus(id, status) {
+        const result = await this.api('tickets.php', 'POST', {
+            action: 'update_status',
+            id,
+            status
+        });
+        return result && result.success;
     }
 };
 

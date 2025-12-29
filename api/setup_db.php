@@ -72,6 +72,29 @@ try {
         INDEX(token)
     )");
 
+    // 6. Support Tickets Table
+    $conn->exec("CREATE TABLE IF NOT EXISTS tickets (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        subject VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        status ENUM('Open', 'Pending', 'Resolved', 'Closed') DEFAULT 'Open',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )");
+
+    // 7. Payments / Crypto Proofs Table
+    $conn->exec("CREATE TABLE IF NOT EXISTS payments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        amount DECIMAL(10, 2) NOT NULL,
+        plan ENUM('pro', 'elite') NOT NULL,
+        proof_url VARCHAR(255) NOT NULL,
+        status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )");
+
     // Ensure 'plan' column exists on existing installations
     $stmt = $conn->query("SHOW COLUMNS FROM users LIKE 'plan'");
     if ($stmt->rowCount() == 0) {

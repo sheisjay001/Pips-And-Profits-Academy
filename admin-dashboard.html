@@ -188,7 +188,7 @@
                                 <h5 class="fw-bold mb-0">Quick Signal Post</h5>
                             </div>
                             <div class="card-body">
-                                <form>
+                                <form id="quickSignalForm">
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Pair</label>
                                         <select class="form-select" id="quickSignalPair">
@@ -300,8 +300,25 @@
                     </button>
                 </div>
                 <div class="card border-0 shadow-sm">
-                     <div class="card-body">
-                        <p class="text-muted">Signal history and management...</p>
+                     <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="border-0 ps-4">Pair</th>
+                                        <th class="border-0">Type</th>
+                                        <th class="border-0">Entry</th>
+                                        <th class="border-0">SL</th>
+                                        <th class="border-0">TP</th>
+                                        <th class="border-0">Status</th>
+                                        <th class="border-0">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminSignalsTableBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
                      </div>
                 </div>
             </div>
@@ -509,11 +526,91 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Detailed signal creation form would go here...</p>
+                    <form id="newSignalModalForm">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Pair</label>
+                            <select class="form-select" name="pair" required>
+                                <optgroup label="Majors">
+                                    <option value="EURUSD">EUR/USD</option>
+                                    <option value="GBPUSD">GBP/USD</option>
+                                    <option value="USDJPY">USD/JPY</option>
+                                    <option value="USDCHF">USD/CHF</option>
+                                    <option value="USDCAD">USD/CAD</option>
+                                    <option value="AUDUSD">AUD/USD</option>
+                                    <option value="NZDUSD">NZD/USD</option>
+                                </optgroup>
+                                <optgroup label="Minors">
+                                    <option value="EURGBP">EUR/GBP</option>
+                                    <option value="EURJPY">EUR/JPY</option>
+                                    <option value="GBPJPY">GBP/JPY</option>
+                                    <option value="AUDJPY">AUD/JPY</option>
+                                    <option value="CADJPY">CAD/JPY</option>
+                                    <option value="CHFJPY">CHF/JPY</option>
+                                    <option value="NZDJPY">NZD/JPY</option>
+                                    <option value="EURAUD">EUR/AUD</option>
+                                    <option value="GBPAUD">GBP/AUD</option>
+                                    <option value="AUDCAD">AUD/CAD</option>
+                                    <option value="AUDCHF">AUD/CHF</option>
+                                </optgroup>
+                                <optgroup label="Commodities">
+                                    <option value="XAUUSD">XAU/USD (Gold)</option>
+                                    <option value="XAGUSD">XAG/USD (Silver)</option>
+                                    <option value="WTIUSD">WTI/USD (Oil)</option>
+                                </optgroup>
+                                <optgroup label="Crypto">
+                                    <option value="BTCUSD">BTC/USD</option>
+                                    <option value="ETHUSD">ETH/USD</option>
+                                    <option value="LTCUSD">LTC/USD</option>
+                                    <option value="XRPUSD">XRP/USD</option>
+                                </optgroup>
+                                <optgroup label="Indices">
+                                    <option value="US30">US30 (Dow Jones)</option>
+                                    <option value="NAS100">NAS100 (Nasdaq)</option>
+                                    <option value="SPX500">SPX500 (S&P 500)</option>
+                                    <option value="GER30">GER30 (DAX)</option>
+                                    <option value="UK100">UK100 (FTSE)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Action</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="type" id="modalBtnRadioBuy" value="BUY" checked>
+                                <label class="btn btn-outline-success" for="modalBtnRadioBuy">BUY</label>
+                                <input type="radio" class="btn-check" name="type" id="modalBtnRadioSell" value="SELL">
+                                <label class="btn btn-outline-danger" for="modalBtnRadioSell">SELL</label>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label small fw-bold">Entry Price</label>
+                                <input type="text" class="form-control" name="entry" placeholder="1.0500" required>
+                            </div>
+                            <div class="col">
+                                <label class="form-label small fw-bold">Stop Loss</label>
+                                <input type="text" class="form-control text-danger" name="sl" placeholder="1.0450" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Take Profit Levels</label>
+                            <input type="text" class="form-control text-success" name="tp" placeholder="1.0550, 1.0600" required>
+                            <div class="form-text">Separate multiple TP levels with commas</div>
+                        </div>
+                        <div class="mb-3">
+                             <label class="form-label small fw-bold">Status</label>
+                             <select class="form-select" name="status">
+                                 <option value="Running">Running</option>
+                                 <option value="Pending">Pending</option>
+                                 <option value="Won">Won</option>
+                                 <option value="Lost">Lost</option>
+                             </select>
+                        </div>
+                        <div class="d-grid gap-2">
+                             <button type="submit" class="btn btn-purple">Post Signal</button>
+                        </div>
+                    </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary">Save changes</button>
+                <div class="modal-footer d-none">
                 </div>
             </div>
         </div>
@@ -603,6 +700,8 @@
                 renderUsers();
             } else if (sectionId === 'tickets') {
                 renderTickets();
+            } else if (sectionId === 'signals') {
+                renderAdminSignals();
             }
         }
 
@@ -611,7 +710,7 @@
             await updateStats();
             await renderUsers();
             renderTickets(); // Ensure tickets are rendered on load
-            renderRecentSignals(); // If you want to show them on admin dash too
+            renderAdminSignals(); // Render signals list
             
             // Handle Add Course
             const addCourseForm = document.getElementById('addCourseForm');
@@ -633,8 +732,41 @@
                 });
             }
 
+            // Handle New Signal Modal Form
+            const newSignalModalForm = document.getElementById('newSignalModalForm');
+            if (newSignalModalForm) {
+                newSignalModalForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const fd = new FormData(newSignalModalForm);
+                    const signalData = Object.fromEntries(fd.entries());
+                    
+                    // Add logic to save signal via API
+                    try {
+                        const res = await App.addSignal(signalData);
+                        if (res && res.success) {
+                            alert('Signal Posted Successfully!');
+                            newSignalModalForm.reset();
+                            
+                            // Close modal
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('newSignalModal'));
+                            modal.hide();
+                            
+                            // Refresh lists
+                            renderAdminSignals();
+                            updateStats();
+                        } else {
+                            alert('Failed to post signal: ' + (res.message || 'Unknown error'));
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('Error posting signal');
+                    }
+                });
+            }
+
             // Handle Quick Signal Post
-            const signalForm = document.querySelector('form');
+            const signalForm = document.getElementById('quickSignalForm');
             if (signalForm) {
                 signalForm.addEventListener('submit', (e) => {
                     e.preventDefault();
@@ -665,6 +797,49 @@
             }
         });
 
+        // --- Signal Management ---
+        async function renderAdminSignals() {
+            const signals = await App.getSignals();
+            const tbody = document.getElementById('adminSignalsTableBody');
+            if (!tbody) return;
+
+            if (signals.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No signals found</td></tr>';
+                return;
+            }
+
+            // Sort by ID desc (newest first) if possible, or just reverse
+            // Assuming signals are returned in order or we sort them
+            signals.reverse();
+
+            tbody.innerHTML = signals.map(s => `
+                <tr>
+                    <td class="ps-4 fw-bold">${s.pair}</td>
+                    <td><span class="badge ${s.type === 'BUY' ? 'bg-success' : 'bg-danger'}">${s.type}</span></td>
+                    <td>${s.entry_price || s.entry}</td>
+                    <td class="text-danger">${s.stop_loss || s.sl}</td>
+                    <td class="text-success">${s.take_profit || s.tp}</td>
+                    <td><span class="badge ${s.status === 'Running' ? 'bg-primary' : s.status === 'Won' ? 'bg-success' : s.status === 'Lost' ? 'bg-danger' : 'bg-secondary'}">${s.status}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-light text-danger" onclick="deleteSignal(${s.id})"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.deleteSignal = async function(id) {
+             if(confirm('Delete this signal?')) {
+                 const res = await App.api('signals.php', 'POST', { action: 'delete', id: id });
+                 if (res && res.success) {
+                     renderAdminSignals();
+                     // Try to update stats if function exists
+                     if (typeof updateDashboardStats === 'function') updateDashboardStats();
+                 } else {
+                     alert('Failed to delete signal: ' + (res.message || 'Unknown error'));
+                 }
+             }
+        };
+
         // --- User Management Logic ---
         async function renderUsers() {
             const users = await App.getUsers();
@@ -688,8 +863,12 @@
             `).join('');
         }
 
-        function renderTickets() {
-            const tickets = App.getTickets();
+        function renderUsers() {
+            // ... (keep as is, but we are replacing larger block so I'll include it or just replace renderTickets)
+        }
+
+        async function renderTickets() {
+            const tickets = await App.getTickets();
             const tbody = document.getElementById('ticketsTableBody');
             if (!tbody) return;
             
@@ -725,9 +904,9 @@
 
         let currentTicketId = null;
 
-        window.viewTicket = function(id) {
-            const tickets = App.getTickets();
-            const ticket = tickets.find(t => t.id === id);
+        window.viewTicket = async function(id) {
+            const tickets = await App.getTickets();
+            const ticket = tickets.find(t => t.id == id); // Loose equality for string/int match
             
             if (ticket) {
                 currentTicketId = ticket.id;
@@ -743,15 +922,15 @@
             }
         };
 
-        window.saveTicketStatus = function() {
+        window.saveTicketStatus = async function() {
             if (!currentTicketId) return;
             
             const newStatus = document.getElementById('ticketStatusSelect').value;
-            const success = App.updateTicketStatus(currentTicketId, newStatus);
+            const success = await App.updateTicketStatus(currentTicketId, newStatus);
             
             if (success) {
                 // Update UI
-                renderTickets();
+                await renderTickets();
                 
                 // Close modal
                 const modalEl = document.getElementById('ticketDetailsModal');
@@ -765,13 +944,12 @@
             }
         };
 
-        window.closeTicket = function(id) {
-            let tickets = App.getTickets();
-            const index = tickets.findIndex(t => t.id === id);
-            if (index !== -1) {
-                tickets[index].status = 'Closed';
-                localStorage.setItem(App.KEYS.TICKETS, JSON.stringify(tickets));
-                renderTickets();
+        window.closeTicket = async function(id) {
+            const success = await App.updateTicketStatus(id, 'Closed');
+            if (success) {
+                await renderTickets();
+            } else {
+                alert('Failed to close ticket');
             }
         };
 
@@ -801,7 +979,7 @@
             if (activeSignalsEl) activeSignalsEl.textContent = activeSignals.length;
             
             // Tickets
-            const tickets = App.getTickets();
+            const tickets = await App.getTickets();
             const openTickets = tickets.filter(t => t.status === 'Open');
             const ticketsEl = document.getElementById('newTicketsCount');
             if (ticketsEl) ticketsEl.textContent = openTickets.length;
@@ -845,13 +1023,13 @@
 
         // Removed mock revenue logic
 
-        function renderCryptoApprovals() {
-            const pending = JSON.parse(localStorage.getItem('ppa_crypto_pending') || '[]');
+        async function renderCryptoApprovals() {
+            const pending = await App.getPendingPayments();
             const tbody = document.getElementById('cryptoApprovalsTable');
             if (!tbody) return;
 
             if (pending.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No pending payments</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No pending payments</td></tr>';
                 return;
             }
 
@@ -874,11 +1052,20 @@
             `).join('');
         }
 
-        window.viewProof = function(id) {
-            const pending = JSON.parse(localStorage.getItem('ppa_crypto_pending') || '[]');
-            const item = pending.find(p => p.id === id);
-            if (item && item.proof) {
-                document.getElementById('proofImage').src = item.proof;
+        window.viewProof = async function(id) {
+            const pending = await App.getPendingPayments();
+            const item = pending.find(p => p.id == id);
+            if (item && item.proof_url) {
+                // Handle relative paths
+                let src = item.proof_url;
+                if (!src.startsWith('http') && !src.startsWith('data:')) {
+                   // src = 'api/' + src; // If stored relative to api
+                   // But wait, we store 'uploads/proofs/...' in DB, and file is in 'uploads/proofs/' relative to root.
+                   // If admin-dashboard is in root, then 'uploads/proofs/...' is correct.
+                   // However, DB path was 'uploads/proofs/file.jpg'.
+                }
+                
+                document.getElementById('proofImage').src = src;
                 const modal = new bootstrap.Modal(document.getElementById('proofModal'));
                 modal.show();
             }
@@ -887,47 +1074,27 @@
         window.approvePayment = async function(id) {
             if(!confirm('Approve this payment?')) return;
 
-            const pending = JSON.parse(localStorage.getItem('ppa_crypto_pending') || '[]');
-            const item = pending.find(p => p.id === id);
+            const res = await App.updatePaymentStatus(id, 'Approved');
             
-            if (item) {
-                const update = await App.api('auth.php', 'POST', { action: 'update_plan', id: item.userId, plan: item.plan || 'elite' });
-                if (!(update && update.success)) {
-                    alert(update.message || 'Failed to update user plan. Please try again.');
-                    return;
-                }
-                // Remove from pending
-                const newPending = pending.filter(p => p.id !== id);
-                localStorage.setItem('ppa_crypto_pending', JSON.stringify(newPending));
-
-                // Add to Revenue/Transactions (Simulated logic in App or here)
-                // Since App.getRevenueStats returns static or mocked structure, we need to update it properly.
-                // For now, let's just assume we store "transactions" in LocalStorage too if we want persistence.
-                // But App.js has getRevenueStats returning an object. Let's create a 'ppa_transactions' key.
-                
-                const transactions = JSON.parse(localStorage.getItem('ppa_transactions') || '[]');
-                transactions.unshift({
-                    id: Date.now(),
-                    user: item.userName,
-                    plan: (item.plan === 'elite' ? 'Elite Plan (Crypto)' : 'Pro Plan (Crypto)'),
-                    amount: item.amount,
-                    date: new Date().toLocaleDateString()
-                });
-                localStorage.setItem('ppa_transactions', JSON.stringify(transactions));
-
+            if (res && res.success) {
                 alert('Payment Approved!');
-                renderRevenue();
+                await renderCryptoApprovals();
+                // Optionally update revenue stats here if we had a real backend for it
+            } else {
+                alert('Failed to approve payment: ' + (res.message || 'Unknown error'));
             }
         };
 
-        window.rejectPayment = function(id) {
+        window.rejectPayment = async function(id) {
             if(!confirm('Reject this payment?')) return;
             
-            const pending = JSON.parse(localStorage.getItem('ppa_crypto_pending') || '[]');
-            const newPending = pending.filter(p => p.id !== id);
-            localStorage.setItem('ppa_crypto_pending', JSON.stringify(newPending));
+            const res = await App.updatePaymentStatus(id, 'Rejected');
             
-            renderCryptoApprovals();
+            if (res && res.success) {
+                await renderCryptoApprovals();
+            } else {
+                alert('Failed to reject payment: ' + (res.message || 'Unknown error'));
+            }
         };
 
 
