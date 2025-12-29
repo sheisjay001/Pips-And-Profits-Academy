@@ -132,7 +132,7 @@
                 </div>
 
                 <!-- Signals List -->
-                <div class="row">
+                <div class="row" id="premiumSignalsSection">
                     <div class="col-12">
                         <div class="card border-0 shadow-sm">
                             <div class="card-body p-0">
@@ -169,11 +169,30 @@
     <script src="js/script.js"></script>
     <script src="js/app.js"></script>
     <script>
-        // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             App.checkAuth();
-            await renderSignals('all');
-
+            const allowed = App.checkAccess('premium_signals');
+            if (allowed) {
+                await renderSignals('all');
+            } else {
+                const section = document.getElementById('premiumSignalsSection');
+                if (section) {
+                    section.innerHTML = `
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-5 text-center">
+                                    <h5 class="fw-bold mb-3">Premium Signals</h5>
+                                    <p class="text-secondary mb-4">Upgrade to Pro to access daily premium signals.</p>
+                                    <div class="d-grid gap-2 col-sm-6 mx-auto">
+                                        <button class="btn btn-warning text-dark fw-bold" onclick="App.initiatePayment('paystack','pro')">Upgrade to Pro</button>
+                                        <button class="btn btn-purple fw-bold text-white" onclick="App.initiatePayment('paystack','elite')">Upgrade to Elite</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
             const user = App.getCurrentUser();
             if (user) {
                 const navUserName = document.getElementById('navUserName');
@@ -201,9 +220,8 @@
             const winRate = await App.getWinRate();
             document.getElementById('signalWinRate').textContent = winRate;
             
-            // Update Total Pips (Placeholder logic or calculated if data exists)
-            // For now, we'll leave it as 0 since we don't track pips explicitly in the object
-            document.getElementById('totalPipsCount').textContent = '0';
+            const totalPipsEl = document.getElementById('totalPipsCount');
+            if (totalPipsEl) totalPipsEl.textContent = '0';
 
             const tbody = document.getElementById('signalsTableBody');
             tbody.innerHTML = '';

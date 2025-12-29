@@ -239,6 +239,21 @@
     <script src="js/app.js"></script>
     <!-- Paystack Inline JS -->
     <script src="https://js.paystack.co/v1/inline.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const allowed = App.checkAccess('live_trading');
+            const btn = document.querySelector('a[href^="https://t.me"][class*="btn"][class*="w-100"]');
+            if (btn && !allowed) {
+                btn.classList.remove('btn-light');
+                btn.classList.add('btn-warning');
+                btn.classList.add('text-dark');
+                btn.textContent = 'Upgrade to Pro to Join';
+                btn.removeAttribute('target');
+                btn.setAttribute('href', '#');
+                btn.onclick = () => App.initiatePayment('paystack','pro');
+            }
+        });
+    </script>
 
     <!-- Payment Method Selection Modal -->
     <div class="modal fade" id="paymentMethodModal" tabindex="-1" aria-hidden="true">

@@ -53,6 +53,61 @@ const App = {
         }
     },
 
+    // --- Access Control ---
+    requiredPlanForFeature(feature) {
+        const free = [
+            'dashboard',
+            'courses',
+            'community',
+            'market_analysis',
+            'settings'
+        ];
+        const pro = [
+            'premium_signals',
+            'live_trading',
+            'tools',
+            'advanced_courses'
+        ];
+        const elite = [
+            'mentorship',
+            'personalized_plan',
+            'priority_support',
+            'vip_community'
+        ];
+        if (free.includes(feature)) return 'free';
+        if (elite.includes(feature)) return 'elite';
+        if (pro.includes(feature)) return 'pro';
+        return 'free';
+    },
+
+    checkAccess(feature) {
+        const user = this.getCurrentUser();
+        if (!user) return false;
+        if (user.role === 'admin') return true;
+        const plan = user.plan || 'free';
+        const required = this.requiredPlanForFeature(feature);
+        if (required === 'free') return true;
+        if (required === 'pro') return plan === 'pro' || plan === 'elite';
+        if (required === 'elite') return plan === 'elite';
+        return true;
+    },
+
+    enforceAccess(feature) {
+        if (!this.checkAccess(feature)) {
+            const required = this.requiredPlanForFeature(feature);
+            const msg = required === 'elite'
+                ? 'This feature requires the Elite plan. Upgrade now?'
+                : 'This feature requires a Pro or Elite plan. Upgrade now?';
+            if (confirm(msg)) {
+                window.location.href = 'dashboard.html?upgrade=true';
+            } else {
+                window.history.back();
+            }
+            return false;
+        }
+        return true;
+    },
+
     // --- Authentication ---
     async register(name, email, password) {
         const result = await this.api('auth.php', 'POST', {

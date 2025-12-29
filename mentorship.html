@@ -92,6 +92,21 @@
 
             <!-- Mentorship Content -->
             <div class="container-fluid p-4">
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        // Check user access
+                        const user = App.getCurrentUser();
+                        if (!user) {
+                            window.location.href = 'login.html';
+                            return;
+                        }
+                        // Check if user has elite plan
+                        if (user.role !== 'admin' && user.plan !== 'elite') {
+                            alert('This page is exclusive to Elite members.');
+                            window.location.href = 'dashboard.html?upgrade=true';
+                        }
+                    });
+                </script>
                 <div class="row mb-4">
                     <div class="col-12">
                         <nav aria-label="breadcrumb">
