@@ -44,18 +44,25 @@ $fields = [
 $fields_string = http_build_query($fields);
 
 // Paystack Secret Key
-// Load from config if available, otherwise fail
-$config_path = __DIR__ . '/config.php';
-if (file_exists($config_path)) {
-    require_once $config_path;
-    if (isset($paystack_secret_key)) {
-        $sk = $paystack_secret_key;
-    } else {
-        echo json_encode(['status' => false, 'message' => 'Configuration file found but key is missing']);
-        exit;
+// Priority 1: Environment Variable (Vercel/Production)
+// Priority 2: config.php (Local Dev)
+
+$sk = getenv('PAYSTACK_SECRET_KEY');
+
+if (!$sk) {
+    // Try loading from config.php if env var is not set
+    $config_path = __DIR__ . '/config.php';
+    if (file_exists($config_path)) {
+        require_once $config_path;
+        if (isset($paystack_secret_key)) {
+            $sk = $paystack_secret_key;
+        }
     }
-} else {
-    echo json_encode(['status' => false, 'message' => 'Server configuration missing (config.php) at ' . $config_path]);
+}
+
+if (!$sk) {
+    // If still no key, fail with helpful error
+    echo json_encode(['status' => false, 'message' => 'Server configuration missing: PAYSTACK_SECRET_KEY not set in Environment or config.php']);
     exit;
 }
 

@@ -89,6 +89,12 @@ try {
         $stmt->execute(['Admin User', 'admin@pips.com', $password, 'admin', 'elite']);
     }
 
+    // RESET POLICY: Ensure all non-admin users are on the FREE plan until upgraded
+    // This cleans up any legacy data or manual changes
+    $conn->exec("UPDATE users SET plan = 'free' WHERE role != 'admin' AND plan IS NULL"); 
+    // Or if we want to enforce it strictly for everyone right now:
+    $conn->exec("UPDATE users SET plan = 'free' WHERE role != 'admin'");
+
     // Remove mock seeding: no default signals inserted
 
     echo json_encode(['success' => true, 'message' => 'Database tables created (admin seeded).']);
