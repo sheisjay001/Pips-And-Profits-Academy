@@ -98,9 +98,14 @@
                         <p class="text-secondary mb-0">Here's what's happening in the markets today.</p>
                     </div>
                     <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                        <button class="btn btn-warning fw-bold text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#paymentMethodModal">
-                            <i class="fa-solid fa-crown me-2"></i> Upgrade to Pro
-                        </button>
+                        <div class="btn-group">
+                            <button class="btn btn-warning fw-bold text-dark shadow-sm" onclick="window.selectedPlan='pro'; new bootstrap.Modal(document.getElementById('paymentMethodModal')).show();">
+                                <i class="fa-solid fa-crown me-2"></i> Upgrade to Pro
+                            </button>
+                            <button class="btn btn-purple fw-bold text-white shadow-sm" onclick="window.selectedPlan='elite'; new bootstrap.Modal(document.getElementById('paymentMethodModal')).show();">
+                                <i class="fa-solid fa-diamond me-2"></i> Upgrade to Elite
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -247,14 +252,14 @@
                     <p class="mb-4">Select your preferred payment method to upgrade your plan.</p>
                     
                     <div class="d-grid gap-3">
-                        <button class="btn btn-lg btn-outline-purple fw-bold d-flex align-items-center justify-content-center" onclick="bootstrap.Modal.getInstance(document.getElementById('paymentMethodModal')).hide(); App.initiatePayment('paystack')">
+                        <button class="btn btn-lg btn-outline-purple fw-bold d-flex align-items-center justify-content-center" onclick="bootstrap.Modal.getInstance(document.getElementById('paymentMethodModal')).hide(); App.initiatePayment('paystack', window.selectedPlan || 'pro')">
                             <i class="fa-regular fa-credit-card me-3 fa-lg"></i>
                             Pay with Card / Bank (Paystack)
                         </button>
                         
                         <div class="text-muted small">OR</div>
                         
-                        <button class="btn btn-lg btn-warning text-dark fw-bold d-flex align-items-center justify-content-center" onclick="bootstrap.Modal.getInstance(document.getElementById('paymentMethodModal')).hide(); App.initiatePayment('crypto')">
+                        <button class="btn btn-lg btn-warning text-dark fw-bold d-flex align-items-center justify-content-center" onclick="bootstrap.Modal.getInstance(document.getElementById('paymentMethodModal')).hide(); App.initiatePayment('crypto', window.selectedPlan || 'pro')">
                             <i class="fa-brands fa-bitcoin me-3 fa-lg"></i>
                             Pay with Crypto (USDT)
                         </button>
@@ -273,7 +278,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small">Please transfer <strong>$199.00</strong> to one of the following addresses and upload your payment proof.</p>
+                    <p class="text-muted small">Please transfer <strong id="cryptoAmount">$199.00</strong> to one of the following addresses and upload your payment proof.</p>
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold small">USDT (BEP20)</label>
@@ -318,6 +323,14 @@
             const user = App.getCurrentUser();
             const planEl = document.getElementById('userPlanLabel');
             if (user && planEl) planEl.textContent = (user.plan || 'free').replace(/^./, c => c.toUpperCase());
+            window.selectedPlan = 'pro';
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('payment') === 'success') {
+                const plan = params.get('plan');
+                if (plan) {
+                    alert('Payment successful. Your plan is now ' + plan.toUpperCase());
+                }
+            }
         });
 
         function updateUserInfo() {
@@ -392,15 +405,16 @@
         }
 
         async function upgrade(plan) {
-            const res = await App.upgradePlan(plan);
-            if (res && res.success) {
-                const planEl = document.getElementById('userPlanLabel');
-                if (planEl) planEl.textContent = plan.replace(/^./, c => c.toUpperCase());
-                alert('Plan upgraded to ' + plan.toUpperCase());
-            } else {
-                alert(res.message || 'Failed to upgrade plan');
-            }
+            window.selectedPlan = plan;
+            new bootstrap.Modal(document.getElementById('paymentMethodModal')).show();
         }
+
+        document.getElementById('paymentMethodModal').addEventListener('show.bs.modal', () => {
+            const label = document.getElementById('cryptoAmount');
+            if (label) {
+                label.textContent = (window.selectedPlan === 'elite') ? '$199.00' : '$49.00';
+            }
+        });
     </script>
 </body>
 </html>

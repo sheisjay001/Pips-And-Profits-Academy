@@ -219,7 +219,11 @@ const App = {
     },
 
     // --- Payment Methods ---
-    async initiatePayment(method) {
+    async initiatePayment(method, plan = 'pro') {
+        this.currentPaymentPlan = plan; // Store plan context
+        const amountInUSD = plan === 'elite' ? 199 : 49;
+        const planName = plan === 'elite' ? 'Elite Plan' : 'Pro Plan';
+
         if (method === 'paystack') {
             if (typeof PaystackPop === 'undefined') {
                 alert('Paystack is unable to load. Please check your internet connection or try again later.');
@@ -233,11 +237,10 @@ const App = {
             }
 
             // Public Key is safe to be on the frontend
-            const publicKey = 'pk_live_764b7c6590906e7aade5d4baac08b7d711bbf2fe'; // <--- REPLACE WITH YOUR LIVE PUBLIC KEY (starts with pk_live_)
+            const publicKey = 'pk_live_764b7c6590906e7aade5d4baac08b7d711b'; // Live Public Key
 
-            // Exchange rate: 1 USD = 1500 NGN (Example rate, adjust as needed)
+            // Exchange rate: adjust as needed
             const exchangeRate = 1600; 
-            const amountInUSD = 199;
             const amountInNGN = amountInUSD * exchangeRate * 100; // Convert to kobo
 
             const handler = PaystackPop.setup({
@@ -251,19 +254,39 @@ const App = {
                         {
                             display_name: "Plan",
                             variable_name: "plan",
-                            value: "Pro Trader Plan ($199)"
+                            value: `${planName} ($${amountInUSD})`
                         }
-                    ]
+                    ],
+                    plan_code: plan
                 },
                 onClose: function() {
                     alert('Transaction was not completed, window closed.');
                 },
-                callback: function(response) {
-                    // Send reference to backend for secure verification
-                    // Using fetch to backend API (which doesn't exist yet but sticking to previous logic)
-                    // We can point this to a future api/verify_payment.php
-                    alert('Payment successful! Reference: ' + response.reference);
-                    window.location.href = 'dashboard.html?payment=success';
+                callback: async (response) => {
+                    try {
+                        const verifyRes = await fetch('http://localhost:3000/api/verify-payment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ reference: response.reference })
+                        });
+                        const verifyData = await verifyRes.json();
+                        if (!verifyRes.ok || !verifyData.status) {
+                            alert(verifyData.message || 'Payment verification failed');
+                            return;
+                        }
+                        const update = await this.api('auth.php', 'POST', { action: 'update_plan', id: user.id, plan });
+                        if (update && update.success) {
+                            user.plan = plan;
+                            this.setCurrentUser(user);
+                            alert('Payment verified. Your plan is now ' + plan.toUpperCase());
+                            window.location.href = 'dashboard.html?payment=success&plan=' + encodeURIComponent(plan);
+                        } else {
+                            alert(update.message || 'Verified, but failed to update plan. Contact support.');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Network error during verification. Please contact support with your reference: ' + response.reference);
+                    }
                 }
             });
 
@@ -271,6 +294,10 @@ const App = {
 
         } else if (method === 'crypto') {
             const cryptoModal = new bootstrap.Modal(document.getElementById('cryptoPaymentModal'));
+            // Update modal text
+            const amountEl = document.getElementById('cryptoAmount');
+            if(amountEl) amountEl.textContent = `$${amountInUSD}.00`;
+
             cryptoModal.show();
         }
     },
@@ -286,8 +313,42 @@ const App = {
 
     async submitCryptoPayment(event) {
         event.preventDefault();
-        alert('Crypto payment submission requires backend implementation for file upload. This is a placeholder.');
-        // Implementation would require FormData and a PHP endpoint
+        const user = this.getCurrentUser();
+        if (!user) {
+            alert('Please login first.');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        const plan = this.currentPaymentPlan || 'pro'; // Default to pro if lost
+        const amount = plan === 'elite' ? 199 : 49;
+
+        const fileInput = document.getElementById('paymentProof');
+        const file = fileInput.files[0];
+        if (!file) {
+            alert('Please upload a screenshot of your payment.');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            const pending = JSON.parse(localStorage.getItem('ppa_crypto_pending') || '[]');
+            const item = {
+                id: Date.now(),
+                userId: user.id,
+                userName: user.name,
+                amount: amount,
+                plan: plan,
+                proof: reader.result,
+                date: new Date().toISOString()
+            };
+            pending.unshift(item);
+            localStorage.setItem('ppa_crypto_pending', JSON.stringify(pending));
+            alert('Payment submitted for verification. You will be upgraded after admin approval.');
+            const modalEl = document.getElementById('cryptoPaymentModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        };
+        reader.readAsDataURL(file);
     },
 
     // --- Ticket Methods (Still LocalStorage for now) ---

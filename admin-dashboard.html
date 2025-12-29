@@ -334,6 +334,7 @@
                                         <thead class="bg-light">
                                             <tr>
                                                 <th class="border-0 ps-4">User</th>
+                                                <th class="border-0">Plan</th>
                                                 <th class="border-0">Amount</th>
                                                 <th class="border-0">Date</th>
                                                 <th class="border-0">Proof</th>
@@ -857,6 +858,7 @@
             tbody.innerHTML = pending.map(p => `
                 <tr>
                     <td class="ps-4 fw-bold">${p.userName}</td>
+                    <td><span class="badge bg-purple">${(p.plan || 'elite').toUpperCase()}</span></td>
                     <td class="fw-bold">$${p.amount}</td>
                     <td class="text-muted small">${new Date(p.date).toLocaleDateString()}</td>
                     <td>
@@ -882,13 +884,18 @@
             }
         };
 
-        window.approvePayment = function(id) {
+        window.approvePayment = async function(id) {
             if(!confirm('Approve this payment?')) return;
 
             const pending = JSON.parse(localStorage.getItem('ppa_crypto_pending') || '[]');
             const item = pending.find(p => p.id === id);
             
             if (item) {
+                const update = await App.api('auth.php', 'POST', { action: 'update_plan', id: item.userId, plan: item.plan || 'elite' });
+                if (!(update && update.success)) {
+                    alert(update.message || 'Failed to update user plan. Please try again.');
+                    return;
+                }
                 // Remove from pending
                 const newPending = pending.filter(p => p.id !== id);
                 localStorage.setItem('ppa_crypto_pending', JSON.stringify(newPending));
@@ -902,7 +909,7 @@
                 transactions.unshift({
                     id: Date.now(),
                     user: item.userName,
-                    plan: 'Pro Plan (Crypto)',
+                    plan: (item.plan === 'elite' ? 'Elite Plan (Crypto)' : 'Pro Plan (Crypto)'),
                     amount: item.amount,
                     date: new Date().toLocaleDateString()
                 });

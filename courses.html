@@ -76,38 +76,43 @@
         App.checkAuth();
 
         // Render Courses
-        const courses = App.getCourses();
-        const grid = document.getElementById('coursesGrid');
+        async function loadCourses() {
+            const courses = await App.getCourses();
+            const grid = document.getElementById('coursesGrid');
+            grid.innerHTML = '';
 
-        courses.forEach(course => {
-            const card = `
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm border-0">
-                        <img src="${course.thumbnail}" class="card-img-top" alt="${course.title}" style="height: 200px; object-fit: cover;">
-                        <div class="card-body d-flex flex-column">
-                            <span class="badge bg-purple w-auto align-self-start mb-2">${course.level}</span>
-                            <h5 class="card-title fw-bold">${course.title}</h5>
-                            <p class="card-text text-muted small flex-grow-1">${course.desc}</p>
-                            
-                            <div class="mt-3">
-                                <div class="d-flex justify-content-between small fw-bold mb-1">
-                                    <span>Progress</span>
-                                    <span>${course.progress}%</span>
+            courses.forEach(course => {
+                const card = `
+                    <div class="col-md-4">
+                        <div class="card h-100 shadow-sm border-0">
+                            <img src="${course.thumbnail_url || 'images/course-default.jpg'}" class="card-img-top" alt="${course.title}" style="height: 200px; object-fit: cover;">
+                            <div class="card-body d-flex flex-column">
+                                <span class="badge bg-purple w-auto align-self-start mb-2">${course.level}</span>
+                                <h5 class="card-title fw-bold">${course.title}</h5>
+                                <p class="card-text text-muted small flex-grow-1">${course.description || course.desc || ''}</p>
+                                
+                                <div class="mt-3">
+                                    <div class="d-flex justify-content-between small fw-bold mb-1">
+                                        <span>Progress</span>
+                                        <span>${course.progress || 0}%</span>
+                                    </div>
+                                    <div class="progress" style="height: 5px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: ${course.progress || 0}%"></div>
+                                    </div>
                                 </div>
-                                <div class="progress" style="height: 5px;">
-                                    <div class="progress-bar bg-success" role="progressbar" style="width: ${course.progress}%"></div>
-                                </div>
+                                
+                                <a href="lesson.html?id=${course.id}" class="btn btn-outline-purple mt-3 w-100">
+                                    ${(course.progress || 0) > 0 ? 'Continue Learning' : 'Start Course'}
+                                </a>
                             </div>
-                            
-                            <a href="lesson.html?id=${course.id}" class="btn btn-outline-purple mt-3 w-100">
-                                ${course.progress > 0 ? 'Continue Learning' : 'Start Course'}
-                            </a>
                         </div>
                     </div>
-                </div>
-            `;
-            grid.innerHTML += card;
-        });
+                `;
+                grid.innerHTML += card;
+            });
+        }
+        
+        loadCourses();
     </script>
 </body>
 </html>

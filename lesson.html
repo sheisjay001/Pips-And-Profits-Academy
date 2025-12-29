@@ -85,41 +85,50 @@
         });
 
         // Get Course Info
-        const params = new URLSearchParams(window.location.search);
-        const courseId = params.get('id');
-        const course = App.getCourses().find(c => c.id == courseId);
-        
-        if (course) {
-            document.getElementById('lessonTitle').textContent = course.title + " - Introduction";
+        async function loadLesson() {
+            const params = new URLSearchParams(window.location.search);
+            const courseId = params.get('id');
+            const courses = await App.getCourses();
+            const course = courses.find(c => c.id == courseId);
             
-            // Load Video
-            const videoContainer = document.getElementById('videoContainer');
-            if (course.videoUrl) {
-                // Check if it's a YouTube or Vimeo Embed
-                if (course.videoUrl.includes('youtube.com/embed') || course.videoUrl.includes('player.vimeo.com')) {
-                    videoContainer.innerHTML = `<iframe src="${course.videoUrl}" title="${course.title}" allowfullscreen></iframe>`;
-                } 
-                // Assume it's a direct video file (local or remote)
-                else {
+            if (course) {
+                document.getElementById('lessonTitle').textContent = course.title + " - Introduction";
+                
+                // Load Video
+                const videoContainer = document.getElementById('videoContainer');
+                const videoSrc = course.video_path || course.videoUrl;
+
+                if (videoSrc) {
+                    // Check if it's a YouTube or Vimeo Embed
+                    if (videoSrc.includes('youtube.com/embed') || videoSrc.includes('player.vimeo.com')) {
+                        videoContainer.innerHTML = `<iframe src="${videoSrc}" title="${course.title}" allowfullscreen></iframe>`;
+                    } 
+                    // Assume it's a direct video file (local or remote)
+                    else {
+                        // Fix path if it's a local file upload (e.g., uploads/courses/...)
+                        // If it starts with 'uploads/', make sure it's relative to root or handled correctly.
+                        // Assuming the file is served from root/uploads/...
+                        videoContainer.innerHTML = `
+                            <video controls class="w-100 h-100" style="object-fit: cover;">
+                                <source src="${videoSrc}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        `;
+                    }
+                } else {
                     videoContainer.innerHTML = `
-                        <video controls class="w-100 h-100" style="object-fit: cover;">
-                            <source src="${course.videoUrl}" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
+                        <div class="d-flex align-items-center justify-content-center h-100">
+                            <div class="text-center text-white">
+                                <i class="fas fa-video-slash fa-4x mb-3"></i>
+                                <h4>No Video Available</h4>
+                                <p class="text-white-50">This lesson content is coming soon.</p>
+                            </div>
+                        </div>
                     `;
                 }
-            } else {
-                videoContainer.innerHTML = `
-                    <div class="d-flex align-items-center justify-content-center h-100">
-                        <div class="text-center text-white">
-                            <i class="fas fa-video-slash fa-4x mb-3"></i>
-                            <h4>No Video Available</h4>
-                            <p class="text-white-50">This lesson content is coming soon.</p>
-                        </div>
-                    </div>
-                `;
             }
         }
+        loadLesson();
     </script>
 </body>
 </html>
