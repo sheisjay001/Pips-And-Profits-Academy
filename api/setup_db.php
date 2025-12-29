@@ -16,6 +16,8 @@ try {
         password_hash VARCHAR(255) NOT NULL,
         role ENUM('user', 'admin') DEFAULT 'user',
         plan ENUM('free', 'pro', 'elite') DEFAULT 'free',
+        profile_picture VARCHAR(255),
+        bio TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
 
@@ -101,6 +103,16 @@ try {
         $conn->exec("ALTER TABLE users ADD COLUMN plan ENUM('free','pro','elite') DEFAULT 'free'");
     }
 
+    // Ensure 'profile_picture' and 'bio' columns exist
+    $stmt = $conn->query("SHOW COLUMNS FROM users LIKE 'profile_picture'");
+    if ($stmt->rowCount() == 0) {
+        $conn->exec("ALTER TABLE users ADD COLUMN profile_picture VARCHAR(255)");
+    }
+    $stmt = $conn->query("SHOW COLUMNS FROM users LIKE 'bio'");
+    if ($stmt->rowCount() == 0) {
+        $conn->exec("ALTER TABLE users ADD COLUMN bio TEXT");
+    }
+
     // Seed Initial Data (admin only; no mock signals)
     
     // Check if admin exists
@@ -116,11 +128,9 @@ try {
     // This cleans up any legacy data or manual changes
     $conn->exec("UPDATE users SET plan = 'free' WHERE role != 'admin' AND plan IS NULL"); 
     // Or if we want to enforce it strictly for everyone right now:
-    $conn->exec("UPDATE users SET plan = 'free' WHERE role != 'admin'");
+    // $conn->exec("UPDATE users SET plan = 'free' WHERE role != 'admin'");
 
-    // Remove mock seeding: no default signals inserted
-
-    echo json_encode(['success' => true, 'message' => 'Database tables created (admin seeded).']);
+    echo json_encode(['success' => true, 'message' => 'Database tables created/updated.']);
 
 } catch(PDOException $e) {
     echo json_encode(['success' => false, 'message' => 'Setup failed: ' . $e->getMessage()]);

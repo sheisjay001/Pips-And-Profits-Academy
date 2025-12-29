@@ -361,47 +361,50 @@
             if (el) el.classList.toggle('d-none');
         }
 
-        function selectAvatar(url) {
-            App.updateAvatar(url);
+        async function selectAvatar(url) {
+            await App.updateAvatar(url);
             window.location.reload();
         }
 
-        function saveCustomAvatar() {
+        async function saveCustomAvatar() {
             const url = document.getElementById('customAvatarUrl').value;
             if (url) {
-                App.updateAvatar(url);
+                await App.updateAvatar(url);
                 window.location.reload();
             }
         }
 
-        function handleAvatarUpload(event) {
+        async function handleAvatarUpload(event) {
             const file = event.target.files[0];
             if (file) {
-                if (file.size > 500 * 1024) { // 500KB limit
-                    alert('File too large. Please choose an image under 500KB.');
+                if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                    alert('File too large. Please choose an image under 2MB.');
                     return;
                 }
 
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const base64 = e.target.result;
-                    App.updateUserAvatar(base64);
+                const result = await App.uploadAvatar(file);
+                if (result.success) {
                     window.location.reload();
-                };
-                reader.readAsDataURL(file);
+                } else {
+                    alert('Upload failed: ' + result.message);
+                }
             }
         }
 
-        function handleProfileUpdate(e) {
+        async function handleProfileUpdate(e) {
             e.preventDefault();
             const name = document.getElementById('settingsFullName').value;
             const email = document.getElementById('settingsEmail').value;
             const bio = document.getElementById('settingsBio').value;
 
             if (name && email) {
-                App.updateUserProfile(name, email, bio);
-                alert('Profile updated successfully!');
-                window.location.reload();
+                const result = await App.updateUserProfile(name, email, bio);
+                if (result.success) {
+                    alert('Profile updated successfully!');
+                    window.location.reload();
+                } else {
+                    alert('Update failed: ' + (result.message || 'Unknown error'));
+                }
             } else {
                 alert('Name and Email are required.');
             }

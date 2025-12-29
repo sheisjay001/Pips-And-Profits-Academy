@@ -303,6 +303,84 @@ const App = {
         return 'https://flagcdn.com/20x15/un.png';
     },
 
+    // --- Profile Management ---
+    async updateUserProfile(name, email, bio) {
+        const currentUser = this.getCurrentUser();
+        if (!currentUser) return;
+
+        const result = await this.api('auth.php', 'POST', {
+            action: 'update_profile',
+            id: currentUser.id,
+            name, email, bio,
+            profile_picture: currentUser.profile_picture
+        });
+
+        if (result.success) {
+            if (result.user) {
+                this.setCurrentUser(result.user);
+            } else {
+                currentUser.name = name;
+                currentUser.email = email;
+                currentUser.bio = bio;
+                this.setCurrentUser(currentUser);
+            }
+        }
+        return result;
+    },
+
+    async updateAvatar(url) {
+        const user = this.getCurrentUser();
+        if (!user) return;
+        
+        const result = await this.api('auth.php', 'POST', {
+            action: 'update_profile',
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            bio: user.bio,
+            profile_picture: url
+        });
+        
+        if (result.success && result.user) {
+            this.setCurrentUser(result.user);
+        }
+        return result;
+    },
+
+    async uploadAvatar(file) {
+        const user = this.getCurrentUser();
+        if (!user) return;
+
+        const formData = new FormData();
+        formData.append('action', 'upload_avatar');
+        formData.append('id', user.id);
+        formData.append('avatar', file);
+
+        try {
+            const res = await fetch('api/auth.php', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await res.json();
+            
+            if (result.success && result.url) {
+                // Update local user object with new avatar URL
+                user.profile_picture = result.url;
+                this.setCurrentUser(user);
+                return result;
+            } else {
+                return { success: false, message: result.message || 'Upload failed' };
+            }
+        } catch (e) {
+            console.error('Upload error:', e);
+            return { success: false, message: 'Network error' };
+        }
+    },
+
+    async updateUserAvatar(base64) {
+         return this.updateAvatar(base64);
+    },
+
     // --- Courses ---
     async getCourses() {
         const result = await this.api('courses.php', 'GET');
