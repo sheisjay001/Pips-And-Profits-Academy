@@ -62,7 +62,10 @@ body {
 
 /* Hero Section */
 .hero-section {
-    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+    background: linear-gradient(135deg, rgba(48, 21, 90, 0.6) 0%, rgba(72, 37, 131, 0.6) 100%), url('../GhwtkRRWoAAov6q.jfif');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     min-height: 100vh;
     padding-top: 80px; /* For fixed navbar */
     position: relative;
@@ -107,6 +110,15 @@ body {
     color: white;
 }
 
+.btn-get-started {
+    border: 2px solid #000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.btn-get-started:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
 .btn-check:checked + .btn-outline-purple {
     background-color: var(--primary-color);
     color: white;
@@ -141,6 +153,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.about-image {
+    opacity: 0.9;
+    filter: brightness(0.92) saturate(0.9);
 }
 
 /* Footer */
