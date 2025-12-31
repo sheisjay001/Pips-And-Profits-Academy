@@ -19,6 +19,7 @@ const App = {
                 window.location.href = phpUrl + window.location.pathname;
             }
         }
+        this.ensureCsrf();
     },
 
     // --- API Helper ---
@@ -28,6 +29,14 @@ const App = {
             headers: { 'Content-Type': 'application/json' }
         };
         if (data) options.body = JSON.stringify(data);
+        try {
+            if (method !== 'GET') {
+                const token = localStorage.getItem('ppa_csrf_token');
+                if (token) {
+                    options.headers['X-CSRF-Token'] = token;
+                }
+            }
+        } catch (e) {}
         
         try {
             const res = await fetch(`api/${endpoint}`, options);
@@ -51,6 +60,17 @@ const App = {
             }
             return { success: false, message: `Network/Server Error: ${error.message}` };
         }
+    },
+    
+    async ensureCsrf() {
+        const existing = localStorage.getItem('ppa_csrf_token');
+        if (existing) return existing;
+        const result = await this.api('auth.php', 'POST', { action: 'csrf' });
+        if (result && result.token) {
+            localStorage.setItem('ppa_csrf_token', result.token);
+            return result.token;
+        }
+        return null;
     },
 
     // --- Access Control ---
@@ -327,6 +347,15 @@ const App = {
         }
         return result;
     },
+    
+    async resendVerification(email) {
+        await this.ensureCsrf();
+        const result = await this.api('auth.php', 'POST', {
+            action: 'resend_verification',
+            email
+        });
+        return result;
+    },
 
     async updateAvatar(url) {
         const user = this.getCurrentUser();
@@ -357,9 +386,11 @@ const App = {
         formData.append('avatar', file);
 
         try {
+            const token = localStorage.getItem('ppa_csrf_token');
             const res = await fetch('api/auth.php', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: token ? { 'X-CSRF-Token': token } : {}
             });
             const result = await res.json();
             
@@ -405,6 +436,10 @@ const App = {
                 window.location.href = 'login.html';
                 return;
             }
+            if (!user.email_verified) {
+                alert('Please verify your email before making a payment.');
+                return;
+            }
 
             // Exchange rate: adjust as needed
             const exchangeRate = 1600; 
@@ -436,6 +471,16 @@ const App = {
             }
 
         } else if (method === 'crypto') {
+            const user = this.getCurrentUser();
+            if (!user) {
+                alert('Please login first.');
+                window.location.href = 'login.html';
+                return;
+            }
+            if (!user.email_verified) {
+                alert('Please verify your email before making a payment.');
+                return;
+            }
             const cryptoModal = new bootstrap.Modal(document.getElementById('cryptoPaymentModal'));
             // Update modal text
             const amountEl = document.getElementById('cryptoAmount');
@@ -462,6 +507,10 @@ const App = {
             window.location.href = 'login.html';
             return;
         }
+        if (!user.email_verified) {
+            alert('Please verify your email before submitting payments.');
+            return;
+        }
 
         const plan = this.currentPaymentPlan || 'pro'; 
         const amount = plan === 'elite' ? 199 : 49;
@@ -480,9 +529,11 @@ const App = {
         formData.append('plan', plan);
 
         try {
+            const token = localStorage.getItem('ppa_csrf_token');
             const res = await fetch('api/payments.php', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: token ? { 'X-CSRF-Token': token } : {}
             });
             const result = await res.json();
             
@@ -503,6 +554,13 @@ const App = {
     async getPendingPayments() {
         const payments = await this.api('payments.php', 'GET');
         return Array.isArray(payments) ? payments.filter(p => p.status === 'Pending') : [];
+    },
+    
+    async getUserPayments() {
+        const user = this.getCurrentUser();
+        if (!user) return [];
+        const payments = await this.api(`payments.php?user_id=${user.id}`, 'GET');
+        return Array.isArray(payments) ? payments : [];
     },
 
     async updatePaymentStatus(id, status) {

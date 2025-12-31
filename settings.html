@@ -478,33 +478,37 @@
                          planCost.textContent = '$199.00 • One-time Payment';
                          if (cancelPlanBtn) cancelPlanBtn.classList.remove('d-none');
                          // Show payment history
-                         if (billingHistoryBody) {
-                             billingHistoryBody.innerHTML = `
-                                <tr>
-                                    <td class="text-muted small">${new Date().toLocaleDateString()}</td>
-                                    <td class="small fw-bold">Elite Mentorship Plan</td>
-                                    <td class="small">$199.00</td>
-                                    <td><span class="badge bg-light text-success border border-success">Paid</span></td>
-                                    <td class="text-end"><a href="#" class="text-purple"><i class="fas fa-download"></i></a></td>
-                                </tr>
-                             `;
-                         }
+                        if (billingHistoryBody) {
+                            App.getUserPayments().then(items => {
+                                billingHistoryBody.innerHTML = items.length ? items.map(p => `
+                                    <tr>
+                                        <td class="text-muted small">${new Date(p.created_at).toLocaleDateString()}</td>
+                                        <td class="small fw-bold">${p.plan === 'elite' ? 'Elite Mentorship Plan' : 'Pro Trader Plan'}</td>
+                                        <td class="small">$${Number(p.amount).toFixed(2)}</td>
+                                        <td><span class="badge ${p.status === 'Approved' ? 'bg-light text-success border border-success' : (p.status === 'Rejected' ? 'bg-light text-danger border border-danger' : 'bg-light text-warning border border-warning text-dark')}">${p.status}</span></td>
+                                        <td class="text-end"><a href="${p.proof_url}" class="text-purple" target="_blank" rel="noopener noreferrer"><i class="fas fa-download"></i></a></td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="5" class="text-center text-muted small py-3">No payment history available</td></tr>';
+                            });
+                        }
                      } else if ((user.plan || 'free') === 'pro') {
                          planName.textContent = 'Pro Trader Plan';
                          planCost.textContent = '$49.00 • One-time Payment';
                          if (cancelPlanBtn) cancelPlanBtn.classList.remove('d-none');
                          // Show payment history
-                         if (billingHistoryBody) {
-                             billingHistoryBody.innerHTML = `
-                                <tr>
-                                    <td class="text-muted small">${new Date().toLocaleDateString()}</td>
-                                    <td class="small fw-bold">Pro Trader Plan</td>
-                                    <td class="small">$49.00</td>
-                                    <td><span class="badge bg-light text-success border border-success">Paid</span></td>
-                                    <td class="text-end"><a href="#" class="text-purple"><i class="fas fa-download"></i></a></td>
-                                </tr>
-                             `;
-                         }
+                        if (billingHistoryBody) {
+                            App.getUserPayments().then(items => {
+                                billingHistoryBody.innerHTML = items.length ? items.map(p => `
+                                    <tr>
+                                        <td class="text-muted small">${new Date(p.created_at).toLocaleDateString()}</td>
+                                        <td class="small fw-bold">${p.plan === 'elite' ? 'Elite Mentorship Plan' : 'Pro Trader Plan'}</td>
+                                        <td class="small">$${Number(p.amount).toFixed(2)}</td>
+                                        <td><span class="badge ${p.status === 'Approved' ? 'bg-light text-success border border-success' : (p.status === 'Rejected' ? 'bg-light text-danger border border-danger' : 'bg-light text-warning border border-warning text-dark')}">${p.status}</span></td>
+                                        <td class="text-end"><a href="${p.proof_url}" class="text-purple" target="_blank" rel="noopener noreferrer"><i class="fas fa-download"></i></a></td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="5" class="text-center text-muted small py-3">No payment history available</td></tr>';
+                            });
+                        }
                      } else {
                          planName.textContent = 'Free Plan';
                          planCost.textContent = 'Free Forever';

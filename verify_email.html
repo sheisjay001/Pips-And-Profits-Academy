@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - Pips & Profit Academy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4 text-center">
+                        <h3 class="fw-bold text-purple mb-3">Email Verification</h3>
+                        <p id="statusText" class="text-secondary mb-4">Verifying your email...</p>
+                        <a href="login.html" id="loginBtn" class="btn btn-purple d-none">Go to Login</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        async function verify() {
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+            const email = params.get('email');
+            const statusText = document.getElementById('statusText');
+            const loginBtn = document.getElementById('loginBtn');
+            if (!token || !email) {
+                statusText.textContent = 'Invalid verification link.';
+                return;
+            }
+            try {
+                const res = await fetch('api/auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'verify_email', token, email })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    statusText.textContent = 'Your email has been verified successfully.';
+                    loginBtn.classList.remove('d-none');
+                } else {
+                    statusText.textContent = 'Verification failed: ' + (result.message || 'Unknown error');
+                }
+            } catch (e) {
+                statusText.textContent = 'Network error verifying email.';
+            }
+        }
+        verify();
+    </script>
+</body>
+</html>

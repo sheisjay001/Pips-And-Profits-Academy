@@ -171,6 +171,24 @@
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             App.checkAuth();
+            const user = App.getCurrentUser();
+            if (user && !user.email_verified) {
+                const section = document.getElementById('premiumSignalsSection');
+                if (section) {
+                    section.innerHTML = `
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-5 text-center">
+                                    <h5 class="fw-bold mb-3">Email Verification Required</h5>
+                                    <p class="text-secondary mb-4">Please verify your email to access premium signals and payments.</p>
+                                    <a href="settings.html#profile" class="btn btn-purple fw-bold text-white">Go to Settings</a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                return;
+            }
             const allowed = App.checkAccess('premium_signals');
             if (allowed) {
                 await renderSignals('all');

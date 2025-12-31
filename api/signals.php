@@ -3,6 +3,20 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header("Content-Security-Policy: default-src 'self' https: data:; img-src 'self' https: data:; script-src 'self' https:; style-src 'self' https: 'unsafe-inline'; connect-src 'self' https:; frame-ancestors 'self';");
+
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => isset($_SERVER['HTTPS']),
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
+session_start();
 
 // CLI fallback for testing
 if (php_sapi_name() === 'cli') {
@@ -20,6 +34,17 @@ require_once 'db_connect.php';
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
+    $now = time();
+    $bucket = $_SESSION['signals_get_bucket'] ?? ['count' => 0, 'reset' => $now + 60];
+    if ($now > ($bucket['reset'] ?? $now)) {
+        $bucket = ['count' => 0, 'reset' => $now + 60];
+    }
+    if ($bucket['count'] >= 120) {
+        echo json_encode(['success' => false, 'message' => 'Rate limit exceeded']);
+        exit;
+    }
+    $bucket['count']++;
+    $_SESSION['signals_get_bucket'] = $bucket;
     // Fetch all signals
     $stmt = $conn->query("SELECT * FROM signals ORDER BY created_at DESC");
     $signals = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -35,6 +60,11 @@ if ($method === 'GET') {
     echo json_encode($signals);
 
 } elseif ($method === 'POST') {
+    $csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
+        exit;
+    }
     $input = file_get_contents("php://input");
     if (empty($input) && php_sapi_name() === 'cli') {
         $input = file_get_contents("php://stdin");

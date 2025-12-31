@@ -3,6 +3,20 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header("Content-Security-Policy: default-src 'self' https: data:; img-src 'self' https: data:; script-src 'self' https:; style-src 'self' https: 'unsafe-inline'; connect-src 'self' https:; frame-ancestors 'self';");
+
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => isset($_SERVER['HTTPS']),
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
+session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
@@ -22,12 +36,24 @@ function getPostParams() {
 if ($method === 'GET') {
     // Admin: Get all pending payments (or all)
     try {
-        $stmt = $conn->query("
-            SELECT p.*, u.name as userName, u.email as userEmail 
-            FROM payments p 
-            JOIN users u ON p.user_id = u.id 
-            ORDER BY p.created_at DESC
-        ");
+        $userId = $_GET['user_id'] ?? null;
+        if ($userId) {
+            $stmt = $conn->prepare("
+                SELECT p.*, u.name as userName, u.email as userEmail 
+                FROM payments p 
+                JOIN users u ON p.user_id = u.id 
+                WHERE p.user_id = ?
+                ORDER BY p.created_at DESC
+            ");
+            $stmt->execute([$userId]);
+        } else {
+            $stmt = $conn->query("
+                SELECT p.*, u.name as userName, u.email as userEmail 
+                FROM payments p 
+                JOIN users u ON p.user_id = u.id 
+                ORDER BY p.created_at DESC
+            ");
+        }
         $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Ensure full URL for proofs if stored relatively
@@ -47,6 +73,11 @@ if ($method === 'GET') {
     }
 
 } elseif ($method === 'POST') {
+    $csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
+        exit;
+    }
     $params = getPostParams();
     $action = $params['action'] ?? '';
 
@@ -61,16 +92,44 @@ if ($method === 'GET') {
             exit;
         }
 
+        if (!isset($_FILES['proof']['size']) || $_FILES['proof']['size'] > 4 * 1024 * 1024) {
+            echo json_encode(['success' => false, 'message' => 'File too large']);
+            exit;
+        }
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($_FILES['proof']['tmp_name']);
+        $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        if (!isset($allowed[$mime])) {
+            echo json_encode(['success' => false, 'message' => 'Invalid file type']);
+            exit;
+        }
+
         $uploadDir = '../uploads/proofs/';
         if (!file_exists($uploadDir)) {
             mkdir($uploadDir, 0777, true);
         }
 
-        $fileName = time() . '_' . basename($_FILES['proof']['name']);
+        $ext = $allowed[$mime];
+        $fileName = bin2hex(random_bytes(16)) . '.' . $ext;
         $targetFile = $uploadDir . $fileName;
         $dbPath = 'uploads/proofs/' . $fileName; // Path relative to web root
 
-        if (move_uploaded_file($_FILES['proof']['tmp_name'], $targetFile)) {
+        $source = $_FILES['proof']['tmp_name'];
+        $img = null;
+        if ($mime === 'image/jpeg') $img = imagecreatefromjpeg($source);
+        elseif ($mime === 'image/png') $img = imagecreatefrompng($source);
+        elseif ($mime === 'image/webp' && function_exists('imagecreatefromwebp')) $img = imagecreatefromwebp($source);
+        $saved = false;
+        if ($img) {
+            if ($mime === 'image/jpeg') $saved = imagejpeg($img, $targetFile, 85);
+            elseif ($mime === 'image/png') $saved = imagepng($img, $targetFile, 8);
+            elseif ($mime === 'image/webp' && function_exists('imagewebp')) $saved = imagewebp($img, $targetFile, 80);
+            imagedestroy($img);
+        } else {
+            $saved = move_uploaded_file($source, $targetFile);
+        }
+
+        if ($saved) {
             try {
                 $stmt = $conn->prepare("INSERT INTO payments (user_id, amount, plan, proof_url, status) VALUES (?, ?, ?, ?, 'Pending')");
                 $stmt->execute([$userId, $amount, $plan, $dbPath]);
@@ -114,6 +173,15 @@ if ($method === 'GET') {
             }
 
             $conn->commit();
+            try {
+                $stmt = $conn->prepare("SELECT p.*, u.email, u.name FROM payments p JOIN users u ON p.user_id = u.id WHERE p.id = ?");
+                $stmt->execute([$id]);
+                $p = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($p && $p['email']) {
+                    $msg = "Hello " . ($p['name'] ?: 'Trader') . ",\n\nYour payment for the " . strtoupper($p['plan']) . " plan was updated to: " . $status . ".\n\nThank you.";
+                    @mail($p['email'], "Payment Status Update", $msg, "From: no-reply@pips-and-profits-academy");
+                }
+            } catch (Exception $e) {}
             echo json_encode(['success' => true, 'message' => 'Payment status updated']);
 
         } catch (Exception $e) {

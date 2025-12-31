@@ -11,6 +11,12 @@ body {
     color: #333;
 }
 
+/* Accessibility: Focus styles for keyboard navigation */
+:focus-visible {
+    outline: 2px solid var(--secondary-color);
+    outline-offset: 2px;
+}
+
 /* Typography */
 .text-purple {
     color: var(--primary-color) !important;

@@ -3,6 +3,20 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header("Content-Security-Policy: default-src 'self' https: data:; img-src 'self' https: data:; script-src 'self' https:; style-src 'self' https: 'unsafe-inline'; connect-src 'self' https:; frame-ancestors 'self';");
+
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => isset($_SERVER['HTTPS']),
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
+session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
@@ -56,6 +70,11 @@ if ($method === 'GET') {
     }
 
 } elseif ($method === 'POST') {
+    $csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
+        exit;
+    }
     $data = getPostData();
     $action = $data['action'] ?? '';
 
@@ -96,6 +115,15 @@ if ($method === 'GET') {
         try {
             $stmt = $conn->prepare("UPDATE tickets SET status = ? WHERE id = ?");
             if ($stmt->execute([$status, $id])) {
+                try {
+                    $stmt = $conn->prepare("SELECT t.*, u.email, u.name FROM tickets t JOIN users u ON t.user_id = u.id WHERE t.id = ?");
+                    $stmt->execute([$id]);
+                    $t = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($t && $t['email']) {
+                        $msg = "Hello " . ($t['name'] ?: 'Trader') . ",\n\nYour support ticket status was updated to: " . $status . ".";
+                        @mail($t['email'], "Ticket Status Update", $msg, "From: support@pips-and-profits-academy");
+                    }
+                } catch (Exception $e) {}
                 echo json_encode(['success' => true, 'message' => 'Status updated']);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to update status']);

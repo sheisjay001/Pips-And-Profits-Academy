@@ -18,6 +18,9 @@ try {
         plan ENUM('free', 'pro', 'elite') DEFAULT 'free',
         profile_picture VARCHAR(255),
         bio TEXT,
+        email_verified TINYINT(1) DEFAULT 0,
+        verification_token VARCHAR(64),
+        verification_sent_at TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
 
@@ -103,7 +106,7 @@ try {
         $conn->exec("ALTER TABLE users ADD COLUMN plan ENUM('free','pro','elite') DEFAULT 'free'");
     }
 
-    // Ensure 'profile_picture' and 'bio' columns exist
+    // Ensure columns exist
     $stmt = $conn->query("SHOW COLUMNS FROM users LIKE 'profile_picture'");
     if ($stmt->rowCount() == 0) {
         $conn->exec("ALTER TABLE users ADD COLUMN profile_picture VARCHAR(255)");
@@ -111,6 +114,18 @@ try {
     $stmt = $conn->query("SHOW COLUMNS FROM users LIKE 'bio'");
     if ($stmt->rowCount() == 0) {
         $conn->exec("ALTER TABLE users ADD COLUMN bio TEXT");
+    }
+    $stmt = $conn->query("SHOW COLUMNS FROM users LIKE 'email_verified'");
+    if ($stmt->rowCount() == 0) {
+        $conn->exec("ALTER TABLE users ADD COLUMN email_verified TINYINT(1) DEFAULT 0");
+    }
+    $stmt = $conn->query("SHOW COLUMNS FROM users LIKE 'verification_token'");
+    if ($stmt->rowCount() == 0) {
+        $conn->exec("ALTER TABLE users ADD COLUMN verification_token VARCHAR(64)");
+    }
+    $stmt = $conn->query("SHOW COLUMNS FROM users LIKE 'verification_sent_at'");
+    if ($stmt->rowCount() == 0) {
+        $conn->exec("ALTER TABLE users ADD COLUMN verification_sent_at TIMESTAMP NULL");
     }
 
     // Seed Initial Data (admin only; no mock signals)

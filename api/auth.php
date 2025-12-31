@@ -4,6 +4,21 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header("Content-Security-Policy: default-src 'self' https: data:; img-src 'self' https: data:; script-src 'self' https:; style-src 'self' https: 'unsafe-inline'; connect-src 'self' https:; frame-ancestors 'self';");
+
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => isset($_SERVER['HTTPS']),
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
+session_start();
+
 // For CLI testing (allows simulation of request method)
 if (php_sapi_name() === 'cli') {
     if (!isset($_SERVER['REQUEST_METHOD'])) {
@@ -43,10 +58,42 @@ $baseUrl = getenv('BASE_URL') ?: (
     : 'http://localhost:8000'
 );
 
+if (!isset($_SESSION['csrf_token'])) {
+    try {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    } catch (Exception $e) {
+        $_SESSION['csrf_token'] = md5(uniqid((string)mt_rand(), true));
+    }
+}
+function require_csrf($action) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (in_array($action, ['login','csrf'])) return;
+        $header = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $header)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
+            exit;
+        }
+    }
+}
+
+if ($action === 'csrf') {
+    echo json_encode(['token' => $_SESSION['csrf_token']]);
+    exit;
+}
+
 if ($action === 'register') {
     $name = $data->name;
     $email = $data->email;
     $password = $data->password;
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid email']);
+        exit;
+    }
+    if (strlen($password) < 6) {
+        echo json_encode(['success' => false, 'message' => 'Password too short']);
+        exit;
+    }
 
     // Check if email exists
     $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
@@ -61,28 +108,50 @@ if ($action === 'register') {
     $role = 'user'; // Default role
     $plan = 'free'; // Default plan
 
-    $stmt = $conn->prepare("INSERT INTO users (name, email, password_hash, role, plan) VALUES (?, ?, ?, ?, ?)");
-    if ($stmt->execute([$name, $email, $password_hash, $role, $plan])) {
-        echo json_encode(['success' => true, 'message' => 'Registration successful']);
+    // Create email verification token
+    try {
+        $verification_token = bin2hex(random_bytes(16));
+    } catch (Exception $e) {
+        $verification_token = md5(uniqid((string)mt_rand(), true));
+    }
+    $stmt = $conn->prepare("INSERT INTO users (name, email, password_hash, role, plan, email_verified, verification_token, verification_sent_at) VALUES (?, ?, ?, ?, ?, 0, ?, NOW())");
+    if ($stmt->execute([$name, $email, $password_hash, $role, $plan, $verification_token])) {
+        $verifyLink = $baseUrl . "/verify_email.html?token=" . urlencode($verification_token) . "&email=" . urlencode($email);
+        @mail($email, "Verify your email - Pips & Profit Academy", "Please verify your email by visiting: " . $verifyLink, "From: no-reply@pips-and-profits-academy");
+        echo json_encode(['success' => true, 'message' => 'Registration successful. Please verify your email.', 'verify_link' => $verifyLink]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Registration failed']);
     }
 } elseif ($action === 'login') {
+    $now = time();
+    $bucket = $_SESSION['login_bucket'] ?? ['count' => 0, 'reset' => $now + 900];
+    if ($now > ($bucket['reset'] ?? $now)) {
+        $bucket = ['count' => 0, 'reset' => $now + 900];
+    }
+    if ($bucket['count'] >= 5) {
+        echo json_encode(['success' => false, 'message' => 'Too many attempts. Please wait and try again.']);
+        exit;
+    }
+    $bucket['count']++;
+    $_SESSION['login_bucket'] = $bucket;
+
     $email = $data->email;
     $password = $data->password;
 
-    $stmt = $conn->prepare("SELECT id, name, email, password_hash, role, plan, profile_picture, bio, created_at FROM users WHERE email = ?");
+    $stmt = $conn->prepare("SELECT id, name, email, password_hash, role, plan, profile_picture, bio, created_at, COALESCE(email_verified, 0) as email_verified FROM users WHERE email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($user && password_verify($password, $user['password_hash'])) {
         unset($user['password_hash']); // Don't send password hash back
+        $_SESSION['user_id'] = $user['id'];
         
         echo json_encode(['success' => true, 'user' => $user]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Invalid credentials']);
     }
 } elseif ($action === 'update_profile') {
+    require_csrf($action);
     $id = $data->id;
     $name = $data->name;
     $email = $data->email;
@@ -108,28 +177,76 @@ if ($action === 'register') {
         echo json_encode(['success' => false, 'message' => 'Update failed']);
     }
 } elseif ($action === 'upload_avatar') {
+    require_csrf($action);
     if (isset($_FILES['avatar']) && isset($_POST['id'])) {
         $userId = $_POST['id'];
         $file = $_FILES['avatar'];
         
-        $uploadDir = '../uploads/avatars/';
+        $uploadDir = __DIR__ . '/../uploads/avatars/';
         if (!file_exists($uploadDir)) {
             mkdir($uploadDir, 0777, true);
         }
 
-        $fileName = time() . '_' . basename($file['name']);
+        // Validate size (max 2MB)
+        if (!isset($file['size']) || $file['size'] > 2 * 1024 * 1024) {
+            echo json_encode(['success' => false, 'message' => 'File too large. Max 2MB']);
+            exit;
+        }
+
+        // Validate MIME type using finfo
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($file['tmp_name']);
+        $allowed = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp'
+        ];
+        if (!isset($allowed[$mime])) {
+            echo json_encode(['success' => false, 'message' => 'Invalid image type']);
+            exit;
+        }
+
+        // Generate a random safe filename
+        try {
+            $ext = $allowed[$mime];
+            $fileName = bin2hex(random_bytes(16)) . '.' . $ext;
+        } catch (Exception $e) {
+            $fileName = time() . '_' . uniqid() . '.' . $allowed[$mime];
+        }
         $targetFile = $uploadDir . $fileName;
         $dbPath = 'uploads/avatars/' . $fileName; // Path relative to web root
 
-        // Validate image
-        $check = getimagesize($file['tmp_name']);
+        // Optional: Basic image sanity check
+        $check = @getimagesize($file['tmp_name']);
         if ($check === false) {
-             echo json_encode(['success' => false, 'message' => 'File is not an image']);
-             exit;
+            echo json_encode(['success' => false, 'message' => 'File is not a valid image']);
+            exit;
         }
 
-        if (move_uploaded_file($file['tmp_name'], $targetFile)) {
-            // Update DB
+        $source = $file['tmp_name'];
+        $img = null;
+        if ($mime === 'image/jpeg') {
+            $img = imagecreatefromjpeg($source);
+        } elseif ($mime === 'image/png') {
+            $img = imagecreatefrompng($source);
+        } elseif ($mime === 'image/webp' && function_exists('imagecreatefromwebp')) {
+            $img = imagecreatefromwebp($source);
+        }
+        $saved = false;
+        if ($img) {
+            if ($mime === 'image/jpeg') {
+                $saved = imagejpeg($img, $targetFile, 85);
+            } elseif ($mime === 'image/png') {
+                $saved = imagepng($img, $targetFile, 8);
+            } elseif ($mime === 'image/webp' && function_exists('imagewebp')) {
+                $saved = imagewebp($img, $targetFile, 80);
+            }
+            imagedestroy($img);
+        } else {
+            $saved = move_uploaded_file($source, $targetFile);
+        }
+
+        if ($saved) {
             try {
                 $stmt = $conn->prepare("UPDATE users SET profile_picture = ? WHERE id = ?");
                 $stmt->execute([$dbPath, $userId]);
@@ -203,6 +320,7 @@ if ($action === 'register') {
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode($users);
 } elseif ($action === 'delete_user') {
+    require_csrf($action);
     $id = $data->id;
     // Check if user exists and is not admin (simple check)
     // Ideally check if requester is admin
@@ -214,6 +332,7 @@ if ($action === 'register') {
         echo json_encode(['success' => false, 'message' => 'Deletion failed']);
     }
 } elseif ($action === 'update_plan') {
+    require_csrf($action);
     $id = $data->id ?? null;
     $plan = $data->plan ?? '';
     $allowed = ['free', 'pro', 'elite'];
@@ -226,6 +345,70 @@ if ($action === 'register') {
         echo json_encode(['success' => true, 'message' => 'Plan updated']);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to update plan']);
+    }
+} elseif ($action === 'verify_email') {
+    $email = $data->email ?? '';
+    $token = $data->token ?? '';
+    if (!$email || !$token) {
+        echo json_encode(['success' => false, 'message' => 'Invalid verification request']);
+        exit;
+    }
+    $stmt = $conn->prepare("SELECT id FROM users WHERE email = ? AND verification_token = ?");
+    $stmt->execute([$email, $token]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$user) {
+        echo json_encode(['success' => false, 'message' => 'Invalid token']);
+        exit;
+    }
+    $stmt = $conn->prepare("UPDATE users SET email_verified = 1, verification_token = NULL WHERE id = ?");
+    if ($stmt->execute([$user['id']])) {
+        echo json_encode(['success' => true, 'message' => 'Email verified']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Verification failed']);
+    }
+} elseif ($action === 'resend_verification') {
+    require_csrf($action);
+    $email = $data->email ?? '';
+    if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid email']);
+        exit;
+    }
+    $stmt = $conn->prepare("SELECT id, email_verified FROM users WHERE email = ?");
+    $stmt->execute([$email]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$user) {
+        echo json_encode(['success' => false, 'message' => 'User not found']);
+        exit;
+    }
+    if ((int)($user['email_verified'] ?? 0) === 1) {
+        echo json_encode(['success' => false, 'message' => 'Email already verified']);
+        exit;
+    }
+    try {
+        $verification_token = bin2hex(random_bytes(16));
+    } catch (Exception $e) {
+        $verification_token = md5(uniqid((string)mt_rand(), true));
+    }
+    $stmt = $conn->prepare("UPDATE users SET verification_token = ?, verification_sent_at = NOW() WHERE id = ?");
+    if ($stmt->execute([$verification_token, $user['id']])) {
+        $verifyLink = $baseUrl . "/verify_email.html?token=" . urlencode($verification_token) . "&email=" . urlencode($email);
+        @mail($email, "Verify your email - Pips & Profit Academy", "Please verify your email by visiting: " . $verifyLink, "From: no-reply@pips-and-profits-academy");
+        echo json_encode(['success' => true, 'message' => 'Verification email resent', 'verify_link' => $verifyLink]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to resend verification']);
+    }
+} elseif ($action === 'me') {
+    if (!isset($_SESSION['user_id'])) {
+        echo json_encode(['success' => false, 'message' => 'Not logged in']);
+        exit;
+    }
+    $stmt = $conn->prepare("SELECT id, name, email, role, plan, profile_picture, bio, COALESCE(email_verified, 0) as email_verified, created_at FROM users WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $u = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($u) {
+        echo json_encode(['success' => true, 'user' => $u]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'User not found']);
     }
 }
 ?>
