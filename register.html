@@ -50,11 +50,15 @@
             <div class="text-center mt-4">
                 <p class="small text-muted">Already have an account? <a href="login.html" class="text-purple text-decoration-none fw-bold">Login</a></p>
                 <p class="small text-muted mt-2"><a href="index.html" class="text-secondary text-decoration-none"><i class="fas fa-arrow-left me-1"></i> Back to Home</a></p>
+                <div class="mt-3">
+                    <div id="googleSignInRegister" class="d-inline-block"></div>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="js/app.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -73,6 +77,32 @@
             } catch (error) {
                 console.error('Registration error:', error);
                 alert('An error occurred during registration. Please try again.');
+            }
+        });
+        
+        function onGoogleCredentialResponse(response) {
+            App.loginWithGoogle(response.credential).then(result => {
+                if (result.success && result.user) {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    alert(result.message || 'Google sign-in failed');
+                }
+            }).catch(err => {
+                console.error(err);
+                alert('An error occurred during Google sign-in.');
+            });
+        }
+        window.addEventListener('load', function () {
+            const CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
+            if (window.google && CLIENT_ID && CLIENT_ID !== 'YOUR_GOOGLE_CLIENT_ID') {
+                google.accounts.id.initialize({
+                    client_id: CLIENT_ID,
+                    callback: onGoogleCredentialResponse
+                });
+                google.accounts.id.renderButton(
+                    document.getElementById('googleSignInRegister'),
+                    { theme: 'outline', size: 'large', text: 'continue_with' }
+                );
             }
         });
     </script>

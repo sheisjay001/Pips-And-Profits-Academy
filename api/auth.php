@@ -150,6 +150,63 @@ if ($action === 'register') {
     } else {
         echo json_encode(['success' => false, 'message' => 'Invalid credentials']);
     }
+} elseif ($action === 'google_login') {
+    $idToken = $data->id_token ?? '';
+    if (!$idToken) {
+        echo json_encode(['success' => false, 'message' => 'Missing token']);
+        exit;
+    }
+    $clientId = getenv('GOOGLE_CLIENT_ID') ?: '';
+    $verifyUrl = 'https://oauth2.googleapis.com/tokeninfo?id_token=' . urlencode($idToken);
+    $resp = @file_get_contents($verifyUrl);
+    if ($resp === false) {
+        echo json_encode(['success' => false, 'message' => 'Failed to verify token']);
+        exit;
+    }
+    $payload = json_decode($resp, true);
+    if (!is_array($payload) || !isset($payload['aud'])) {
+        echo json_encode(['success' => false, 'message' => 'Invalid token payload']);
+        exit;
+    }
+    if (!$clientId || $payload['aud'] !== $clientId) {
+        echo json_encode(['success' => false, 'message' => 'Server not configured for Google Sign-In']);
+        exit;
+    }
+    $email = $payload['email'] ?? '';
+    $emailVerified = ($payload['email_verified'] ?? 'false') === 'true';
+    $name = $payload['name'] ?? '';
+    $picture = $payload['picture'] ?? null;
+    if (!$email || !$emailVerified) {
+        echo json_encode(['success' => false, 'message' => 'Email not verified']);
+        exit;
+    }
+    $stmt = $conn->prepare("SELECT id, name, email, role, plan, profile_picture, bio, created_at, COALESCE(email_verified, 0) as email_verified FROM users WHERE email = ?");
+    $stmt->execute([$email]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($user) {
+        if ($picture && empty($user['profile_picture'])) {
+            $up = $conn->prepare("UPDATE users SET profile_picture = ?, email_verified = 1 WHERE id = ?");
+            try { $up->execute([$picture, $user['id']]); } catch (Exception $e) {}
+            $stmt = $conn->prepare("SELECT id, name, email, role, plan, profile_picture, bio, created_at, COALESCE(email_verified, 0) as email_verified FROM users WHERE id = ?");
+            $stmt->execute([$user['id']]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        } else {
+            $up = $conn->prepare("UPDATE users SET email_verified = 1 WHERE id = ?");
+            try { $up->execute([$user['id']]); } catch (Exception $e) {}
+        }
+    } else {
+        $ins = $conn->prepare("INSERT INTO users (name, email, role, plan, email_verified, profile_picture, created_at) VALUES (?, ?, 'user', 'free', 1, ?, NOW())");
+        $ins->execute([$name ?: $email, $email, $picture]);
+        $stmt = $conn->prepare("SELECT id, name, email, role, plan, profile_picture, bio, created_at, 1 as email_verified FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    if ($user) {
+        $_SESSION['user_id'] = $user['id'];
+        echo json_encode(['success' => true, 'user' => $user]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Login failed']);
+    }
 } elseif ($action === 'update_profile') {
     require_csrf($action);
     $id = $data->id;

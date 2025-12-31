@@ -148,6 +148,17 @@ const App = {
         }
         return result;
     },
+    
+    async loginWithGoogle(idToken) {
+        const result = await this.api('auth.php', 'POST', {
+            action: 'google_login',
+            id_token: idToken
+        });
+        if (result.success && result.user) {
+            this.setCurrentUser(result.user);
+        }
+        return result;
+    },
 
     logout() {
         localStorage.removeItem(this.KEYS.CURRENT_USER);
