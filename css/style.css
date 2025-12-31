@@ -160,6 +160,17 @@ body {
     filter: brightness(0.92) saturate(0.9);
 }
 
+.legal-hero {
+    background: linear-gradient(135deg, rgba(48, 21, 90, 0.6) 0%, rgba(72, 37, 131, 0.6) 100%), url('../GhwtkRRWoAAov6q.jfif');
+    background-size: cover;
+    background-position: center 20%;
+    background-repeat: no-repeat;
+    min-height: 260px;
+    padding-top: 100px;
+    position: relative;
+    overflow: hidden;
+}
+
 /* Footer */
 footer {
     background-color: #0f0518 !important;
