@@ -52,4 +52,40 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.classList.remove('sidebar-open');
         }
     });
+
+    
+
+    const sections = document.querySelectorAll('section[id]');
+    const navLinksMap = {};
+    document.querySelectorAll('.navbar .nav-link[href^="#"]').forEach(link => {
+        const id = link.getAttribute('href').substring(1);
+        navLinksMap[id] = link;
+    });
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const id = entry.target.getAttribute('id');
+            const link = navLinksMap[id];
+            if (link) {
+                if (entry.isIntersecting) {
+                    Object.values(navLinksMap).forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                }
+            }
+        });
+    }, { rootMargin: '-50% 0px -50% 0px', threshold: 0.1 });
+    sections.forEach(sec => observer.observe(sec));
+
+    const backToTop = document.getElementById('backToTop');
+    if (backToTop) {
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 300) {
+                backToTop.classList.add('show');
+            } else {
+                backToTop.classList.remove('show');
+            }
+        });
+        backToTop.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
 });
