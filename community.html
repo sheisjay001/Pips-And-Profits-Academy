@@ -100,6 +100,24 @@
                 </div>
 
                 <div class="row g-4 justify-content-center">
+                    <div class="col-lg-6" id="vip-community-section" style="display: none;">
+                        <div class="card border-0 shadow-sm p-5 h-100 text-center bg-dark text-white">
+                            <div class="card-body">
+                                <div class="mb-4">
+                                    <i class="fa-brands fa-discord fa-5x text-light"></i>
+                                </div>
+                                <h3 class="fw-bold mb-3">VIP Discord Server</h3>
+                                <p class="lead text-light mb-4">
+                                    Exclusive access for Elite members. Get direct access to mentors and advanced trading discussions.
+                                </p>
+                                <div class="d-grid gap-3">
+                                    <a href="#" class="btn btn-light btn-lg px-5 gap-3">
+                                        <i class="fa-brands fa-discord me-2"></i> Join VIP Server
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="col-lg-6">
                         <div class="card border-0 shadow-sm p-5 h-100 text-center">
                             <div class="card-body">
@@ -180,6 +198,10 @@
                 const navUserAvatar = document.getElementById('navUserAvatar');
                 if (navUserName) navUserName.textContent = user.name;
                 if (navUserAvatar) navUserAvatar.src = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff`;
+
+                if (App.checkAccess('vip_community')) {
+                    document.getElementById('vip-community-section').style.display = 'block';
+                }
             }
         });
     </script>

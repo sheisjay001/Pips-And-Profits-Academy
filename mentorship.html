@@ -31,7 +31,7 @@
                 <a href="courses.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
                     <i class="fa-solid fa-graduation-cap me-2"></i> My Courses
                 </a>
-                <a href="signals.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
+                <a href="signals.html" class_name="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
                     <i class="fa-solid fa-signal me-2"></i> Signals <span class="badge bg-danger rounded-pill float-end">New</span>
                 </a>
                 <a href="tools.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
@@ -92,21 +92,7 @@
 
             <!-- Mentorship Content -->
             <div class="container-fluid p-4">
-                <script>
-                    document.addEventListener('DOMContentLoaded', () => {
-                        // Check user access
-                        const user = App.getCurrentUser();
-                        if (!user) {
-                            window.location.href = 'login.html';
-                            return;
-                        }
-                        // Check if user has elite plan
-                        if (user.role !== 'admin' && user.plan !== 'elite') {
-                            alert('This page is exclusive to Elite members.');
-                            window.location.href = 'dashboard.html?upgrade=true';
-                        }
-                    });
-                </script>
+                
                 <div class="row mb-4">
                     <div class="col-12">
                         <nav aria-label="breadcrumb">
@@ -142,6 +128,17 @@
                                         <img src="https://img.freepik.com/free-vector/mentoring-concept-illustration_114360-5757.jpg" alt="Mentorship" class="img-fluid rounded-circle shadow-sm">
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Schedule Section -->
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="mb-0 fw-bold">Your Personalized Trading Plan</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">Based on your profile and goals, here is a starting point for your trading plan. We will refine this together in our sessions.</p>
+                                <div id="personalizedPlan" class="p-3 bg-light rounded"></div>
                             </div>
                         </div>
 
@@ -307,60 +304,77 @@
                     <p>Are you sure you want to end your <strong>Elite Mentorship Plan</strong>?</p>
                     <p class="small text-muted mb-0">You will lose access to 1-on-1 sessions and priority support immediately.</p>
                 </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Keep Plan</button>
-                    <button type="button" class="btn btn-danger" id="confirmCancelBtn">Confirm Ending</button>
-                </div>
             </div>
         </div>
     </div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Custom JS -->
-    <script src="js/script.js"></script>
+    <!-- App Logic -->
     <script src="js/app.js"></script>
     <script>
-        // Toggle Sidebar
-        document.getElementById("sidebarToggle").addEventListener("click", function(e) {
-            e.preventDefault();
-            document.getElementById("wrapper").classList.toggle("toggled");
-        });
-
-        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             App.checkAuth();
-            
-            // Handle Booking Form
-            const bookingForm = document.getElementById('bookingForm');
-            if(bookingForm) {
-                bookingForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    alert('Session booked successfully! You will receive a confirmation email shortly.');
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('bookingModal'));
-                    modal.hide();
-                    bookingForm.reset();
-                });
-            }
+            App.enforceAccess('mentorship');
 
-            // Handle Cancellation
-            const confirmCancelBtn = document.getElementById('confirmCancelBtn');
-            if(confirmCancelBtn) {
-                confirmCancelBtn.addEventListener('click', () => {
-                    alert('Your subscription has been successfully cancelled.');
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('cancelModal'));
-                    modal.hide();
-                    // Optionally update UI to reflect cancellation
-                    const cancelBtn = document.querySelector('[data-bs-target="#cancelModal"]');
-                    if(cancelBtn) {
-                        cancelBtn.textContent = 'Plan Cancelled';
-                        cancelBtn.classList.remove('btn-outline-danger');
-                        cancelBtn.classList.add('btn-secondary');
-                        cancelBtn.disabled = true;
+            const user = App.getCurrentUser();
+            if (user) {
+                // Update navbar user details
+                const navUserName = document.getElementById('navUserName');
+                const navUserAvatar = document.getElementById('navUserAvatar');
+                if (navUserName) navUserName.textContent = user.name;
+                if (navUserAvatar) navUserAvatar.src = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff`;
+
+                // Generate personalized plan if elite and confirmed
+                if (App.checkAccess('personalized_plan') && user.admin_confirmed) {
+                    generatePersonalizedPlan(user);
+                } else {
+                    const planElement = document.getElementById('personalizedPlan');
+                    if(planElement) {
+                        planElement.innerHTML = `
+                            <div class="text-center p-3">
+                                <i class="fa-solid fa-lock fa-2x text-muted mb-2"></i>
+                                <h6 class="fw-bold">Confirm Your Plan</h6>
+                                <p class="small text-muted">Your personalized trading plan will appear here once your Elite plan is confirmed by an admin.</p>
+                            </div>
+                        `;
                     }
-                });
+                }
             }
         });
+
+        function generatePersonalizedPlan(user) {
+            const plan = {
+                user: user.name,
+                riskTolerance: user.risk_tolerance || 'medium',
+                tradingStyle: user.trading_style || 'swing',
+                goals: user.goals || 'consistent profits',
+                sessions: [
+                    { date: 'Week 1', topic: 'Risk Management' },
+                    { date: 'Week 2', topic: 'Trading Strategy' },
+                    { date: 'Week 3', topic: 'Trade Review' }
+                ]
+            };
+            const planElement = document.getElementById('personalizedPlan');
+            if(planElement) {
+                let planHtml = `
+                    <h5 class="fw-bold">Trading Plan for ${plan.user}</h5>
+                    <p><strong>Risk Tolerance:</strong> <span class="badge bg-info">${plan.riskTolerance}</span></p>
+                    <p><strong>Trading Style:</strong> <span class="badge bg-primary">${plan.tradingStyle}</span></p>
+                    <p><strong>Goals:</strong> ${plan.goals}</p>
+                    <h6 class="mt-4 fw-bold">Mentorship Sessions:</h6>
+                    <ul class="list-group">
+                `;
+                plan.sessions.forEach(session => {
+                    planHtml += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                        ${session.topic}
+                        <span class="badge bg-secondary">${session.date}</span>
+                    </li>`;
+                });
+                planHtml += '</ul>';
+                planElement.innerHTML = planHtml;
+            }
+        }
     </script>
 </body>
 </html>

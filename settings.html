@@ -162,6 +162,24 @@
                                         </tbody>
                                     </table>
                                 </div>
+                                <div id="prioritySupportQueue" class="d-none">
+                                <hr class="my-4">
+                                <h6 class="fw-bold mb-3 small text-uppercase text-purple">Priority Support Tickets (Elite Only)</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th class="border-0">Subject</th>
+                                                <th class="border-0">Status</th>
+                                                <th class="border-0 text-end">Response Time</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="priorityUserTicketsTable">
+                                            <!-- Filled by JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                </div>
                             </div>
                         </div>
 
@@ -526,6 +544,29 @@
                      } else {
                          eliteBenefits.classList.add('d-none');
                      }
+                 }
+
+                 // Conditionally display priority support for confirmed elite members
+                 if ((user.plan || 'free') === 'elite' && user.admin_confirmed) {
+                    const priorityQueueEl = document.getElementById('prioritySupportQueue');
+                    const priorityTbody = document.getElementById('priorityUserTicketsTable');
+
+                    if (priorityQueueEl) priorityQueueEl.classList.remove('d-none');
+                    
+                    if (priorityTbody) {
+                        // Dummy data for priority tickets
+                        const priorityTickets = [
+                            { subject: 'Urgent: Trade Execution Issue', status: 'In Progress', response: 'Under 1hr' },
+                            { subject: 'Personalized Plan Question', status: 'Open', response: 'Under 2hr' }
+                        ];
+                        priorityTbody.innerHTML = priorityTickets.map(t => `
+                            <tr>
+                                <td>${t.subject}</td>
+                                <td><span class="badge bg-info text-dark">${t.status}</span></td>
+                                <td class="text-end">${t.response}</td>
+                            </tr>
+                        `).join('');
+                    }
                  }
                  
                  renderUserTickets();
