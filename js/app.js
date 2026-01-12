@@ -23,7 +23,7 @@ const App = {
     },
 
     // --- API Helper ---
-    async api(endpoint, method = 'GET', data = null) {
+    async api(endpoint, method = 'GET', data = null, retryCount = 0) {
         const options = {
             method,
             headers: { 'Content-Type': 'application/json' }
@@ -51,7 +51,18 @@ const App = {
 
                 throw new Error(`Server Error (${res.status}): ${text.substring(0, 100)}...`);
             }
-            return await res.json();
+            
+            const json = await res.json();
+            
+            // Auto-retry on invalid CSRF token
+            if (json && json.success === false && json.message === 'Invalid CSRF token' && retryCount < 1) {
+                console.warn('Invalid CSRF token detected. Refreshing token and retrying...');
+                localStorage.removeItem('ppa_csrf_token');
+                await this.ensureCsrf();
+                return await this.api(endpoint, method, data, retryCount + 1);
+            }
+            
+            return json;
         } catch (error) {
             console.error('API Call Failed:', error);
             // Check for syntax error (often means PHP error output instead of JSON)
