@@ -4,6 +4,8 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
+require_once 'db_connect.php';
+
 // Get JSON input
 $input = json_decode(file_get_contents('php://input'), true);
 $email = $input['email'] ?? '';
@@ -12,6 +14,18 @@ $plan = $input['plan'] ?? 'pro'; // Default to pro if not set
 
 if (!$email || !$amount) {
     echo json_encode(['status' => false, 'message' => 'Email and amount required']);
+    exit;
+}
+
+$stmt = $conn->prepare("SELECT COALESCE(email_verified, 0) as email_verified FROM users WHERE email = ? LIMIT 1");
+$stmt->execute([$email]);
+$u = $stmt->fetch(PDO::FETCH_ASSOC);
+if (!$u) {
+    echo json_encode(['status' => false, 'message' => 'User not found']);
+    exit;
+}
+if ((int)($u['email_verified'] ?? 0) !== 1) {
+    echo json_encode(['status' => false, 'message' => 'Please verify your email before making a payment.']);
     exit;
 }
 

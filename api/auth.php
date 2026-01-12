@@ -76,6 +76,90 @@ function require_csrf($action) {
     }
 }
 
+function send_email($to, $subject, $textBody, $htmlBody = null) {
+    $host = getenv('BREVO_SMTP_HOST') ?: getenv('SMTP_HOST');
+    $port = (int)(getenv('BREVO_SMTP_PORT') ?: getenv('SMTP_PORT') ?: 0);
+    $user = getenv('BREVO_SMTP_USER') ?: getenv('SMTP_USER');
+    $pass = getenv('BREVO_SMTP_PASS') ?: getenv('SMTP_PASS');
+    $from = getenv('SMTP_FROM') ?: 'no-reply@pipsandprofitsacademy.com';
+    $fromName = getenv('SMTP_FROM_NAME') ?: 'Pips & Profit Academy';
+    $useSmtp = $host && $port && $user && $pass;
+
+    $body = $htmlBody !== null ? $htmlBody : $textBody;
+    $isHtml = $htmlBody !== null;
+
+    $headers = [];
+    $headers[] = 'From: ' . $fromName . ' <' . $from . '>';
+    $headers[] = 'MIME-Version: 1.0';
+    $headers[] = 'Content-Type: ' . ($isHtml ? 'text/html' : 'text/plain') . '; charset=UTF-8';
+    $headersText = implode("\r\n", $headers);
+
+    if (!$useSmtp) {
+        return @mail($to, $subject, $body, $headersText);
+    }
+
+    $fp = @fsockopen($host, $port, $errno, $errstr, 15);
+    if (!$fp) return false;
+
+    $read = function() use ($fp) {
+        $data = '';
+        while (!feof($fp)) {
+            $line = fgets($fp, 515);
+            if ($line === false) break;
+            $data .= $line;
+            if (preg_match('/^\d{3} /', $line)) break;
+        }
+        return $data;
+    };
+    $expect = function($codes) use ($read) {
+        $resp = $read();
+        $code = (int)substr($resp, 0, 3);
+        return in_array($code, (array)$codes, true);
+    };
+    $send = function($cmd) use ($fp) {
+        fwrite($fp, $cmd . "\r\n");
+    };
+
+    if (!$expect([220])) { fclose($fp); return false; }
+    $send('EHLO ' . (getenv('SMTP_HELO') ?: 'localhost'));
+    if (!$expect([250])) { fclose($fp); return false; }
+
+    $send('STARTTLS');
+    if (!$expect([220])) { fclose($fp); return false; }
+    if (!stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) { fclose($fp); return false; }
+
+    $send('EHLO ' . (getenv('SMTP_HELO') ?: 'localhost'));
+    if (!$expect([250])) { fclose($fp); return false; }
+
+    $send('AUTH LOGIN');
+    if (!$expect([334])) { fclose($fp); return false; }
+    $send(base64_encode($user));
+    if (!$expect([334])) { fclose($fp); return false; }
+    $send(base64_encode($pass));
+    if (!$expect([235])) { fclose($fp); return false; }
+
+    $send('MAIL FROM:<' . $from . '>');
+    if (!$expect([250])) { fclose($fp); return false; }
+    $send('RCPT TO:<' . $to . '>');
+    if (!$expect([250, 251])) { fclose($fp); return false; }
+    $send('DATA');
+    if (!$expect([354])) { fclose($fp); return false; }
+
+    $msg = 'To: <' . $to . ">\r\n" .
+           'Subject: ' . $subject . "\r\n" .
+           $headersText . "\r\n\r\n" .
+           $body;
+
+    $msg = str_replace(["\r\n.", "\n."], ["\r\n..", "\n.."], $msg);
+    $msg = str_replace("\n", "\r\n", $msg);
+
+    fwrite($fp, $msg . "\r\n.\r\n");
+    if (!$expect([250])) { fclose($fp); return false; }
+    $send('QUIT');
+    fclose($fp);
+    return true;
+}
+
 if ($action === 'csrf') {
     echo json_encode(['token' => $_SESSION['csrf_token']]);
     exit;
@@ -117,7 +201,7 @@ if ($action === 'register') {
     $stmt = $conn->prepare("INSERT INTO users (name, email, password_hash, role, plan, email_verified, verification_token, verification_sent_at) VALUES (?, ?, ?, ?, ?, 0, ?, NOW())");
     if ($stmt->execute([$name, $email, $password_hash, $role, $plan, $verification_token])) {
         $verifyLink = $baseUrl . "/verify_email.html?token=" . urlencode($verification_token) . "&email=" . urlencode($email);
-        @mail($email, "Verify your email - Pips & Profit Academy", "Please verify your email by visiting: " . $verifyLink, "From: no-reply@pips-and-profits-academy");
+        send_email($email, "Verify your email - Pips & Profit Academy", "Please verify your email by visiting: " . $verifyLink);
         echo json_encode(['success' => true, 'message' => 'Registration successful. Please verify your email.', 'verify_link' => $verifyLink]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Registration failed']);
@@ -340,7 +424,7 @@ if ($action === 'register') {
                  . "Use the link below to set a new password. This link expires in 1 hour.\n\n"
                  . $resetLink . "\n\n"
                  . "If you did not request this, please ignore this email.";
-        @mail($email, $subject, $message, "From: no-reply@pips-and-profits-academy");
+        send_email($email, $subject, $message);
     }
 
     // Always return success to avoid user enumeration
@@ -449,7 +533,7 @@ if ($action === 'register') {
     $stmt = $conn->prepare("UPDATE users SET verification_token = ?, verification_sent_at = NOW() WHERE id = ?");
     if ($stmt->execute([$verification_token, $user['id']])) {
         $verifyLink = $baseUrl . "/verify_email.html?token=" . urlencode($verification_token) . "&email=" . urlencode($email);
-        @mail($email, "Verify your email - Pips & Profit Academy", "Please verify your email by visiting: " . $verifyLink, "From: no-reply@pips-and-profits-academy");
+        send_email($email, "Verify your email - Pips & Profit Academy", "Please verify your email by visiting: " . $verifyLink);
         echo json_encode(['success' => true, 'message' => 'Verification email resent', 'verify_link' => $verifyLink]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to resend verification']);

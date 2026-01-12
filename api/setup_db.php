@@ -59,6 +59,17 @@ try {
         FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
     )");
 
+    // 8. Email Verifications Table
+    $conn->exec("CREATE TABLE IF NOT EXISTS email_verifications (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        token VARCHAR(255) NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX(token)
+    )");
+
     // Ensure 'video_path' exists
     try {
         $conn->query("SELECT video_path FROM courses LIMIT 1");

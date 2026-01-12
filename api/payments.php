@@ -91,6 +91,27 @@ if ($method === 'GET') {
             echo json_encode(['success' => false, 'message' => 'Missing user or amount']);
             exit;
         }
+        
+        $stmt = $conn->prepare("SELECT id, role, COALESCE(email_verified, 0) as email_verified FROM users WHERE id = ? LIMIT 1");
+        $stmt->execute([$userId]);
+        $u = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$u) {
+            echo json_encode(['success' => false, 'message' => 'User not found']);
+            exit;
+        }
+        if ((int)($u['email_verified'] ?? 0) !== 1) {
+            echo json_encode(['success' => false, 'message' => 'Please verify your email before submitting payments.']);
+            exit;
+        }
+        if (isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] !== (int)$userId) {
+            $stmt = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
+            $stmt->execute([(int)$_SESSION['user_id']]);
+            $sessionUser = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$sessionUser || ($sessionUser['role'] ?? '') !== 'admin') {
+                echo json_encode(['success' => false, 'message' => 'Not authorized']);
+                exit;
+            }
+        }
 
         if (!isset($_FILES['proof']['size']) || $_FILES['proof']['size'] > 4 * 1024 * 1024) {
             echo json_encode(['success' => false, 'message' => 'File too large']);

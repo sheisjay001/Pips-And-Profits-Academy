@@ -447,8 +447,16 @@ const App = {
                 window.location.href = 'login.html';
                 return;
             }
-            if (!user.email_verified) {
-                alert('Please verify your email before making a payment.');
+              if (!user.email_verified) {
+                const doResend = confirm('Please verify your email before making a payment.\n\nResend verification email now?');
+                if (doResend) {
+                    await this.ensureCsrf();
+                    const res = await this.api('auth.php', 'POST', { action: 'resend_verification', email: user.email });
+                    alert(res.message || 'Verification email sent.');
+                    if (res.verify_link) {
+                        window.open(res.verify_link, '_blank');
+                    }
+                }
                 return;
             }
 
@@ -489,7 +497,15 @@ const App = {
                 return;
             }
             if (!user.email_verified) {
-                alert('Please verify your email before making a payment.');
+                const doResend = confirm('Please verify your email before making a payment.\n\nResend verification email now?');
+                if (doResend) {
+                    await this.ensureCsrf();
+                    const res = await this.api('auth.php', 'POST', { action: 'resend_verification', email: user.email });
+                    alert(res.message || 'Verification email sent.');
+                    if (res.verify_link) {
+                        window.open(res.verify_link, '_blank');
+                    }
+                }
                 return;
             }
             const cryptoModal = new bootstrap.Modal(document.getElementById('cryptoPaymentModal'));

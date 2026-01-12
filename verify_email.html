@@ -21,6 +21,7 @@
             </div>
         </div>
     </div>
+    <script src="js/app.js"></script>
     <script>
         async function verify() {
             const params = new URLSearchParams(window.location.search);
@@ -42,6 +43,16 @@
                 if (result.success) {
                     statusText.textContent = 'Your email has been verified successfully.';
                     loginBtn.classList.remove('d-none');
+                    try {
+                        const raw = localStorage.getItem('ppa_current_user');
+                        if (raw) {
+                            const u = JSON.parse(raw);
+                            if (u && u.email && u.email.toLowerCase() === (email || '').toLowerCase()) {
+                                u.email_verified = 1;
+                                localStorage.setItem('ppa_current_user', JSON.stringify(u));
+                            }
+                        }
+                    } catch (e) {}
                 } else {
                     statusText.textContent = 'Verification failed: ' + (result.message || 'Unknown error');
                 }
