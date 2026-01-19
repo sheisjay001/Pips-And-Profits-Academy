@@ -102,7 +102,7 @@
                             <button class="btn btn-warning fw-bold text-dark shadow-sm" onclick="window.selectedPlan='pro'; new bootstrap.Modal(document.getElementById('paymentMethodModal')).show();">
                                 <i class="fa-solid fa-crown me-2"></i> Upgrade to Pro
                             </button>
-                            <button class="btn btn-purple fw-bold text-white shadow-sm" onclick="window.selectedPlan='elite'; new bootstrap.Modal(document.getElementById('paymentMethodModal')).show();">
+                            <button class="btn btn-purple fw-bold text-white shadow-sm" onclick="App.initiatePayment('paystack', 'elite')">
                                 <i class="fa-solid fa-diamond me-2"></i> Upgrade to Elite
                             </button>
                         </div>
@@ -145,7 +145,7 @@
                                     <h4 class="fw-bold mb-0" id="userPlanLabel">Free</h4>
                                     <div class="btn-group">
                                         <button class="btn btn-sm btn-outline-purple" onclick="upgrade('pro')">Pro $49</button>
-                                        <button class="btn btn-sm btn-purple" onclick="upgrade('elite')">Elite $199</button>
+                                        <button class="btn btn-sm btn-purple" onclick="App.initiatePayment('paystack', 'elite')">Elite $199</button>
                                     </div>
                                 </div>
                             </div>
