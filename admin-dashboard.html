@@ -744,7 +744,8 @@
                         } catch (jsonError) {
                             const text = await resClone.text();
                             console.error('Server returned non-JSON:', text);
-                            alert('Server Error: The server returned an invalid response. Check console for details.');
+                            // Show first 500 chars of error in alert
+                            alert('Server Error: The server returned an invalid response. \n\nDetails:\n' + text.substring(0, 500));
                         }
                     } catch (networkError) {
                         console.error('Network Error:', networkError);
