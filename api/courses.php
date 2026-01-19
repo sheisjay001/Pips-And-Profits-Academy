@@ -95,17 +95,40 @@ try {
         }
 
         $thumbPathRel = '';
+        
+        // Handle File Upload
         if (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === UPLOAD_ERR_OK) {
-            $ext = pathinfo($_FILES['thumbnail']['name'], PATHINFO_EXTENSION);
-            $filename = uniqid('thumb_') . '.' . strtolower($ext);
-            $dest = $thumbDir . DIRECTORY_SEPARATOR . $filename;
-            if (move_uploaded_file($_FILES['thumbnail']['tmp_name'], $dest)) {
-                $thumbPathRel = 'uploads/thumbnails/' . $filename;
+            // Check if we can write to the directory
+            if (!is_writable($thumbDir) && !@mkdir($thumbDir, 0777, true)) {
+                 // If we have a fallback URL, use it and ignore upload failure
+                 if (isset($_POST['thumbnail_url']) && !empty($_POST['thumbnail_url'])) {
+                     $thumbPathRel = $_POST['thumbnail_url'];
+                 } else {
+                     throw new Exception("Server file system is read-only (e.g. Vercel). Please use the 'Thumbnail Image URL' field instead.");
+                 }
             } else {
-                throw new Exception("Failed to move uploaded thumbnail. Check permissions for $dest");
+                $ext = pathinfo($_FILES['thumbnail']['name'], PATHINFO_EXTENSION);
+                $filename = uniqid('thumb_') . '.' . strtolower($ext);
+                $dest = $thumbDir . DIRECTORY_SEPARATOR . $filename;
+                
+                if (move_uploaded_file($_FILES['thumbnail']['tmp_name'], $dest)) {
+                    $thumbPathRel = 'uploads/thumbnails/' . $filename;
+                } else {
+                    // Fallback to URL if upload fails (e.g. permissions)
+                    if (isset($_POST['thumbnail_url']) && !empty($_POST['thumbnail_url'])) {
+                        $thumbPathRel = $_POST['thumbnail_url'];
+                    } else {
+                        throw new Exception("Failed to save uploaded file. Check server permissions.");
+                    }
+                }
             }
-        } elseif (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] !== UPLOAD_ERR_NO_FILE) {
-            // Upload error occurred
+        } 
+        // Handle URL (if no file uploaded or file upload failed/skipped)
+        elseif (isset($_POST['thumbnail_url']) && !empty($_POST['thumbnail_url'])) {
+            $thumbPathRel = $_POST['thumbnail_url'];
+        }
+        // Error if file upload attempted but failed (and not just empty)
+        elseif (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] !== UPLOAD_ERR_NO_FILE) {
              throw new Exception("Upload failed with error code: " . $_FILES['thumbnail']['error']);
         }
 
