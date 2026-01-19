@@ -54,6 +54,16 @@ if ($method === 'GET') {
         }
     }
 
+    // Ensure video_path column exists
+    try {
+        $check = $conn->query("SHOW COLUMNS FROM courses LIKE 'video_path'");
+        if ($check->rowCount() == 0) {
+            $conn->exec("ALTER TABLE courses ADD COLUMN video_path VARCHAR(255) AFTER thumbnail_url");
+        }
+    } catch (Exception $e) {
+        // Ignore check error, insert might fail but we tried
+    }
+
     $stmt = $conn->prepare("INSERT INTO courses (title, description, level, thumbnail_url, video_path, price, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
     
     try {
