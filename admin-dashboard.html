@@ -863,10 +863,6 @@
             `).join('');
         }
 
-        function renderUsers() {
-            // ... (keep as is, but we are replacing larger block so I'll include it or just replace renderTickets)
-        }
-
         async function renderTickets() {
             const tickets = await App.getTickets();
             const tbody = document.getElementById('ticketsTableBody');
@@ -1002,7 +998,9 @@
                             <td><span class="badge bg-purple">Student</span></td>
                             <td><span class="text-success fw-bold">Active</span></td>
                             <td class="text-muted small">${new Date(user.created_at).toLocaleDateString()}</td>
-                            <td><button class="btn btn-sm btn-light text-secondary"><i class="fa-solid fa-ellipsis-vertical"></i></button></td>
+                            <td>
+                                ${user.role !== 'admin' ? `<button class="btn btn-sm btn-light text-danger" onclick="deleteUser(${user.id})" title="Delete User"><i class="fa-solid fa-trash"></i></button>` : ''}
+                            </td>
                         </tr>
                     `).join('');
                 }
