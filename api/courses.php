@@ -42,17 +42,10 @@ if ($method === 'GET') {
     if (!is_dir($thumbDir)) { @mkdir($thumbDir); }
 
     $videoPathRel = '';
-    if (isset($_FILES['video']) && $_FILES['video']['error'] === UPLOAD_ERR_OK) {
-        $ext = pathinfo($_FILES['video']['name'], PATHINFO_EXTENSION);
-        $filename = uniqid('vid_') . '.' . strtolower($ext);
-        $dest = $videoDir . DIRECTORY_SEPARATOR . $filename;
-        if (!move_uploaded_file($_FILES['video']['tmp_name'], $dest)) {
-            echo json_encode(['success' => false, 'message' => 'Failed to save video']);
-            exit;
-        }
-        $videoPathRel = 'uploads/videos/' . $filename;
+    if (isset($_POST['video_url']) && !empty($_POST['video_url'])) {
+        $videoPathRel = $_POST['video_url'];
     } else {
-        echo json_encode(['success' => false, 'message' => 'Video file is required']);
+        echo json_encode(['success' => false, 'message' => 'Video URL is required']);
         exit;
     }
 
