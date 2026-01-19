@@ -55,10 +55,16 @@ if ($method === 'GET') {
     }
 
     $stmt = $conn->prepare("INSERT INTO courses (title, description, level, thumbnail_url, video_path, price, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
-    $ok = $stmt->execute([$title, $description, $level, $thumbPathRel, $videoPathRel, $price]);
     
-    if (!$ok) {
-        echo json_encode(['success' => false, 'message' => 'Failed to create course']);
+    try {
+        $ok = $stmt->execute([$title, $description, $level, $thumbPathRel, $videoPathRel, $price]);
+        if (!$ok) {
+            $errorInfo = $stmt->errorInfo();
+            echo json_encode(['success' => false, 'message' => 'Failed to create course: ' . $errorInfo[2]]);
+            exit;
+        }
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Database Error: ' . $e->getMessage()]);
         exit;
     }
     
