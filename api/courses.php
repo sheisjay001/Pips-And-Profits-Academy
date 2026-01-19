@@ -39,9 +39,9 @@ if ($method === 'GET') {
     $videoDir = $uploadBase . DIRECTORY_SEPARATOR . 'videos';
     $thumbDir = $uploadBase . DIRECTORY_SEPARATOR . 'thumbnails';
 
-    if (!is_dir($uploadBase)) { @mkdir($uploadBase); }
-    if (!is_dir($videoDir)) { @mkdir($videoDir); }
-    if (!is_dir($thumbDir)) { @mkdir($thumbDir); }
+    if (!is_dir($uploadBase)) { @mkdir($uploadBase, 0777, true); }
+    if (!is_dir($videoDir)) { @mkdir($videoDir, 0777, true); }
+    if (!is_dir($thumbDir)) { @mkdir($thumbDir, 0777, true); }
 
     $videoPathRel = '';
     if (isset($_POST['video_url']) && !empty($_POST['video_url'])) {
