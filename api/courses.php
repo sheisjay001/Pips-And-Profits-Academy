@@ -19,12 +19,7 @@ require_once 'db_connect.php';
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
-    $stmt = $conn->query("SELECT id, title, description, level, thumbnail_url, price, created_at, 
-        CASE 
-            WHEN COLUMN_NAME IS NOT NULL THEN video_path 
-            ELSE '' 
-        END AS video_path
-        FROM courses");
+    $stmt = $conn->query("SELECT * FROM courses ORDER BY created_at DESC");
     $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode($courses);
 } elseif ($method === 'POST') {
@@ -59,23 +54,15 @@ if ($method === 'GET') {
         }
     }
 
-    $stmt = $conn->prepare("INSERT INTO courses (title, description, level, thumbnail_url, price, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
-    $ok = $stmt->execute([$title, $description, $level, $thumbPathRel, $price]);
+    $stmt = $conn->prepare("INSERT INTO courses (title, description, level, thumbnail_url, video_path, price, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+    $ok = $stmt->execute([$title, $description, $level, $thumbPathRel, $videoPathRel, $price]);
+    
     if (!$ok) {
         echo json_encode(['success' => false, 'message' => 'Failed to create course']);
         exit;
     }
+    
     $courseId = $conn->lastInsertId();
-
-    $hasVideoCol = false;
-    try {
-        $conn->query("SELECT video_path FROM courses LIMIT 1");
-        $hasVideoCol = true;
-    } catch (Exception $e) { $hasVideoCol = false; }
-
-    if ($hasVideoCol) {
-        $conn->prepare("UPDATE courses SET video_path = ? WHERE id = ?")->execute([$videoPathRel, $courseId]);
-    }
 
     echo json_encode([
         'success' => true,
