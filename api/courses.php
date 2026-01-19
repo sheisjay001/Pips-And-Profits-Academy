@@ -15,11 +15,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // DEBUG: Log all requests
-// $logFile = __DIR__ . '/debug_courses.txt';
-// $logEntry = date('Y-m-d H:i:s') . " - Method: " . $_SERVER['REQUEST_METHOD'] . "\n";
-// $logEntry .= "POST Data: " . print_r($_POST, true) . "\n";
-// $logEntry .= "FILES Data: " . print_r($_FILES, true) . "\n";
-// file_put_contents($logFile, $logEntry, FILE_APPEND);
+$logFile = __DIR__ . '/debug_courses.txt';
+$logEntry = date('Y-m-d H:i:s') . " - Method: " . $_SERVER['REQUEST_METHOD'] . "\n";
+$logEntry .= "POST Data: " . print_r($_POST, true) . "\n";
+$logEntry .= "FILES Data: " . print_r($_FILES, true) . "\n";
+file_put_contents($logFile, $logEntry, FILE_APPEND);
 
 require_once 'db_connect.php';
 

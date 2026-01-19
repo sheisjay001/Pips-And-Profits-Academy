@@ -719,15 +719,36 @@
                     e.preventDefault();
                     
                     const fd = new FormData(addCourseForm);
-                    const res = await fetch('api/courses.php', { method: 'POST', body: fd });
-                    const data = await res.json();
-                    if (data && data.success) {
-                        alert('Course Added Successfully!');
-                        addCourseForm.reset();
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('addCourseModal'));
-                        modal.hide();
-                    } else {
-                        alert((data && data.message) || 'Failed to add course');
+                    try {
+                        const res = await fetch('api/courses.php', { method: 'POST', body: fd });
+                        // Clone the response to read text if JSON fails
+                        const resClone = res.clone();
+                        try {
+                            const data = await res.json();
+                            if (data && data.success) {
+                                alert('Course Added Successfully!');
+                                addCourseForm.reset();
+                                const modalElement = document.getElementById('addCourseModal');
+                                const modal = bootstrap.Modal.getInstance(modalElement);
+                                if (modal) {
+                                    modal.hide();
+                                } else {
+                                    // Fallback if getInstance returns null (sometimes happens if modal hidden/shown programmatically)
+                                    const newModal = new bootstrap.Modal(modalElement);
+                                    newModal.hide();
+                                }
+                            } else {
+                                console.error('Add Course Failed:', data);
+                                alert('Failed to add course: ' + ((data && data.message) || 'Unknown error'));
+                            }
+                        } catch (jsonError) {
+                            const text = await resClone.text();
+                            console.error('Server returned non-JSON:', text);
+                            alert('Server Error: The server returned an invalid response. Check console for details.');
+                        }
+                    } catch (networkError) {
+                        console.error('Network Error:', networkError);
+                        alert('Network Error: Could not connect to the server.');
                     }
                 });
             }
