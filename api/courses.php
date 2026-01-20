@@ -73,6 +73,42 @@ try {
         $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode($courses);
     } elseif ($method === 'POST') {
+        // Handle Delete Actions
+        if (isset($_POST['action'])) {
+            if ($_POST['action'] === 'delete') {
+                $id = $_POST['id'] ?? null;
+                if (!$id) {
+                    echo json_encode(['success' => false, 'message' => 'Course ID required']);
+                    exit;
+                }
+                // Delete related progress first
+                try {
+                    $conn->prepare("DELETE FROM user_progress WHERE course_id = ?")->execute([$id]);
+                    $stmt = $conn->prepare("DELETE FROM courses WHERE id = ?");
+                    if ($stmt->execute([$id])) {
+                        echo json_encode(['success' => true]);
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Failed to delete course']);
+                    }
+                } catch (PDOException $e) {
+                    echo json_encode(['success' => false, 'message' => 'Database Error: ' . $e->getMessage()]);
+                }
+                exit;
+            } elseif ($_POST['action'] === 'delete_all') {
+                try {
+                    // Disable foreign key checks temporarily if needed, but safe order is better
+                    $conn->exec("DELETE FROM user_progress");
+                    $conn->exec("DELETE FROM courses");
+                    // Reset Auto Increment (optional but good for clean slate)
+                    // $conn->exec("ALTER TABLE courses AUTO_INCREMENT = 1"); 
+                    echo json_encode(['success' => true]);
+                } catch (PDOException $e) {
+                    echo json_encode(['success' => false, 'message' => 'Database Error: ' . $e->getMessage()]);
+                }
+                exit;
+            }
+        }
+
         $title = $_POST['title'] ?? '';
         $description = $_POST['desc'] ?? '';
         $level = $_POST['level'] ?? 'Beginner';

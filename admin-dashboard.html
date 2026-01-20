@@ -327,14 +327,34 @@
             <div id="courses-section" class="section container-fluid p-4 d-none">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2 class="fw-bold text-dark">Courses</h2>
-                    <button class="btn btn-purple rounded-pill" data-bs-toggle="modal" data-bs-target="#addCourseModal">
-                        <i class="fa-solid fa-plus me-1"></i> Add Course
-                    </button>
+                    <div>
+                        <button class="btn btn-outline-danger rounded-pill me-2" onclick="deleteAllCourses()">
+                            <i class="fa-solid fa-trash me-1"></i> Delete All
+                        </button>
+                        <button class="btn btn-purple rounded-pill" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                            <i class="fa-solid fa-plus me-1"></i> Add Course
+                        </button>
+                    </div>
                 </div>
-                <div class="row g-4" id="admin-courses-list">
-                    <!-- Courses will be loaded here dynamically if needed, or just placeholder -->
-                    <div class="col-12">
-                        <div class="alert alert-info">Course management enabled. Use 'Add Course' to upload new content.</div>
+                
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="border-0 ps-4">Title</th>
+                                        <th class="border-0">Level</th>
+                                        <th class="border-0">Price</th>
+                                        <th class="border-0">Created</th>
+                                        <th class="border-0">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminCoursesTableBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -707,6 +727,8 @@
                 renderTickets();
             } else if (sectionId === 'signals') {
                 renderAdminSignals();
+            } else if (sectionId === 'courses') {
+                renderAdminCourses();
             }
         }
 
@@ -792,6 +814,27 @@
                 });
             }
 
+                            // Refresh lists
+                            renderAdminSignals();
+                            updateStats();
+                        } else {
+                            alert('Failed to post signal: ' + (res.message || 'Unknown error'));
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('Error posting signal');
+                    }
+                });
+            }
+
+            // Handle Add Course Success Refresh
+            const addCourseForm = document.getElementById('addCourseForm');
+            // ... (existing listener logic is good, but we need to call renderAdminCourses on success)
+            // Actually, we need to modify the existing listener or just ensure we call it.
+            // Let's rely on the user navigating or we can hook into the existing listener if we could.
+            // Re-reading the listener logic above, it resets form and hides modal.
+            // I will inject the renderAdminCourses call into the existing listener block using search/replace separately if needed.
+            // Or better, let's just define the function and update the listener block.
             // Handle Quick Signal Post
             const signalForm = document.getElementById('quickSignalForm');
             if (signalForm) {
@@ -823,6 +866,79 @@
                 });
             }
         });
+
+        // --- Course Management ---
+        async function renderAdminCourses() {
+            const courses = await App.getCourses();
+            const tbody = document.getElementById('adminCoursesTableBody');
+            if (!tbody) return;
+
+            if (courses.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No courses found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = courses.map(c => `
+                <tr>
+                    <td class="ps-4 fw-bold">
+                        <div class="d-flex align-items-center">
+                            <img src="${c.thumbnail_url || 'images/course-placeholder.jpg'}" class="rounded me-2" width="40" height="30" style="object-fit: cover;">
+                            ${c.title}
+                        </div>
+                    </td>
+                    <td><span class="badge bg-info text-dark">${c.level}</span></td>
+                    <td>${c.price > 0 ? '$'+c.price : 'Free'}</td>
+                    <td class="text-muted small">${new Date(c.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-light text-danger" onclick="deleteCourse(${c.id})"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.deleteCourse = async function(id) {
+            if(confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
+                const fd = new FormData();
+                fd.append('action', 'delete');
+                fd.append('id', id);
+                
+                try {
+                    const res = await fetch('api/courses.php', { method: 'POST', body: fd });
+                    const data = await res.json();
+                    if (data.success) {
+                        renderAdminCourses();
+                    } else {
+                        alert('Failed to delete course: ' + data.message);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert('Error deleting course');
+                }
+            }
+        };
+
+        window.deleteAllCourses = async function() {
+            if(confirm('WARNING: Are you sure you want to delete ALL courses? This will remove all course content and user progress. This action cannot be undone.')) {
+                if(confirm('Double check: Delete EVERYTHING?')) {
+                    const fd = new FormData();
+                    fd.append('action', 'delete_all');
+                    
+                    try {
+                        const res = await fetch('api/courses.php', { method: 'POST', body: fd });
+                        const data = await res.json();
+                        if (data.success) {
+                            alert('All courses have been deleted.');
+                            renderAdminCourses();
+                        } else {
+                            alert('Failed to delete courses: ' + data.message);
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Error deleting courses');
+                    }
+                }
+            }
+        };
 
         // --- Signal Management ---
         async function renderAdminSignals() {
