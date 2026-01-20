@@ -184,33 +184,12 @@
 
                     <!-- Course Progress -->
                     <div class="col-lg-4">
-                        <div class="card border-0 shadow-sm">
+                        <div class="card border-0 shadow-sm" id="dashboardCourseCard" style="display: none;">
                             <div class="card-header bg-white border-0 py-3">
                                 <h5 class="fw-bold mb-0">Continue Learning</h5>
                             </div>
-                            <div class="card-body">
-                                <div class="mb-4">
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <span class="fw-bold small">Technical Analysis Masterclass</span>
-                                        <span class="text-muted small">75%</span>
-                                    </div>
-                                    <div class="progress" style="height: 8px;">
-                                        <div class="progress-bar bg-purple" role="progressbar" style="width: 75%"></div>
-                                    </div>
-                                    <a href="courses.html" class="btn btn-link text-decoration-none text-purple p-0 mt-2 small">Resume Module 4: Candlestick Patterns</a>
-                                </div>
-                                <div class="mb-4">
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <span class="fw-bold small">Risk Management 101</span>
-                                        <span class="text-muted small">30%</span>
-                                    </div>
-                                    <div class="progress" style="height: 8px;">
-                                        <div class="progress-bar bg-info" role="progressbar" style="width: 30%"></div>
-                                    </div>
-                                </div>
-                                <div class="d-grid">
-                                    <a href="courses.html" class="btn btn-outline-purple btn-sm">View All Courses</a>
-                                </div>
+                            <div class="card-body" id="continueLearningContainer">
+                                <!-- Dynamic Content -->
                             </div>
                         </div>
 
@@ -333,6 +312,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             App.checkAuth();
             await renderSignals();
+            await renderDashboardCourses();
             await updateStats();
             updateUserInfo();
             const user = App.getCurrentUser();
@@ -430,6 +410,48 @@
                     `;
                     tbody.innerHTML += row;
                 });
+            }
+        }
+
+        async function renderDashboardCourses() {
+            try {
+                const courses = await App.getCourses();
+                const card = document.getElementById('dashboardCourseCard');
+                const container = document.getElementById('continueLearningContainer');
+                
+                if (!courses || courses.length === 0) {
+                    card.style.display = 'none';
+                    return;
+                }
+
+                // If user has courses, show the first one or a summary
+                // For now, let's just show a "Browse Courses" if they have courses but no progress
+                // Or if we had progress data, we would show that. 
+                // Since we don't have progress tracking yet, let's just show the latest course.
+                
+                const latestCourse = courses[0];
+                card.style.display = 'block';
+                
+                container.innerHTML = `
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-bold small">${latestCourse.title}</span>
+                            <span class="text-muted small">0%</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-purple" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <a href="lesson.html?id=${latestCourse.id}" class="btn btn-link text-decoration-none text-purple p-0 mt-2 small">Start Course</a>
+                    </div>
+                    <div class="d-grid">
+                        <a href="courses.html" class="btn btn-outline-purple btn-sm">View All Courses</a>
+                    </div>
+                `;
+            } catch (e) {
+                console.error('Error rendering dashboard courses:', e);
+                // Hide card on error
+                const card = document.getElementById('dashboardCourseCard');
+                if(card) card.style.display = 'none';
             }
         }
 
