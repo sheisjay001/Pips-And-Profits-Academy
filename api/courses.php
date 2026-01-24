@@ -106,6 +106,74 @@ try {
                     echo json_encode(['success' => false, 'message' => 'Database Error: ' . $e->getMessage()]);
                 }
                 exit;
+            } elseif ($_POST['action'] === 'edit') {
+                $id = $_POST['id'] ?? null;
+                if (!$id) {
+                    echo json_encode(['success' => false, 'message' => 'Course ID required']);
+                    exit;
+                }
+                
+                $title = $_POST['title'] ?? '';
+                $description = $_POST['desc'] ?? '';
+                $level = $_POST['level'] ?? 'Beginner';
+                $price = $_POST['price'] ?? 0.00;
+                $videoPathRel = $_POST['video_url'] ?? '';
+
+                // Optional: Handle Thumbnail Update (only if new file/url provided)
+                // If not provided, we keep existing. But here we need to know the existing one if we don't update it?
+                // SQL UPDATE will only change fields we specify.
+                
+                $updateFields = [
+                    'title' => $title,
+                    'description' => $description,
+                    'level' => $level,
+                    'price' => $price,
+                    'video_path' => $videoPathRel
+                ];
+                
+                // Handle Thumbnail Upload if present
+                $uploadBase = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'uploads';
+                $thumbDir = $uploadBase . DIRECTORY_SEPARATOR . 'thumbnails';
+                if (!is_dir($thumbDir)) { @mkdir($thumbDir, 0777, true); }
+                
+                $thumbPathRel = null;
+                if (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === UPLOAD_ERR_OK) {
+                     // Upload logic same as create
+                     $ext = pathinfo($_FILES['thumbnail']['name'], PATHINFO_EXTENSION);
+                     $filename = uniqid('thumb_') . '.' . strtolower($ext);
+                     $dest = $thumbDir . DIRECTORY_SEPARATOR . $filename;
+                     if (move_uploaded_file($_FILES['thumbnail']['tmp_name'], $dest)) {
+                         $thumbPathRel = 'uploads/thumbnails/' . $filename;
+                     }
+                } elseif (isset($_POST['thumbnail_url']) && !empty($_POST['thumbnail_url'])) {
+                    $thumbPathRel = $_POST['thumbnail_url'];
+                }
+                
+                if ($thumbPathRel) {
+                    $updateFields['thumbnail_url'] = $thumbPathRel;
+                }
+                
+                // Build SQL
+                $setPart = [];
+                $params = [];
+                foreach ($updateFields as $key => $val) {
+                    $setPart[] = "$key = ?";
+                    $params[] = $val;
+                }
+                $params[] = $id; // For WHERE clause
+                
+                try {
+                    $sql = "UPDATE courses SET " . implode(', ', $setPart) . " WHERE id = ?";
+                    $stmt = $conn->prepare($sql);
+                    if ($stmt->execute($params)) {
+                        echo json_encode(['success' => true, 'message' => 'Course updated successfully']);
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Failed to update course']);
+                    }
+                } catch (PDOException $e) {
+                    echo json_encode(['success' => false, 'message' => 'Database Error: ' . $e->getMessage()]);
+                }
+                exit;
             }
         }
 

@@ -542,6 +542,55 @@
         </div>
     </div>
 
+    <!-- Edit Course Modal -->
+    <div class="modal fade" id="editCourseModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Edit Course</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editCourseForm">
+                        <input type="hidden" name="action" value="edit">
+                        <input type="hidden" name="id" id="editCourseId">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Course Title</label>
+                            <input type="text" class="form-control" name="title" id="editCourseTitle" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Level</label>
+                            <select class="form-select" name="level" id="editCourseLevel">
+                                <option>Beginner</option>
+                                <option>Intermediate</option>
+                                <option>Advanced</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">New Thumbnail Image (Optional)</label>
+                            <input type="file" class="form-control" name="thumbnail" accept="image/*">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">OR New Thumbnail URL</label>
+                            <input type="url" class="form-control" name="thumbnail_url" id="editCourseThumbUrl" placeholder="https://example.com/image.jpg">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Course Video URL</label>
+                            <input type="url" class="form-control" name="video_url" id="editCourseVideoUrl" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Description</label>
+                            <textarea class="form-control" name="desc" id="editCourseDesc" rows="3" required></textarea>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-purple">Update Course</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- New Signal Modal -->
     <div class="modal fade" id="newSignalModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
@@ -764,6 +813,7 @@
                                     const newModal = new bootstrap.Modal(modalElement);
                                     newModal.hide();
                                 }
+                                renderAdminCourses(); // Refresh list
                             } else {
                                 console.error('Add Course Failed:', data);
                                 alert('Failed to add course: ' + ((data && data.message) || 'Unknown error'));
@@ -835,6 +885,31 @@
             // Re-reading the listener logic above, it resets form and hides modal.
             // I will inject the renderAdminCourses call into the existing listener block using search/replace separately if needed.
             // Or better, let's just define the function and update the listener block.
+            // Handle Edit Course Form
+            const editCourseForm = document.getElementById('editCourseForm');
+            if (editCourseForm) {
+                editCourseForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const fd = new FormData(editCourseForm);
+                    
+                    try {
+                        const res = await fetch('api/courses.php', { method: 'POST', body: fd });
+                        const data = await res.json();
+                        if (data.success) {
+                            alert('Course Updated Successfully!');
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('editCourseModal'));
+                            modal.hide();
+                            renderAdminCourses();
+                        } else {
+                            alert('Failed to update course: ' + data.message);
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Error updating course');
+                    }
+                });
+            }
+
             // Handle Quick Signal Post
             const signalForm = document.getElementById('quickSignalForm');
             if (signalForm) {
@@ -890,11 +965,28 @@
                     <td>${c.price > 0 ? '$'+c.price : 'Free'}</td>
                     <td class="text-muted small">${new Date(c.created_at).toLocaleDateString()}</td>
                     <td>
+                        <button class="btn btn-sm btn-light text-primary me-1" onclick="openEditCourseModal(${c.id})"><i class="fa-solid fa-pen"></i></button>
                         <button class="btn btn-sm btn-light text-danger" onclick="deleteCourse(${c.id})"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
             `).join('');
         }
+        
+        window.openEditCourseModal = async function(id) {
+            const courses = await App.getCourses();
+            const course = courses.find(c => c.id == id);
+            if (!course) return;
+            
+            document.getElementById('editCourseId').value = course.id;
+            document.getElementById('editCourseTitle').value = course.title;
+            document.getElementById('editCourseLevel').value = course.level;
+            document.getElementById('editCourseVideoUrl').value = course.video_path || '';
+            document.getElementById('editCourseDesc').value = course.description;
+            // document.getElementById('editCourseThumbUrl').value = course.thumbnail_url; // Optional: Pre-fill URL if it's a URL
+            
+            const modal = new bootstrap.Modal(document.getElementById('editCourseModal'));
+            modal.show();
+        };
 
         window.deleteCourse = async function(id) {
             if(confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
