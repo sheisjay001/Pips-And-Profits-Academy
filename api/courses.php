@@ -92,7 +92,19 @@ try {
             exit;
         }
 
-        $stmt = $conn->query("SELECT * FROM courses ORDER BY created_at DESC");
+        // Fetch courses with progress if user is logged in
+        if (isset($_SESSION['user_id'])) {
+            $user_id = $_SESSION['user_id'];
+            $sql = "SELECT c.*, COALESCE(up.progress_percentage, 0) as progress 
+                    FROM courses c 
+                    LEFT JOIN user_progress up ON c.id = up.course_id AND up.user_id = ? 
+                    ORDER BY c.created_at DESC";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$user_id]);
+        } else {
+            $stmt = $conn->query("SELECT *, 0 as progress FROM courses ORDER BY created_at DESC");
+        }
+        
         $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode($courses);
     } elseif ($method === 'POST') {
