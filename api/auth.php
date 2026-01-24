@@ -208,11 +208,12 @@ if ($action === 'register') {
     }
 } elseif ($action === 'login') {
     $now = time();
-    $bucket = $_SESSION['login_bucket'] ?? ['count' => 0, 'reset' => $now + 900];
+    // Rate limiting: 50 attempts per 5 minutes for development convenience
+    $bucket = $_SESSION['login_bucket'] ?? ['count' => 0, 'reset' => $now + 300];
     if ($now > ($bucket['reset'] ?? $now)) {
-        $bucket = ['count' => 0, 'reset' => $now + 900];
+        $bucket = ['count' => 0, 'reset' => $now + 300];
     }
-    if ($bucket['count'] >= 5) {
+    if ($bucket['count'] >= 50) {
         echo json_encode(['success' => false, 'message' => 'Too many attempts. Please wait and try again.']);
         exit;
     }
