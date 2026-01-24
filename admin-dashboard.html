@@ -864,27 +864,6 @@
                 });
             }
 
-                            // Refresh lists
-                            renderAdminSignals();
-                            updateStats();
-                        } else {
-                            alert('Failed to post signal: ' + (res.message || 'Unknown error'));
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        alert('Error posting signal');
-                    }
-                });
-            }
-
-            // Handle Add Course Success Refresh
-            const addCourseForm = document.getElementById('addCourseForm');
-            // ... (existing listener logic is good, but we need to call renderAdminCourses on success)
-            // Actually, we need to modify the existing listener or just ensure we call it.
-            // Let's rely on the user navigating or we can hook into the existing listener if we could.
-            // Re-reading the listener logic above, it resets form and hides modal.
-            // I will inject the renderAdminCourses call into the existing listener block using search/replace separately if needed.
-            // Or better, let's just define the function and update the listener block.
             // Handle Edit Course Form
             const editCourseForm = document.getElementById('editCourseForm');
             if (editCourseForm) {
