@@ -65,7 +65,7 @@
                             </div>
                         </div>
                         <div class="d-grid">
-                            <button class="btn btn-success py-2">Mark as Complete</button>
+                            <button class="btn btn-success py-2" id="markCompleteBtn">Mark as Complete</button>
                         </div>
                     </div>
                 </div>
@@ -170,6 +170,61 @@
                             </div>
                         </div>
                     `;
+                }
+
+                // Check Progress
+                try {
+                    const response = await fetch(`api/courses.php?action=check_progress&course_id=${courseId}`);
+                    const data = await response.json();
+                    if (data.success && data.progress == 100) {
+                        const btn = document.getElementById('markCompleteBtn');
+                        if (btn) {
+                            btn.textContent = 'Completed';
+                            btn.disabled = true;
+                            btn.classList.remove('btn-success');
+                            btn.classList.add('btn-secondary');
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to check progress', e);
+                }
+
+                // Handle Mark as Complete
+                const markCompleteBtn = document.getElementById('markCompleteBtn');
+                if (markCompleteBtn) {
+                    markCompleteBtn.addEventListener('click', async function() {
+                        const btn = this;
+                        const originalText = btn.textContent;
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                        
+                        try {
+                            const formData = new FormData();
+                            formData.append('action', 'mark_complete');
+                            formData.append('course_id', courseId);
+                            
+                            const response = await fetch('api/courses.php', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const data = await response.json();
+                            
+                            if (data.success) {
+                                btn.textContent = 'Completed';
+                                btn.classList.remove('btn-success');
+                                btn.classList.add('btn-secondary');
+                            } else {
+                                alert(data.message || 'Failed to mark as complete');
+                                btn.disabled = false;
+                                btn.textContent = originalText;
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            alert('Error connecting to server');
+                            btn.disabled = false;
+                            btn.textContent = originalText;
+                        }
+                    });
                 }
             }
         }

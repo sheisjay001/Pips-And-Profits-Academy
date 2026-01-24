@@ -3,6 +3,11 @@
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
+// Start session to access user_id
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Custom error handler to catch warnings/notices and return JSON
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
     // Only handle if error_reporting respects this level
@@ -69,6 +74,24 @@ try {
     $method = $_SERVER['REQUEST_METHOD'];
 
     if ($method === 'GET') {
+        // Handle Progress Check
+        if (isset($_GET['action']) && $_GET['action'] === 'check_progress') {
+            $course_id = $_GET['course_id'] ?? 0;
+            $user_id = $_SESSION['user_id'] ?? 0;
+            
+            if (!$user_id) {
+                echo json_encode(['success' => false, 'message' => 'Not logged in']);
+                exit;
+            }
+            
+            $stmt = $conn->prepare("SELECT progress_percentage FROM user_progress WHERE user_id = ? AND course_id = ?");
+            $stmt->execute([$user_id, $course_id]);
+            $progress = $stmt->fetchColumn();
+            
+            echo json_encode(['success' => true, 'progress' => $progress ?: 0]);
+            exit;
+        }
+
         $stmt = $conn->query("SELECT * FROM courses ORDER BY created_at DESC");
         $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode($courses);
@@ -106,14 +129,36 @@ try {
                     echo json_encode(['success' => false, 'message' => 'Database Error: ' . $e->getMessage()]);
                 }
                 exit;
-            } elseif ($_POST['action'] === 'edit') {
-                $id = $_POST['id'] ?? null;
-                if (!$id) {
-                    echo json_encode(['success' => false, 'message' => 'Course ID required']);
-                    exit;
+            } elseif ($_POST['action'] === 'mark_complete') {
+                $course_id = $_POST['course_id'] ?? 0;
+                $user_id = $_SESSION['user_id'] ?? 0;
+                
+                if (!$user_id) {
+                     echo json_encode(['success' => false, 'message' => 'Not logged in']);
+                     exit;
                 }
                 
-                $title = $_POST['title'] ?? '';
+                try {
+                    // Check if exists
+                    $stmt = $conn->prepare("SELECT id FROM user_progress WHERE user_id = ? AND course_id = ?");
+                    $stmt->execute([$user_id, $course_id]);
+                    
+                    if ($stmt->fetch()) {
+                        $stmt = $conn->prepare("UPDATE user_progress SET progress_percentage = 100 WHERE user_id = ? AND course_id = ?");
+                        $stmt->execute([$user_id, $course_id]);
+                    } else {
+                        $stmt = $conn->prepare("INSERT INTO user_progress (user_id, course_id, progress_percentage) VALUES (?, ?, 100)");
+                        $stmt->execute([$user_id, $course_id]);
+                    }
+                    echo json_encode(['success' => true]);
+                } catch (PDOException $e) {
+                    echo json_encode(['success' => false, 'message' => 'Database Error: ' . $e->getMessage()]);
+                }
+                exit;
+            }
+        }
+
+        $title = $_POST['title'] ?? '';
                 $description = $_POST['desc'] ?? '';
                 $level = $_POST['level'] ?? 'Beginner';
                 $price = $_POST['price'] ?? 0.00;
