@@ -517,13 +517,8 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">Thumbnail Image (Upload)</label>
-                            <input type="file" class="form-control" name="thumbnail" id="addCourseThumbFile" accept="image/*">
-                            <div class="form-text text-muted">Note: File uploads may not work on some cloud servers (like Vercel). Use URL below if upload fails.</div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">OR Thumbnail Image URL</label>
-                            <input type="url" class="form-control" name="thumbnail_url" id="addCourseThumbUrl" placeholder="https://example.com/image.jpg">
+                            <label class="form-label small fw-bold">Thumbnail Image</label>
+                            <input type="file" class="form-control" name="thumbnail" id="addCourseThumbFile" accept="image/*" required>
                         </div>
                         <div class="mb-3 text-center">
                              <img id="addCoursePreview" src="" class="img-fluid rounded d-none" style="max-height: 150px; object-fit: cover;">
@@ -572,10 +567,6 @@
                         <div class="mb-3">
                             <label class="form-label small fw-bold">New Thumbnail Image (Optional)</label>
                             <input type="file" class="form-control" name="thumbnail" id="editCourseThumbFile" accept="image/*">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">OR New Thumbnail URL</label>
-                            <input type="url" class="form-control" name="thumbnail_url" id="editCourseThumbUrl" placeholder="https://example.com/image.jpg">
                         </div>
                         <div class="mb-3 text-center">
                              <img id="editCoursePreview" src="" class="img-fluid rounded d-none" style="max-height: 150px; object-fit: cover;">
@@ -795,9 +786,8 @@
             renderAdminSignals(); // Render signals list
             
             // Setup Image Preview Logic
-            function setupPreview(fileId, urlId, imgId) {
+            function setupPreview(fileId, imgId) {
                 const fileInput = document.getElementById(fileId);
-                const urlInput = document.getElementById(urlId);
                 const imgElem = document.getElementById(imgId);
 
                 function update() {
@@ -808,20 +798,20 @@
                             imgElem.classList.remove('d-none');
                         };
                         reader.readAsDataURL(fileInput.files[0]);
-                    } else if (urlInput && urlInput.value) {
-                        imgElem.src = urlInput.value;
-                        imgElem.classList.remove('d-none');
                     } else {
-                        imgElem.classList.add('d-none');
+                        // Keep existing image if in edit mode, or hide if add mode
+                        // For now, if no file selected, we don't clear the preview immediately 
+                        // because in edit mode it might show the current image.
+                        // But if we want to be strict:
+                        // imgElem.classList.add('d-none');
                     }
                 }
 
                 if (fileInput) fileInput.addEventListener('change', update);
-                if (urlInput) urlInput.addEventListener('input', update);
             }
 
-            setupPreview('addCourseThumbFile', 'addCourseThumbUrl', 'addCoursePreview');
-            setupPreview('editCourseThumbFile', 'editCourseThumbUrl', 'editCoursePreview');
+            setupPreview('addCourseThumbFile', 'addCoursePreview');
+            setupPreview('editCourseThumbFile', 'editCoursePreview');
             
             // Handle Add Course
             const addCourseForm = document.getElementById('addCourseForm');
@@ -997,7 +987,7 @@
             document.getElementById('editCourseLevel').value = course.level;
             document.getElementById('editCourseVideoUrl').value = course.video_path || '';
             document.getElementById('editCourseDesc').value = course.description;
-            document.getElementById('editCourseThumbUrl').value = course.thumbnail_url || '';
+            // document.getElementById('editCourseThumbUrl').value = course.thumbnail_url || '';
             
             // Set Preview
             const preview = document.getElementById('editCoursePreview');

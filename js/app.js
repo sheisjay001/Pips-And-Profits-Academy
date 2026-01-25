@@ -26,7 +26,8 @@ const App = {
     async api(endpoint, method = 'GET', data = null, retryCount = 0) {
         const options = {
             method,
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
         };
         if (data) options.body = JSON.stringify(data);
         try {

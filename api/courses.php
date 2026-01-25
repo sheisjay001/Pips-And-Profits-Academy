@@ -3,8 +3,16 @@
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
-// Start session to access user_id
+// Start session with consistent cookie parameters
 if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'domain' => '',
+        'secure' => isset($_SERVER['HTTPS']),
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
     session_start();
 }
 
@@ -45,9 +53,19 @@ register_shutdown_function(function() {
 });
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+
+// CORS Handling
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if ($origin) {
+    header("Access-Control-Allow-Origin: $origin");
+    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Max-Age: 86400');
+} else {
+    header('Access-Control-Allow-Origin: *');
+}
+
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
 
 try {
     if (php_sapi_name() === 'cli') {
@@ -196,11 +214,16 @@ try {
                  $ext = pathinfo($_FILES['thumbnail']['name'], PATHINFO_EXTENSION);
                  $filename = uniqid('thumb_') . '.' . strtolower($ext);
                  $dest = $thumbDir . DIRECTORY_SEPARATOR . $filename;
-                 if (move_uploaded_file($_FILES['thumbnail']['tmp_name'], $dest)) {
+                 
+                 if (@move_uploaded_file($_FILES['thumbnail']['tmp_name'], $dest)) {
                      $thumbPathRel = 'uploads/thumbnails/' . $filename;
+                 } else {
+                     $msg = "Failed to save uploaded file.";
+                     if (!is_writable($thumbDir)) {
+                          $msg = "Server file system appears read-only. Upload failed.";
+                     }
+                     throw new Exception($msg);
                  }
-            } elseif (isset($_POST['thumbnail_url']) && !empty($_POST['thumbnail_url'])) {
-                $thumbPathRel = $_POST['thumbnail_url'];
             }
             
             if ($thumbPathRel) {
@@ -268,21 +291,13 @@ try {
                 if (@move_uploaded_file($_FILES['thumbnail']['tmp_name'], $dest)) {
                     $thumbPathRel = 'uploads/thumbnails/' . $filename;
                 } else {
-                    // Upload failed. Fallback to URL if present.
-                    if (isset($_POST['thumbnail_url']) && !empty($_POST['thumbnail_url'])) {
-                        $thumbPathRel = $_POST['thumbnail_url'];
-                    } else {
-                        $msg = "Failed to save uploaded file.";
-                        if (!is_writable($thumbDir)) {
-                             $msg = "Server file system appears read-only. Please use the Image URL option instead.";
-                        }
-                        throw new Exception($msg);
+                    $msg = "Failed to save uploaded file.";
+                    if (!is_writable($thumbDir)) {
+                         $msg = "Server file system appears read-only. Upload failed.";
                     }
+                    throw new Exception($msg);
                 }
             } 
-            elseif (isset($_POST['thumbnail_url']) && !empty($_POST['thumbnail_url'])) {
-                $thumbPathRel = $_POST['thumbnail_url'];
-            }
             elseif (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] !== UPLOAD_ERR_NO_FILE) {
                  throw new Exception("Upload failed with error code: " . $_FILES['thumbnail']['error']);
             }
