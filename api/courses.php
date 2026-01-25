@@ -5,13 +5,16 @@ error_reporting(E_ALL);
 
 // Start session with consistent cookie parameters
 if (session_status() === PHP_SESSION_NONE) {
+    // Determine if we are using HTTPS
+    $isHttps = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+
     session_set_cookie_params([
         'lifetime' => 0,
         'path' => '/',
         'domain' => '',
-        'secure' => true, // Required for SameSite=None
+        'secure' => $isHttps, // True if HTTPS, False otherwise
         'httponly' => true,
-        'samesite' => 'None' // Required for cross-site (different ports)
+        'samesite' => $isHttps ? 'None' : 'Lax' // None for HTTPS (Cross-Site), Lax for HTTP (Same-Site/Localhost)
     ]);
     session_start();
 }
@@ -79,8 +82,14 @@ try {
     }
 
     // DEBUG: Log all requests
-    $logFile = __DIR__ . '/debug_courses.txt';
+    // Use uploads directory as it's known to be writable
+    $uploadBase = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'uploads';
+    if (!is_dir($uploadBase)) { @mkdir($uploadBase, 0777, true); }
+    
+    $logFile = $uploadBase . DIRECTORY_SEPARATOR . 'debug_courses.txt';
+    
     $logEntry = date('Y-m-d H:i:s') . " - Method: " . $_SERVER['REQUEST_METHOD'] . "\n";
+    $logEntry .= "Is HTTPS: " . ($isHttps ? 'Yes' : 'No') . "\n";
     $logEntry .= "Session ID: " . session_id() . "\n";
     $logEntry .= "Session User ID: " . ($_SESSION['user_id'] ?? 'Not Set') . "\n";
     $logEntry .= "Cookie Data: " . print_r($_COOKIE, true) . "\n";

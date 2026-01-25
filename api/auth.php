@@ -19,13 +19,16 @@ header('X-Frame-Options: SAMEORIGIN');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header("Content-Security-Policy: default-src 'self' https: data:; img-src 'self' https: data:; script-src 'self' https:; style-src 'self' https: 'unsafe-inline'; connect-src 'self' https:; frame-ancestors 'self';");
 
+// Determine if we are using HTTPS
+$isHttps = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+
 session_set_cookie_params([
     'lifetime' => 0,
     'path' => '/',
     'domain' => '',
-    'secure' => true, // Required for SameSite=None
+    'secure' => $isHttps, // True if HTTPS, False otherwise
     'httponly' => true,
-    'samesite' => 'None' // Required for cross-site (different ports)
+    'samesite' => $isHttps ? 'None' : 'Lax' // None for HTTPS (Cross-Site), Lax for HTTP (Same-Site/Localhost)
 ]);
 session_start();
 
