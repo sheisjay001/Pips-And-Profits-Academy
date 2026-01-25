@@ -193,27 +193,31 @@ try {
                 exit;
             }
 
-            $title = $_POST['title'] ?? '';
-            $description = $_POST['desc'] ?? '';
-            $level = $_POST['level'] ?? 'Beginner';
-            $price = $_POST['price'] ?? 0.00;
-            $videoPathRel = $_POST['video_url'] ?? '';
-
-            $updateFields = [
-                'title' => $title,
-                'description' => $description,
-                'level' => $level,
-                'price' => $price,
-                'video_path' => $videoPathRel
+            // Define allowed fields and only update if they are provided in the POST request
+            // This prevents overwriting existing data with empty values if a field is missing
+            $allowedFields = [
+                'title' => 'title',
+                'desc' => 'description',
+                'level' => 'level',
+                'price' => 'price',
+                'video_url' => 'video_path'
             ];
-            
-            // Build SQL
+
             $setPart = [];
             $params = [];
-            foreach ($updateFields as $key => $val) {
-                $setPart[] = "$key = ?";
-                $params[] = $val;
+
+            foreach ($allowedFields as $postKey => $dbCol) {
+                if (isset($_POST[$postKey])) {
+                    $setPart[] = "$dbCol = ?";
+                    $params[] = $_POST[$postKey];
+                }
             }
+            
+            if (empty($setPart)) {
+                 echo json_encode(['success' => false, 'message' => 'No fields to update']);
+                 exit;
+            }
+
             $params[] = $id;
             
             try {
