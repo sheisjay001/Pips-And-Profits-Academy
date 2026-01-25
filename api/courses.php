@@ -6,7 +6,8 @@ error_reporting(E_ALL);
 // Start session with consistent cookie parameters
 if (session_status() === PHP_SESSION_NONE) {
     // Determine if we are using HTTPS
-    $isHttps = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+    $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') 
+               || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
 
     session_set_cookie_params([
         'lifetime' => 0,
@@ -82,22 +83,12 @@ try {
     }
 
     // DEBUG: Log all requests
-    // Use uploads directory as it's known to be writable
-    $uploadBase = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'uploads';
-    if (!is_dir($uploadBase)) { @mkdir($uploadBase, 0777, true); }
+    $logEntry = "DEBUG COURSES API - Method: " . $_SERVER['REQUEST_METHOD'] . " | ";
+    $logEntry .= "Is HTTPS: " . ($isHttps ? 'Yes' : 'No') . " | ";
+    $logEntry .= "Session ID: " . session_id() . " | ";
+    $logEntry .= "User ID: " . ($_SESSION['user_id'] ?? 'Not Set');
     
-    $logFile = $uploadBase . DIRECTORY_SEPARATOR . 'debug_courses.txt';
-    
-    $logEntry = date('Y-m-d H:i:s') . " - Method: " . $_SERVER['REQUEST_METHOD'] . "\n";
-    $logEntry .= "Is HTTPS: " . ($isHttps ? 'Yes' : 'No') . "\n";
-    $logEntry .= "Session ID: " . session_id() . "\n";
-    $logEntry .= "Session User ID: " . ($_SESSION['user_id'] ?? 'Not Set') . "\n";
-    $logEntry .= "Cookie Data: " . print_r($_COOKIE, true) . "\n";
-    $logEntry .= "POST Data: " . print_r($_POST, true) . "\n";
-    $logEntry .= "FILES Data: " . print_r($_FILES, true) . "\n";
-    
-    // Try to write log, ignore if fails
-    @file_put_contents($logFile, $logEntry, FILE_APPEND);
+    error_log($logEntry);
 
     require_once 'db_connect.php';
 
@@ -274,8 +265,8 @@ try {
                     @mkdir($thumbDir, 0777, true);
                 }
                 
-                // Try to fix permissions if not writable
-                if (!is_writable($thumbDir)) {
+                // Try to fix permissions if not writable (and dir exists)
+                if (is_dir($thumbDir) && !is_writable($thumbDir)) {
                     @chmod($thumbDir, 0777);
                 }
 
@@ -289,11 +280,13 @@ try {
                 } else {
                     $lastError = error_get_last();
                     $errorMsg = $lastError ? $lastError['message'] : 'Unknown error';
-                    $perms = substr(sprintf('%o', fileperms($thumbDir)), -4);
-                    $writable = is_writable($thumbDir) ? 'Yes' : 'No';
-                    $exists = file_exists($thumbDir) ? 'Yes' : 'No';
                     
-                    $uploadWarning = " (Thumbnail upload failed. Debug Info: Dir Exists: $exists, Writable: $writable, Perms: $perms, PHP Error: $errorMsg)";
+                    // Safe debug info
+                    $exists = file_exists($thumbDir) ? 'Yes' : 'No';
+                    $perms = ($exists === 'Yes') ? substr(sprintf('%o', fileperms($thumbDir)), -4) : 'N/A';
+                    $writable = is_writable($thumbDir) ? 'Yes' : 'No';
+                    
+                    $uploadWarning = " (Thumbnail upload skipped: Server file system is read-only or permission denied. Debug: Exists=$exists, Writable=$writable, Perms=$perms)";
                     // Proceed without thumbnail
                 }
             } 
