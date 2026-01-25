@@ -518,7 +518,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Thumbnail Image</label>
-                            <input type="file" class="form-control" name="thumbnail" id="addCourseThumbFile" accept="image/*" required>
+                            <input type="file" class="form-control" name="thumbnail" id="addCourseThumbFile" accept="image/*">
                         </div>
                         <div class="mb-3 text-center">
                              <img id="addCoursePreview" src="" class="img-fluid rounded d-none" style="max-height: 150px; object-fit: cover;">
@@ -820,7 +820,7 @@
                         try {
                             const data = await res.json();
                             if (data && data.success) {
-                                alert('Course Added Successfully!');
+                                alert(data.message || 'Course Added Successfully!');
                                 addCourseForm.reset();
                                 document.getElementById('addCoursePreview').classList.add('d-none');
                                 const modalElement = document.getElementById('addCourseModal');

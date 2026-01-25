@@ -251,10 +251,16 @@ try {
             $thumbPathRel = '';
             
             // Handle File Upload
+            $uploadWarning = '';
             if (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === UPLOAD_ERR_OK) {
                 // Ensure directory exists
                 if (!is_dir($thumbDir)) {
                     @mkdir($thumbDir, 0777, true);
+                }
+                
+                // Try to fix permissions if not writable
+                if (!is_writable($thumbDir)) {
+                    @chmod($thumbDir, 0777);
                 }
 
                 $ext = pathinfo($_FILES['thumbnail']['name'], PATHINFO_EXTENSION);
@@ -265,15 +271,12 @@ try {
                 if (@move_uploaded_file($_FILES['thumbnail']['tmp_name'], $dest)) {
                     $thumbPathRel = 'uploads/thumbnails/' . $filename;
                 } else {
-                    $msg = "Failed to save uploaded file.";
-                    if (!is_writable($thumbDir)) {
-                         $msg = "Server file system appears read-only. Upload failed.";
-                    }
-                    throw new Exception($msg);
+                    $uploadWarning = " (Thumbnail upload failed: Server file system appears read-only or permission denied)";
+                    // Proceed without thumbnail
                 }
             } 
             elseif (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] !== UPLOAD_ERR_NO_FILE) {
-                 throw new Exception("Upload failed with error code: " . $_FILES['thumbnail']['error']);
+                 $uploadWarning = " (Thumbnail upload failed with error code: " . $_FILES['thumbnail']['error'] . ")";
             }
 
             // Ensure video_path column exists
@@ -302,6 +305,7 @@ try {
 
             echo json_encode([
                 'success' => true,
+                'message' => 'Course created successfully.' . $uploadWarning,
                 'course' => [
                     'id' => $courseId,
                     'title' => $title,
