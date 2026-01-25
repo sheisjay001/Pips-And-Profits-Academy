@@ -564,13 +564,7 @@
                                 <option>Advanced</option>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">New Thumbnail Image (Optional)</label>
-                            <input type="file" class="form-control" name="thumbnail" id="editCourseThumbFile" accept="image/*">
-                        </div>
-                        <div class="mb-3 text-center">
-                             <img id="editCoursePreview" src="" class="img-fluid rounded d-none" style="max-height: 150px; object-fit: cover;">
-                        </div>
+
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Course Video URL</label>
                             <input type="url" class="form-control" name="video_url" id="editCourseVideoUrl" required>
@@ -811,7 +805,6 @@
             }
 
             setupPreview('addCourseThumbFile', 'addCoursePreview');
-            setupPreview('editCourseThumbFile', 'editCoursePreview');
             
             // Handle Add Course
             const addCourseForm = document.getElementById('addCourseForm');

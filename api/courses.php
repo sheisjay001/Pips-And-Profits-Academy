@@ -204,32 +204,6 @@ try {
                 'video_path' => $videoPathRel
             ];
             
-            // Handle Thumbnail Upload
-            $uploadBase = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'uploads';
-            $thumbDir = $uploadBase . DIRECTORY_SEPARATOR . 'thumbnails';
-            if (!is_dir($thumbDir)) { @mkdir($thumbDir, 0777, true); }
-            
-            $thumbPathRel = null;
-            if (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === UPLOAD_ERR_OK) {
-                 $ext = pathinfo($_FILES['thumbnail']['name'], PATHINFO_EXTENSION);
-                 $filename = uniqid('thumb_') . '.' . strtolower($ext);
-                 $dest = $thumbDir . DIRECTORY_SEPARATOR . $filename;
-                 
-                 if (@move_uploaded_file($_FILES['thumbnail']['tmp_name'], $dest)) {
-                     $thumbPathRel = 'uploads/thumbnails/' . $filename;
-                 } else {
-                     $msg = "Failed to save uploaded file.";
-                     if (!is_writable($thumbDir)) {
-                          $msg = "Server file system appears read-only. Upload failed.";
-                     }
-                     throw new Exception($msg);
-                 }
-            }
-            
-            if ($thumbPathRel) {
-                $updateFields['thumbnail_url'] = $thumbPathRel;
-            }
-            
             // Build SQL
             $setPart = [];
             $params = [];
