@@ -287,7 +287,13 @@ try {
                 if (@move_uploaded_file($_FILES['thumbnail']['tmp_name'], $dest)) {
                     $thumbPathRel = 'uploads/thumbnails/' . $filename;
                 } else {
-                    $uploadWarning = " (Thumbnail upload failed: Server file system appears read-only or permission denied)";
+                    $lastError = error_get_last();
+                    $errorMsg = $lastError ? $lastError['message'] : 'Unknown error';
+                    $perms = substr(sprintf('%o', fileperms($thumbDir)), -4);
+                    $writable = is_writable($thumbDir) ? 'Yes' : 'No';
+                    $exists = file_exists($thumbDir) ? 'Yes' : 'No';
+                    
+                    $uploadWarning = " (Thumbnail upload failed. Debug Info: Dir Exists: $exists, Writable: $writable, Perms: $perms, PHP Error: $errorMsg)";
                     // Proceed without thumbnail
                 }
             } 
