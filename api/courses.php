@@ -255,7 +255,7 @@ try {
                 exit;
             }
 
-            $thumbPathRel = '';
+            $thumbPathRel = $_POST['thumbnail_url'] ?? '';
             
             // Handle File Upload
             $uploadWarning = '';

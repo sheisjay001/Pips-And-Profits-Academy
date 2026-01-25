@@ -517,8 +517,13 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">Thumbnail Image</label>
+                            <label class="form-label small fw-bold">Thumbnail Image (Upload)</label>
                             <input type="file" class="form-control" name="thumbnail" id="addCourseThumbFile" accept="image/*">
+                            <div class="form-text text-muted">Or paste a URL below if upload fails</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Thumbnail URL (Optional)</label>
+                            <input type="url" class="form-control" name="thumbnail_url" placeholder="https://example.com/image.jpg">
                         </div>
                         <div class="mb-3 text-center">
                              <img id="addCoursePreview" src="" class="img-fluid rounded d-none" style="max-height: 150px; object-fit: cover;">
