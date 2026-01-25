@@ -530,7 +530,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Course Video URL</label>
-                            <input type="url" class="form-control" name="video_url" placeholder="https://example.com/video.mp4" required>
+                            <input type="url" class="form-control" name="video_url" placeholder="https://www.youtube.com/watch?v=..." required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Description</label>
@@ -814,6 +814,32 @@
             // Handle Add Course
             const addCourseForm = document.getElementById('addCourseForm');
             if (addCourseForm) {
+                // Auto-extract YouTube Thumbnail
+                const videoInput = addCourseForm.querySelector('input[name="video_url"]');
+                const thumbUrlInput = addCourseForm.querySelector('input[name="thumbnail_url"]');
+                const preview = document.getElementById('addCoursePreview');
+
+                if (videoInput && thumbUrlInput) {
+                    videoInput.addEventListener('input', function() {
+                        const url = this.value;
+                        // Regex for YouTube URLs (supports shortened, embed, and standard links)
+                        const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+                        const match = url.match(regExp);
+                        const videoId = (match && match[7].length == 11) ? match[7] : false;
+
+                        if (videoId) {
+                            const thumbUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                            thumbUrlInput.value = thumbUrl;
+                            
+                            // Show preview
+                            if (preview) {
+                                preview.src = thumbUrl;
+                                preview.classList.remove('d-none');
+                            }
+                        }
+                    });
+                }
+
                 addCourseForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     
