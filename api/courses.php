@@ -255,25 +255,28 @@ try {
             
             // Handle File Upload
             if (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === UPLOAD_ERR_OK) {
-                if (!is_writable($thumbDir) && !@mkdir($thumbDir, 0777, true)) {
-                     if (isset($_POST['thumbnail_url']) && !empty($_POST['thumbnail_url'])) {
-                         $thumbPathRel = $_POST['thumbnail_url'];
-                     } else {
-                         throw new Exception("Server file system is read-only. Use URL.");
-                     }
+                // Ensure directory exists
+                if (!is_dir($thumbDir)) {
+                    @mkdir($thumbDir, 0777, true);
+                }
+
+                $ext = pathinfo($_FILES['thumbnail']['name'], PATHINFO_EXTENSION);
+                $filename = uniqid('thumb_') . '.' . strtolower($ext);
+                $dest = $thumbDir . DIRECTORY_SEPARATOR . $filename;
+                
+                // Try to move file.
+                if (@move_uploaded_file($_FILES['thumbnail']['tmp_name'], $dest)) {
+                    $thumbPathRel = 'uploads/thumbnails/' . $filename;
                 } else {
-                    $ext = pathinfo($_FILES['thumbnail']['name'], PATHINFO_EXTENSION);
-                    $filename = uniqid('thumb_') . '.' . strtolower($ext);
-                    $dest = $thumbDir . DIRECTORY_SEPARATOR . $filename;
-                    
-                    if (move_uploaded_file($_FILES['thumbnail']['tmp_name'], $dest)) {
-                        $thumbPathRel = 'uploads/thumbnails/' . $filename;
+                    // Upload failed. Fallback to URL if present.
+                    if (isset($_POST['thumbnail_url']) && !empty($_POST['thumbnail_url'])) {
+                        $thumbPathRel = $_POST['thumbnail_url'];
                     } else {
-                        if (isset($_POST['thumbnail_url']) && !empty($_POST['thumbnail_url'])) {
-                            $thumbPathRel = $_POST['thumbnail_url'];
-                        } else {
-                            throw new Exception("Failed to save uploaded file.");
+                        $msg = "Failed to save uploaded file.";
+                        if (!is_writable($thumbDir)) {
+                             $msg = "Server file system appears read-only. Please use the Image URL option instead.";
                         }
+                        throw new Exception($msg);
                     }
                 }
             } 
