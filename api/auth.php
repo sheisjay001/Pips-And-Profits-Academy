@@ -23,9 +23,9 @@ session_set_cookie_params([
     'lifetime' => 0,
     'path' => '/',
     'domain' => '',
-    'secure' => isset($_SERVER['HTTPS']),
+    'secure' => true, // Required for SameSite=None
     'httponly' => true,
-    'samesite' => 'Lax'
+    'samesite' => 'None' // Required for cross-site (different ports)
 ]);
 session_start();
 

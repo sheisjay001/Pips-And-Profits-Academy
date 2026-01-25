@@ -9,9 +9,9 @@ if (session_status() === PHP_SESSION_NONE) {
         'lifetime' => 0,
         'path' => '/',
         'domain' => '',
-        'secure' => isset($_SERVER['HTTPS']),
+        'secure' => true, // Required for SameSite=None
         'httponly' => true,
-        'samesite' => 'Lax'
+        'samesite' => 'None' // Required for cross-site (different ports)
     ]);
     session_start();
 }
@@ -81,6 +81,9 @@ try {
     // DEBUG: Log all requests
     $logFile = __DIR__ . '/debug_courses.txt';
     $logEntry = date('Y-m-d H:i:s') . " - Method: " . $_SERVER['REQUEST_METHOD'] . "\n";
+    $logEntry .= "Session ID: " . session_id() . "\n";
+    $logEntry .= "Session User ID: " . ($_SESSION['user_id'] ?? 'Not Set') . "\n";
+    $logEntry .= "Cookie Data: " . print_r($_COOKIE, true) . "\n";
     $logEntry .= "POST Data: " . print_r($_POST, true) . "\n";
     $logEntry .= "FILES Data: " . print_r($_FILES, true) . "\n";
     
