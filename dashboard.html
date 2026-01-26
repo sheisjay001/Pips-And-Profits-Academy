@@ -418,28 +418,44 @@
                 const courses = await App.getCourses();
                 const card = document.getElementById('dashboardCourseCard');
                 const container = document.getElementById('continueLearningContainer');
+                const user = App.getCurrentUser();
+                const userPlan = (user.plan || 'free').toLowerCase();
+                const isAdmin = user.role === 'admin';
                 
                 if (!courses || courses.length === 0) {
                     card.style.display = 'none';
                     return;
                 }
 
-                // If user has courses, show the first one or a summary
-                // For now, let's just show a "Browse Courses" if they have courses but no progress
-                // Or if we had progress data, we would show that. 
-                // Since we don't have progress tracking yet, let's just show the latest course.
-                
-                const latestCourse = courses[0];
+                // Filter accessible courses
+                const accessibleCourses = courses.filter(course => {
+                    const coursePlan = (course.plan_availability || 'Free').toLowerCase();
+                    if (isAdmin) return true;
+                    if (coursePlan === 'free') return true;
+                    if (coursePlan === 'pro' && (userPlan === 'pro' || userPlan === 'elite')) return true;
+                    if (coursePlan === 'elite' && userPlan === 'elite') return true;
+                    return false;
+                });
+
+                if (accessibleCourses.length === 0) {
+                    // Show a message or the first locked course with upgrade button?
+                    // For now, hide the "Continue Learning" card if they have no accessible courses
+                    card.style.display = 'none';
+                    return;
+                }
+
+                // Ideally sort by progress, but for now take the first one
+                const latestCourse = accessibleCourses[0];
                 card.style.display = 'block';
                 
                 container.innerHTML = `
                     <div class="mb-4">
                         <div class="d-flex justify-content-between mb-1">
                             <span class="fw-bold small">${latestCourse.title}</span>
-                            <span class="text-muted small">0%</span>
+                            <span class="text-muted small">${latestCourse.progress || 0}%</span>
                         </div>
                         <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-purple" role="progressbar" style="width: 0%"></div>
+                            <div class="progress-bar bg-purple" role="progressbar" style="width: ${latestCourse.progress || 0}%"></div>
                         </div>
                         <a href="lesson.html?id=${latestCourse.id}" class="btn btn-link text-decoration-none text-purple p-0 mt-2 small">Start Course</a>
                     </div>

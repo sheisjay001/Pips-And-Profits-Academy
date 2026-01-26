@@ -81,23 +81,37 @@
             const grid = document.getElementById('coursesGrid');
             grid.innerHTML = '';
             const user = App.getCurrentUser();
-            const hasPremium = user && (user.role === 'admin' || user.plan === 'pro' || user.plan === 'elite');
+            const userPlan = (user.plan || 'free').toLowerCase();
+            const isAdmin = user.role === 'admin';
 
             courses.forEach(course => {
-                const isAdvanced = (course.level || '').toLowerCase() === 'advanced';
-                const locked = isAdvanced && !hasPremium;
+                const coursePlan = (course.plan_availability || 'Free').toLowerCase();
+                let locked = true;
+
+                if (isAdmin) {
+                    locked = false;
+                } else if (coursePlan === 'free') {
+                    locked = false;
+                } else if (coursePlan === 'pro') {
+                    if (userPlan === 'pro' || userPlan === 'elite') locked = false;
+                } else if (coursePlan === 'elite') {
+                    if (userPlan === 'elite') locked = false;
+                }
+
                 const actionBtn = locked
-                    ? `<button class="btn btn-warning text-dark mt-3 w-100" onclick="App.initiatePayment('paystack','pro')">Upgrade to Pro</button>`
+                    ? `<button class="btn btn-warning text-dark mt-3 w-100" onclick="App.initiatePayment('paystack','${coursePlan}')">Upgrade to ${coursePlan.charAt(0).toUpperCase() + coursePlan.slice(1)}</button>`
                     : `<a href="lesson.html?id=${course.id}" class="btn btn-outline-purple mt-3 w-100">${(course.progress || 0) > 0 ? 'Continue Learning' : 'Start Course'}</a>`;
+                
                 const badgeClass = locked ? 'bg-secondary' : 'bg-purple';
                 const overlay = locked ? `
                     <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light bg-opacity-75">
                         <div class="text-center">
                             <div class="mb-2"><i class="fa-solid fa-lock text-danger"></i></div>
-                            <div class="small fw-bold">Advanced Strategy (Pro)</div>
+                            <div class="small fw-bold">${coursePlan.charAt(0).toUpperCase() + coursePlan.slice(1)} Plan Required</div>
                         </div>
                     </div>
                 ` : '';
+                
                 const card = `
                     <div class="col-md-4">
                         <div class="card h-100 shadow-sm border-0">

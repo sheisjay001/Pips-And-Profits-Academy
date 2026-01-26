@@ -346,7 +346,6 @@
                                         <th class="border-0 ps-4">Title</th>
                                         <th class="border-0">Level</th>
                                         <th class="border-0">Plan</th>
-                                        <th class="border-0">Price</th>
                                         <th class="border-0">Created</th>
                                         <th class="border-0">Action</th>
                                     </tr>
@@ -1009,7 +1008,6 @@
                     </td>
                     <td><span class="badge bg-info text-dark">${c.level}</span></td>
                     <td><span class="badge bg-secondary">${c.plan_availability || 'Free'}</span></td>
-                    <td>${c.price > 0 ? '$'+c.price : 'Free'}</td>
                     <td class="text-muted small">${new Date(c.created_at).toLocaleDateString()}</td>
                     <td>
                         <button class="btn btn-sm btn-light text-primary me-1" onclick="openEditCourseModal(${c.id})"><i class="fa-solid fa-pen"></i></button>
