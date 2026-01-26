@@ -238,6 +238,7 @@ try {
             $title = $_POST['title'] ?? '';
             $description = $_POST['desc'] ?? '';
             $level = $_POST['level'] ?? 'Beginner';
+            $plan = $_POST['plan_availability'] ?? 'Free';
             $price = $_POST['price'] ?? 0.00;
 
             $uploadBase = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'uploads';
