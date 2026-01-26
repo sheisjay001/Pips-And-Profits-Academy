@@ -295,18 +295,23 @@ try {
                  $uploadWarning = " (Thumbnail upload failed with error code: " . $_FILES['thumbnail']['error'] . ")";
             }
 
-            // Ensure video_path column exists
+            // Ensure video_path and plan_availability columns exist
             try {
                 $check = $conn->query("SHOW COLUMNS FROM courses LIKE 'video_path'");
                 if ($check->rowCount() == 0) {
                     $conn->exec("ALTER TABLE courses ADD COLUMN video_path VARCHAR(255) AFTER thumbnail_url");
                 }
+                
+                $checkPlan = $conn->query("SHOW COLUMNS FROM courses LIKE 'plan_availability'");
+                if ($checkPlan->rowCount() == 0) {
+                    $conn->exec("ALTER TABLE courses ADD COLUMN plan_availability VARCHAR(50) DEFAULT 'Free' AFTER price");
+                }
             } catch (Exception $e) { }
 
-            $stmt = $conn->prepare("INSERT INTO courses (title, description, level, thumbnail_url, video_path, price, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+            $stmt = $conn->prepare("INSERT INTO courses (title, description, level, thumbnail_url, video_path, price, plan_availability, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
             
             try {
-                $ok = $stmt->execute([$title, $description, $level, $thumbPathRel, $videoPathRel, $price]);
+                $ok = $stmt->execute([$title, $description, $level, $thumbPathRel, $videoPathRel, $price, $plan]);
                 if (!$ok) {
                     $errorInfo = $stmt->errorInfo();
                     echo json_encode(['success' => false, 'message' => 'Failed to create course: ' . $errorInfo[2]]);
