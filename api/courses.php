@@ -200,7 +200,8 @@ try {
                 'desc' => 'description',
                 'level' => 'level',
                 'price' => 'price',
-                'video_url' => 'video_path'
+                'video_url' => 'video_path',
+                'plan_availability' => 'plan_availability'
             ];
 
             $setPart = [];
@@ -328,7 +329,8 @@ try {
                     'level' => $level,
                     'thumbnail_url' => $thumbPathRel,
                     'video_path' => $videoPathRel,
-                    'price' => (float)$price
+                    'price' => (float)$price,
+                    'plan_availability' => $plan
                 ]
             ]);
         }
