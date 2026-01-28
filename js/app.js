@@ -438,7 +438,12 @@ const App = {
     // --- Courses ---
     async getCourses() {
         const result = await this.api('courses.php', 'GET');
-        return Array.isArray(result) ? result : [];
+        if (Array.isArray(result)) {
+            return result;
+        } else {
+            console.error('Failed to fetch courses:', result);
+            return [];
+        }
     },
 
     async uploadCourse(formData) {
