@@ -284,7 +284,7 @@
                                                 <div class="col-lg-4 text-center border-start border-white border-opacity-10 mt-3 mt-lg-0">
                             <div class="py-2">
                                 <p class="small text-uppercase fw-bold mb-1 text-white-50">One-Time Payment</p>
-                                <h2 class="display-5 fw-bold mb-1">$199</h2>
+                                <h2 class="display-5 fw-bold mb-1">$300</h2>
                                 <p class="small text-white-50 mb-3">Lifetime Access</p>
                                 <div class="dropdown">
                                                             <button class="btn btn-light text-purple fw-bold w-100 shadow-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -336,7 +336,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small">Please transfer <strong>$199.00</strong> to one of the following addresses and upload your payment proof.</p>
+                    <p class="text-muted small">Please transfer <strong id="cryptoAmount">$300.00</strong> to one of the following addresses and upload your payment proof.</p>
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold small">USDT (BEP20)</label>
@@ -493,7 +493,7 @@
                  if (planName && planCost) {
                      if ((user.plan || 'free') === 'elite') {
                          planName.textContent = 'Elite Mentorship Plan';
-                         planCost.textContent = '$199.00 • One-time Payment';
+                         planCost.textContent = '$300.00 • One-time Payment';
                          if (cancelPlanBtn) cancelPlanBtn.classList.remove('d-none');
                          // Show payment history
                         if (billingHistoryBody) {
@@ -511,7 +511,7 @@
                         }
                      } else if ((user.plan || 'free') === 'pro') {
                          planName.textContent = 'Pro Trader Plan';
-                         planCost.textContent = '$49.00 • One-time Payment';
+                         planCost.textContent = '$35.00 • One-time Payment';
                          if (cancelPlanBtn) cancelPlanBtn.classList.remove('d-none');
                          // Show payment history
                         if (billingHistoryBody) {

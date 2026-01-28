@@ -449,7 +449,7 @@ const App = {
     // --- Payment Methods ---
     async initiatePayment(method, plan = 'pro') {
         this.currentPaymentPlan = plan; // Store plan context
-        const amountInUSD = plan === 'elite' ? 199 : 49;
+        const amountInUSD = plan === 'elite' ? 300 : 35;
         const planName = plan === 'elite' ? 'Elite Plan' : 'Pro Plan';
 
         if (method === 'paystack') {
@@ -474,7 +474,8 @@ const App = {
 
             // Exchange rate: adjust as needed
             const exchangeRate = 1600; 
-            const amountInNGN = amountInUSD * exchangeRate * 100; // Convert to kobo
+            // Use exactly 50,000 NGN for Pro as requested, otherwise convert USD
+            const amountInNGN = (plan === 'pro') ? 50000 * 100 : (amountInUSD * exchangeRate * 100); 
 
             // Use Standard Paystack Redirect (Server-side Init)
             try {
@@ -552,7 +553,7 @@ const App = {
         }
 
         const plan = this.currentPaymentPlan || 'pro'; 
-        const amount = plan === 'elite' ? 199 : 49;
+        const amount = plan === 'elite' ? 300 : 35;
 
         const fileInput = document.getElementById('paymentProof');
         const file = fileInput.files[0];

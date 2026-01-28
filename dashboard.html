@@ -144,8 +144,8 @@
                                 <div class="d-flex align-items-center justify-content-between">
                                     <h4 class="fw-bold mb-0" id="userPlanLabel">Free</h4>
                                     <div class="btn-group">
-                                        <button class="btn btn-sm btn-outline-purple" onclick="upgrade('pro')">Pro $49</button>
-                                        <button class="btn btn-sm btn-purple" onclick="App.initiatePayment('paystack', 'elite')">Elite $199</button>
+                                        <button class="btn btn-sm btn-outline-purple" onclick="upgrade('pro')">Pro $35</button>
+                                        <button class="btn btn-sm btn-purple" onclick="App.initiatePayment('paystack', 'elite')">Elite $300</button>
                                     </div>
                                 </div>
                             </div>
@@ -272,7 +272,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small">Please transfer <strong id="cryptoAmount">$199.00</strong> to one of the following addresses and upload your payment proof.</p>
+                    <p class="text-muted small">Please transfer <strong id="cryptoAmount">$300.00</strong> to one of the following addresses and upload your payment proof.</p>
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold small">USDT (BEP20)</label>
@@ -479,7 +479,7 @@
         document.getElementById('paymentMethodModal').addEventListener('show.bs.modal', () => {
             const label = document.getElementById('cryptoAmount');
             if (label) {
-                label.textContent = (window.selectedPlan === 'elite') ? '$199.00' : '$49.00';
+                label.textContent = (window.selectedPlan === 'elite') ? '$300.00' : '$35.00';
             }
         });
     </script>
