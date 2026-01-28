@@ -200,7 +200,7 @@
 
 
                                 
-                                <div id="eliteBenefits" class="mt-4 d-none">
+                                <div id="premiumBenefits" class="mt-4 d-none">
                                     <h6 class="fw-bold mb-3 small text-uppercase text-success">Your Premium Benefits</h6>
                                     <div class="row g-3">
                                         <div class="col-sm-6">
@@ -471,7 +471,7 @@
                  const settingsEmail = document.getElementById('settingsEmail');
                  const settingsBio = document.getElementById('settingsBio');
                  const planBadge = document.getElementById('userPlanBadge');
-                 const eliteBenefits = document.getElementById('eliteBenefits');
+                 const premiumBenefits = document.getElementById('premiumBenefits');
                  const planName = document.getElementById('planName');
                  const planCost = document.getElementById('planCost');
                  const cancelPlanBtn = document.getElementById('cancelPlanBtn');
@@ -483,10 +483,14 @@
                  if (settingsEmail) settingsEmail.value = user.email;
                  if (settingsBio) settingsBio.value = user.bio || '';
                  if (planBadge) {
-                     const label = (user.plan || 'free') === 'elite' ? 'Elite Member' : ((user.plan || 'free') === 'pro' ? 'Pro Member' : 'Free Member');
+                     let label = 'Free Member';
+                     const p = (user.plan || 'free');
+                     if (p === 'premium' || p === 'elite') label = 'Premium Member';
+                     else if (p === 'pro') label = 'Pro Member';
+                     
                      planBadge.textContent = label;
-                     planBadge.classList.toggle('bg-purple', (user.plan || 'free') !== 'elite');
-                     planBadge.classList.toggle('bg-success', (user.plan || 'free') === 'elite');
+                     planBadge.classList.toggle('bg-purple', p !== 'premium' && p !== 'elite');
+                     planBadge.classList.toggle('bg-success', p === 'premium' || p === 'elite');
                  }
 
                  // Update Plan Details Card
@@ -538,11 +542,11 @@
                      }
                  }
 
-                 if (eliteBenefits) {
+                 if (premiumBenefits) {
                      if ((user.plan || 'free') === 'premium') {
-                         eliteBenefits.classList.remove('d-none');
+                         premiumBenefits.classList.remove('d-none');
                      } else {
-                         eliteBenefits.classList.add('d-none');
+                         premiumBenefits.classList.add('d-none');
                      }
                  }
 
