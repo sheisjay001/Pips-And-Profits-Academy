@@ -201,7 +201,7 @@
 
                                 
                                 <div id="eliteBenefits" class="mt-4 d-none">
-                                    <h6 class="fw-bold mb-3 small text-uppercase text-success">Your Elite Benefits</h6>
+                                    <h6 class="fw-bold mb-3 small text-uppercase text-success">Your Premium Benefits</h6>
                                     <div class="row g-3">
                                         <div class="col-sm-6">
                                             <div class="d-flex align-items-center">
@@ -248,7 +248,7 @@
                                                         </div>
                                                         <div>
                                                             <h4 class="fw-bold mb-0">1-on-1 Mentorship</h4>
-                                                            <span class="badge bg-white text-purple bg-opacity-75 rounded-pill small">Elite Plan</span>
+                                                            <span class="badge bg-white text-purple bg-opacity-75 rounded-pill small">Premium Plan</span>
                                                         </div>
                                                     </div>
                                                     <p class="mb-4 text-white-50">Get personalized guidance, weekly strategy calls, and a custom trading plan tailored to your goals.</p>
@@ -291,8 +291,8 @@
                                                                 Upgrade Now
                                                             </button>
                                                             <ul class="dropdown-menu w-100 shadow border-0">
-                                                                <li><a class="dropdown-item py-2" href="#" onclick="event.preventDefault(); App.initiatePayment('paystack','elite')"><i class="fas fa-credit-card me-2 text-primary"></i>Pay via Paystack</a></li>
-                                                                <li><a class="dropdown-item py-2" href="#" onclick="App.initiatePayment('crypto','elite')"><i class="fab fa-bitcoin me-2 text-warning"></i>Pay via Crypto</a></li>
+                                                                <li><a class="dropdown-item py-2" href="#" onclick="event.preventDefault(); App.initiatePayment('paystack','premium')"><i class="fas fa-credit-card me-2 text-primary"></i>Pay via Paystack</a></li>
+                                                                <li><a class="dropdown-item py-2" href="#" onclick="App.initiatePayment('crypto','premium')"><i class="fab fa-bitcoin me-2 text-warning"></i>Pay via Crypto</a></li>
                                                             </ul>
                                                         </div>
                                                     </div>
@@ -491,8 +491,8 @@
 
                  // Update Plan Details Card
                  if (planName && planCost) {
-                     if ((user.plan || 'free') === 'elite') {
-                         planName.textContent = 'Elite Mentorship Plan';
+                     if ((user.plan || 'free') === 'premium') {
+                         planName.textContent = 'Premium Plan';
                          planCost.textContent = '$300.00 • One-time Payment';
                          if (cancelPlanBtn) cancelPlanBtn.classList.remove('d-none');
                          // Show payment history
@@ -501,7 +501,7 @@
                                 billingHistoryBody.innerHTML = items.length ? items.map(p => `
                                     <tr>
                                         <td class="text-muted small">${new Date(p.created_at).toLocaleDateString()}</td>
-                                        <td class="small fw-bold">${p.plan === 'elite' ? 'Elite Mentorship Plan' : 'Pro Trader Plan'}</td>
+                                        <td class="small fw-bold">${p.plan === 'premium' ? 'Premium Plan' : 'Pro Trader Plan'}</td>
                                         <td class="small">$${Number(p.amount).toFixed(2)}</td>
                                         <td><span class="badge ${p.status === 'Approved' ? 'bg-light text-success border border-success' : (p.status === 'Rejected' ? 'bg-light text-danger border border-danger' : 'bg-light text-warning border border-warning text-dark')}">${p.status}</span></td>
                                         <td class="text-end"><a href="${p.proof_url}" class="text-purple" target="_blank" rel="noopener noreferrer"><i class="fas fa-download"></i></a></td>
@@ -519,7 +519,7 @@
                                 billingHistoryBody.innerHTML = items.length ? items.map(p => `
                                     <tr>
                                         <td class="text-muted small">${new Date(p.created_at).toLocaleDateString()}</td>
-                                        <td class="small fw-bold">${p.plan === 'elite' ? 'Elite Mentorship Plan' : 'Pro Trader Plan'}</td>
+                                        <td class="small fw-bold">${p.plan === 'premium' ? 'Premium Plan' : 'Pro Trader Plan'}</td>
                                         <td class="small">$${Number(p.amount).toFixed(2)}</td>
                                         <td><span class="badge ${p.status === 'Approved' ? 'bg-light text-success border border-success' : (p.status === 'Rejected' ? 'bg-light text-danger border border-danger' : 'bg-light text-warning border border-warning text-dark')}">${p.status}</span></td>
                                         <td class="text-end"><a href="${p.proof_url}" class="text-purple" target="_blank" rel="noopener noreferrer"><i class="fas fa-download"></i></a></td>
@@ -539,15 +539,15 @@
                  }
 
                  if (eliteBenefits) {
-                     if ((user.plan || 'free') === 'elite') {
+                     if ((user.plan || 'free') === 'premium') {
                          eliteBenefits.classList.remove('d-none');
                      } else {
                          eliteBenefits.classList.add('d-none');
                      }
                  }
 
-                 // Conditionally display priority support for confirmed elite members
-                 if ((user.plan || 'free') === 'elite' && user.admin_confirmed) {
+                 // Conditionally display priority support for confirmed premium members
+                 if ((user.plan || 'free') === 'premium' && user.admin_confirmed) {
                     const priorityQueueEl = document.getElementById('prioritySupportQueue');
                     const priorityTbody = document.getElementById('priorityUserTicketsTable');
 

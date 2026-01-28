@@ -102,8 +102,8 @@
                             <button class="btn btn-warning fw-bold text-dark shadow-sm" onclick="window.selectedPlan='pro'; new bootstrap.Modal(document.getElementById('paymentMethodModal')).show();">
                                 <i class="fa-solid fa-crown me-2"></i> Upgrade to Pro
                             </button>
-                            <button class="btn btn-purple fw-bold text-white shadow-sm" onclick="App.initiatePayment('paystack', 'elite')">
-                                <i class="fa-solid fa-diamond me-2"></i> Upgrade to Elite
+                            <button class="btn btn-purple fw-bold text-white shadow-sm" onclick="App.initiatePayment('paystack', 'premium')">
+                                <i class="fa-solid fa-diamond me-2"></i> Upgrade to Premium
                             </button>
                         </div>
                     </div>
@@ -145,7 +145,7 @@
                                     <h4 class="fw-bold mb-0" id="userPlanLabel">Free</h4>
                                     <div class="btn-group">
                                         <button class="btn btn-sm btn-outline-purple" onclick="upgrade('pro')">Pro $35</button>
-                                        <button class="btn btn-sm btn-purple" onclick="App.initiatePayment('paystack', 'elite')">Elite $300</button>
+                                        <button class="btn btn-sm btn-purple" onclick="App.initiatePayment('paystack', 'premium')">Premium $300</button>
                                     </div>
                                 </div>
                             </div>
@@ -432,8 +432,8 @@
                     const coursePlan = (course.plan_availability || 'Free').toLowerCase();
                     if (isAdmin) return true;
                     if (coursePlan === 'free') return true;
-                    if (coursePlan === 'pro' && (userPlan === 'pro' || userPlan === 'elite')) return true;
-                    if (coursePlan === 'elite' && userPlan === 'elite') return true;
+                    if (coursePlan === 'pro' && (userPlan === 'pro' || userPlan === 'premium')) return true;
+                    if ((coursePlan === 'premium' || coursePlan === 'elite') && userPlan === 'premium') return true;
                     return false;
                 });
 
@@ -479,7 +479,7 @@
         document.getElementById('paymentMethodModal').addEventListener('show.bs.modal', () => {
             const label = document.getElementById('cryptoAmount');
             if (label) {
-                label.textContent = (window.selectedPlan === 'elite') ? '$300.00' : '$35.00';
+                label.textContent = (window.selectedPlan === 'premium') ? '$300.00' : '$35.00';
             }
         });
     </script>

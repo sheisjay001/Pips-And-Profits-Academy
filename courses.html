@@ -93,9 +93,9 @@
                 } else if (coursePlan === 'free') {
                     locked = false;
                 } else if (coursePlan === 'pro') {
-                    if (userPlan === 'pro' || userPlan === 'elite') locked = false;
-                } else if (coursePlan === 'elite') {
-                    if (userPlan === 'elite') locked = false;
+                    if (userPlan === 'pro' || userPlan === 'premium') locked = false;
+                } else if (coursePlan === 'premium' || coursePlan === 'elite') {
+                    if (userPlan === 'premium') locked = false;
                 }
 
                 const actionBtn = locked

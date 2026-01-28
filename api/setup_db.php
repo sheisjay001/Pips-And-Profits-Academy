@@ -146,8 +146,8 @@ try {
     if ($stmt->fetchColumn() == 0) {
         // Create Admin (Password: admin123)
         $password = password_hash('admin123', PASSWORD_DEFAULT);
-        $stmt = $conn->prepare("INSERT INTO users (name, email, password_hash, role, plan) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute(['Admin User', 'admin@pips.com', $password, 'admin', 'elite']);
+        $stmt = $conn->prepare("INSERT INTO users (name, email, password_hash, role, plan, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
+        $stmt->execute(['Admin User', 'admin@pips.com', $password, 'admin', 'premium']);
     }
 
     // RESET POLICY: Ensure all non-admin users are on the FREE plan until upgraded

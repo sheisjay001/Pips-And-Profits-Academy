@@ -491,7 +491,7 @@ if ($action === 'register') {
     require_csrf($action);
     $id = $data->id ?? null;
     $plan = $data->plan ?? '';
-    $allowed = ['free', 'pro', 'elite'];
+    $allowed = ['free', 'pro', 'premium'];
     if (!$id || !in_array($plan, $allowed)) {
         echo json_encode(['success' => false, 'message' => 'Invalid plan update']);
         exit;

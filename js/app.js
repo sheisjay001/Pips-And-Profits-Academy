@@ -100,14 +100,14 @@ const App = {
             'live_trading',
             'advanced_courses'
         ];
-        const elite = [
+        const premium = [
             'mentorship',
             'personalized_plan',
             'priority_support',
             'vip_community'
         ];
         if (free.includes(feature)) return 'free';
-        if (elite.includes(feature)) return 'elite';
+        if (premium.includes(feature)) return 'premium';
         if (pro.includes(feature)) return 'pro';
         return 'free';
     },
@@ -119,17 +119,17 @@ const App = {
         const plan = user.plan || 'free';
         const required = this.requiredPlanForFeature(feature);
         if (required === 'free') return true;
-        if (required === 'pro') return plan === 'pro' || plan === 'elite';
-        if (required === 'elite') return plan === 'elite';
+        if (required === 'pro') return plan === 'pro' || plan === 'premium';
+        if (required === 'premium') return plan === 'premium';
         return true;
     },
 
     enforceAccess(feature) {
         if (!this.checkAccess(feature)) {
             const required = this.requiredPlanForFeature(feature);
-            const msg = required === 'elite'
-                ? 'This feature requires the Elite plan. Upgrade now?'
-                : 'This feature requires a Pro or Elite plan. Upgrade now?';
+            const msg = required === 'premium'
+                ? 'This feature requires the Premium plan. Upgrade now?'
+                : 'This feature requires a Pro or Premium plan. Upgrade now?';
             if (confirm(msg)) {
                 window.location.href = 'dashboard.html?upgrade=true';
             } else {
@@ -454,8 +454,8 @@ const App = {
     // --- Payment Methods ---
     async initiatePayment(method, plan = 'pro') {
         this.currentPaymentPlan = plan; // Store plan context
-        const amountInUSD = plan === 'elite' ? 300 : 35;
-        const planName = plan === 'elite' ? 'Elite Plan' : 'Pro Plan';
+        const amountInUSD = plan === 'premium' ? 300 : 35;
+        const planName = plan === 'premium' ? 'Premium Plan' : 'Pro Plan';
 
         if (method === 'paystack') {
             const user = this.getCurrentUser();
@@ -558,7 +558,7 @@ const App = {
         }
 
         const plan = this.currentPaymentPlan || 'pro'; 
-        const amount = plan === 'elite' ? 300 : 35;
+        const amount = plan === 'premium' ? 300 : 35;
 
         const fileInput = document.getElementById('paymentProof');
         const file = fileInput.files[0];

@@ -133,8 +133,8 @@
 
                 if (isAdmin) hasAccess = true;
                 else if (coursePlan === 'free') hasAccess = true;
-                else if (coursePlan === 'pro' && (userPlan === 'pro' || userPlan === 'elite')) hasAccess = true;
-                else if (coursePlan === 'elite' && userPlan === 'elite') hasAccess = true;
+                else if (coursePlan === 'pro' && (userPlan === 'pro' || userPlan === 'premium')) hasAccess = true;
+                else if ((coursePlan === 'premium' || coursePlan === 'elite') && userPlan === 'premium') hasAccess = true;
 
                 if (!hasAccess) {
                     alert(`You need to be on the ${coursePlan.charAt(0).toUpperCase() + coursePlan.slice(1)} plan to view this course.`);
