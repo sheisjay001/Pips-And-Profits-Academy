@@ -99,10 +99,10 @@
                     </div>
                     <div class="col-md-4 text-md-end mt-3 mt-md-0">
                         <div class="btn-group">
-                            <button class="btn btn-warning fw-bold text-dark shadow-sm" onclick="window.selectedPlan='pro'; new bootstrap.Modal(document.getElementById('paymentMethodModal')).show();">
+                            <button id="upgradeProTopBtn" class="btn btn-warning fw-bold text-dark shadow-sm" onclick="window.selectedPlan='pro'; new bootstrap.Modal(document.getElementById('paymentMethodModal')).show();">
                                 <i class="fa-solid fa-crown me-2"></i> Upgrade to Pro
                             </button>
-                            <button class="btn btn-purple fw-bold text-white shadow-sm" onclick="App.initiatePayment('paystack', 'premium')">
+                            <button id="upgradePremiumTopBtn" class="btn btn-purple fw-bold text-white shadow-sm" onclick="App.initiatePayment('paystack', 'premium')">
                                 <i class="fa-solid fa-diamond me-2"></i> Upgrade to Premium
                             </button>
                         </div>
@@ -144,8 +144,8 @@
                                 <div class="d-flex align-items-center justify-content-between">
                                     <h4 class="fw-bold mb-0" id="userPlanLabel">Free</h4>
                                     <div class="btn-group">
-                                        <button class="btn btn-sm btn-outline-purple" onclick="upgrade('pro')">Pro $35</button>
-                                        <button class="btn btn-sm btn-purple" onclick="App.initiatePayment('paystack', 'premium')">Premium $300</button>
+                                        <button id="planProBtn" class="btn btn-sm btn-outline-purple" onclick="upgrade('pro')">Pro $35</button>
+                                        <button id="planPremiumBtn" class="btn btn-sm btn-purple" onclick="App.initiatePayment('paystack', 'premium')">Premium $300</button>
                                     </div>
                                 </div>
                             </div>
@@ -220,6 +220,34 @@
     <script src="https://js.paystack.co/v1/inline.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            App.checkAuth();
+            const user = App.getCurrentUser();
+            const plan = user ? (user.plan || 'free').toLowerCase() : 'free';
+
+            const planLabelEl = document.getElementById('userPlanLabel');
+            if (planLabelEl) {
+                if (plan === 'pro') planLabelEl.textContent = 'Pro Trader';
+                else if (plan === 'premium' || plan === 'elite') planLabelEl.textContent = 'One-on-One';
+                else planLabelEl.textContent = 'Free';
+            }
+
+            const upgradeProTopBtn = document.getElementById('upgradeProTopBtn');
+            const upgradePremiumTopBtn = document.getElementById('upgradePremiumTopBtn');
+            const planProBtn = document.getElementById('planProBtn');
+            const planPremiumBtn = document.getElementById('planPremiumBtn');
+
+            if (plan === 'pro') {
+                if (upgradeProTopBtn) upgradeProTopBtn.style.display = 'none';
+                if (planProBtn) planProBtn.style.display = 'none';
+            }
+
+            if (plan === 'premium' || plan === 'elite') {
+                if (upgradeProTopBtn) upgradeProTopBtn.style.display = 'none';
+                if (planProBtn) planProBtn.style.display = 'none';
+                if (upgradePremiumTopBtn) upgradePremiumTopBtn.style.display = 'none';
+                if (planPremiumBtn) planPremiumBtn.style.display = 'none';
+            }
+
             const allowed = App.checkAccess('live_trading');
             const btn = document.querySelector('a[href^="https://t.me"][class*="btn"][class*="w-100"]');
             if (btn && !allowed) {

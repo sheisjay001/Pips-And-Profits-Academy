@@ -204,16 +204,16 @@
                                     <h6 class="fw-bold mb-3 small text-uppercase text-success">Your Premium Benefits</h6>
                                     <div class="row g-3">
                                         <div class="col-sm-6">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fa-solid fa-check text-success me-2"></i>
-                                                <span class="small fw-semibold">Everything in Pro</span>
-                                            </div>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fa-solid fa-check text-success me-2"></i>
+                                            <span class="small fw-semibold">Everything in Pro</span>
+                                        </div>
                                         </div>
                                         <div class="col-sm-6">
                                             <div class="d-flex align-items-center">
-                                                <i class="fa-solid fa-check text-success me-2"></i>
-                                                <span class="small fw-semibold">1-on-1 Mentorship</span>
-                                            </div>
+                                            <i class="fa-solid fa-check text-success me-2"></i>
+                                            <span class="small fw-semibold">1-on-1 Mentorship</span>
+                                        </div>
                                         </div>
                                         <div class="col-sm-6">
                                             <div class="d-flex align-items-center">
@@ -485,7 +485,7 @@
                  if (planBadge) {
                      let label = 'Free Member';
                      const p = (user.plan || 'free');
-                     if (p === 'premium' || p === 'elite') label = 'Premium Member';
+                    if (p === 'premium' || p === 'elite') label = 'Premium Member';
                      else if (p === 'pro') label = 'Pro Member';
                      
                      planBadge.textContent = label;
@@ -495,8 +495,9 @@
 
                  // Update Plan Details Card
                  if (planName && planCost) {
-                     if ((user.plan || 'free') === 'premium') {
-                         planName.textContent = 'Premium Plan';
+                     const planValue = (user.plan || 'free').toLowerCase();
+                     if (planValue === 'premium' || planValue === 'elite') {
+                         planName.textContent = 'One-on-One Plan';
                          planCost.textContent = '$300.00 • One-time Payment';
                          if (cancelPlanBtn) cancelPlanBtn.classList.remove('d-none');
                          // Show payment history
@@ -513,7 +514,7 @@
                                 `).join('') : '<tr><td colspan="5" class="text-center text-muted small py-3">No payment history available</td></tr>';
                             });
                         }
-                     } else if ((user.plan || 'free') === 'pro') {
+                     } else if (planValue === 'pro') {
                          planName.textContent = 'Pro Trader Plan';
                          planCost.textContent = '$35.00 • One-time Payment';
                          if (cancelPlanBtn) cancelPlanBtn.classList.remove('d-none');
@@ -543,7 +544,8 @@
                  }
 
                  if (premiumBenefits) {
-                     if ((user.plan || 'free') === 'premium') {
+                     const planValue = (user.plan || 'free').toLowerCase();
+                     if (planValue === 'premium' || planValue === 'elite') {
                          premiumBenefits.classList.remove('d-none');
                      } else {
                          premiumBenefits.classList.add('d-none');
@@ -551,7 +553,7 @@
                  }
 
                  // Conditionally display priority support for confirmed premium members
-                 if ((user.plan || 'free') === 'premium' && user.admin_confirmed) {
+                 if (((user.plan || 'free') === 'premium' || (user.plan || 'free') === 'elite') && user.admin_confirmed) {
                     const priorityQueueEl = document.getElementById('prioritySupportQueue');
                     const priorityTbody = document.getElementById('priorityUserTicketsTable');
 

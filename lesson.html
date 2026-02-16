@@ -120,9 +120,40 @@
         async function loadLesson() {
             const params = new URLSearchParams(window.location.search);
             const courseId = params.get('id');
+            const videoContainer = document.getElementById('videoContainer');
+
+            if (!courseId) {
+                if (videoContainer) {
+                    videoContainer.innerHTML = `
+                        <div class="d-flex align-items-center justify-content-center h-100">
+                            <div class="text-center text-white">
+                                <i class="fas fa-video-slash fa-4x mb-3"></i>
+                                <h4>No Course Selected</h4>
+                                <p class="text-white-50">Please go back to the courses page and choose a lesson.</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                return;
+            }
             const courses = await App.getCourses();
             const course = courses.find(c => c.id == courseId);
             
+            if (!course) {
+                if (videoContainer) {
+                    videoContainer.innerHTML = `
+                        <div class="d-flex align-items-center justify-content-center h-100">
+                            <div class="text-center text-white">
+                                <i class="fas fa-video-slash fa-4x mb-3"></i>
+                                <h4>Course Not Found</h4>
+                                <p class="text-white-50">This lesson could not be loaded. It may have been removed or is unavailable.</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                return;
+            }
+
             if (course) {
                 // Check Access
                 const user = App.getCurrentUser();
@@ -133,8 +164,8 @@
 
                 if (isAdmin) hasAccess = true;
                 else if (coursePlan === 'free') hasAccess = true;
-                else if (coursePlan === 'pro' && (userPlan === 'pro' || userPlan === 'premium')) hasAccess = true;
-                else if ((coursePlan === 'premium' || coursePlan === 'elite') && userPlan === 'premium') hasAccess = true;
+                else if (coursePlan === 'pro' && (userPlan === 'pro' || userPlan === 'premium' || userPlan === 'elite')) hasAccess = true;
+                else if ((coursePlan === 'premium' || coursePlan === 'elite') && (userPlan === 'premium' || userPlan === 'elite')) hasAccess = true;
 
                 if (!hasAccess) {
                     alert(`You need to be on the ${coursePlan.charAt(0).toUpperCase() + coursePlan.slice(1)} plan to view this course.`);

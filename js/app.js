@@ -116,11 +116,11 @@ const App = {
         const user = this.getCurrentUser();
         if (!user) return false;
         if (user.role === 'admin') return true;
-        const plan = user.plan || 'free';
+        const plan = (user.plan || 'free').toLowerCase();
         const required = this.requiredPlanForFeature(feature);
         if (required === 'free') return true;
-        if (required === 'pro') return plan === 'pro' || plan === 'premium';
-        if (required === 'premium') return plan === 'premium';
+        if (required === 'pro') return plan === 'pro' || plan === 'premium' || plan === 'elite';
+        if (required === 'premium') return plan === 'premium' || plan === 'elite';
         return true;
     },
 
@@ -454,8 +454,10 @@ const App = {
     // --- Payment Methods ---
     async initiatePayment(method, plan = 'pro') {
         this.currentPaymentPlan = plan; // Store plan context
-        const amountInUSD = plan === 'premium' ? 300 : 35;
-        const planName = plan === 'premium' ? 'Premium Plan' : 'Pro Plan';
+        const normalizedPlan = (plan || 'pro').toLowerCase();
+        const isPremiumLike = normalizedPlan === 'premium' || normalizedPlan === 'elite';
+        const amountInUSD = isPremiumLike ? 300 : 35;
+        const planName = isPremiumLike ? 'One-on-One Plan' : 'Pro Plan';
 
         if (method === 'paystack') {
             const user = this.getCurrentUser();
@@ -479,8 +481,8 @@ const App = {
 
             // Exchange rate: adjust as needed
             const exchangeRate = 1600; 
-            // Use exactly 50,000 NGN for Pro as requested, otherwise convert USD
-            const amountInNGN = (plan === 'pro') ? 50000 * 100 : (amountInUSD * exchangeRate * 100); 
+            // Use exactly 50,000 NGN for Pro as requested, otherwise convert USD for premium/elite
+            const amountInNGN = (normalizedPlan === 'pro') ? 50000 * 100 : (amountInUSD * exchangeRate * 100); 
 
             // Use Standard Paystack Redirect (Server-side Init)
             try {
@@ -490,7 +492,7 @@ const App = {
                     body: JSON.stringify({
                         email: user.email,
                         amount: amountInNGN,
-                        plan: plan
+                        plan: normalizedPlan === 'elite' ? 'premium' : normalizedPlan
                     })
                 });
                 
@@ -529,7 +531,7 @@ const App = {
             const cryptoModal = new bootstrap.Modal(document.getElementById('cryptoPaymentModal'));
             // Update modal text
             const amountEl = document.getElementById('cryptoAmount');
-            if(amountEl) amountEl.textContent = `$${amountInUSD}.00`;
+            if (amountEl) amountEl.textContent = `$${amountInUSD}.00`;
 
             cryptoModal.show();
         }
@@ -558,7 +560,9 @@ const App = {
         }
 
         const plan = this.currentPaymentPlan || 'pro'; 
-        const amount = plan === 'premium' ? 300 : 35;
+        const normalizedPlan = (plan || 'pro').toLowerCase();
+        const isPremiumLike = normalizedPlan === 'premium' || normalizedPlan === 'elite';
+        const amount = isPremiumLike ? 300 : 35;
 
         const fileInput = document.getElementById('paymentProof');
         const file = fileInput.files[0];
@@ -571,7 +575,7 @@ const App = {
         formData.append('proof', file);
         formData.append('user_id', user.id);
         formData.append('amount', amount);
-        formData.append('plan', plan);
+        formData.append('plan', normalizedPlan === 'elite' ? 'premium' : normalizedPlan);
 
         try {
             const token = localStorage.getItem('ppa_csrf_token');

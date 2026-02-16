@@ -95,11 +95,11 @@
                 } else if (coursePlan === 'pro') {
                     if (userPlan === 'pro' || userPlan === 'premium') locked = false;
                 } else if (coursePlan === 'premium' || coursePlan === 'elite') {
-                    if (userPlan === 'premium') locked = false;
+                    if (userPlan === 'premium' || userPlan === 'elite') locked = false;
                 }
 
                 const actionBtn = locked
-                    ? `<button class="btn btn-warning text-dark mt-3 w-100" onclick="App.initiatePayment('paystack','${coursePlan}')">Upgrade to ${coursePlan.charAt(0).toUpperCase() + coursePlan.slice(1)}</button>`
+                    ? `<button class="btn btn-warning text-dark mt-3 w-100" onclick="App.initiatePayment('paystack','${coursePlan === 'elite' ? 'premium' : coursePlan}')">Upgrade to ${coursePlan === 'elite' ? 'Premium' : coursePlan.charAt(0).toUpperCase() + coursePlan.slice(1)}</button>`
                     : `<a href="lesson.html?id=${course.id}" class="btn btn-outline-purple mt-3 w-100">${(course.progress || 0) > 0 ? 'Continue Learning' : 'Start Course'}</a>`;
                 
                 const badgeClass = locked ? 'bg-secondary' : 'bg-purple';
