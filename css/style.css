@@ -67,11 +67,7 @@ body {
 
 /* Hero Section */
 .hero-section {
-    background-color: var(--primary-dark);
-    background-image: url("../images/logo.jpg");
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
     min-height: 100vh;
     padding-top: 80px; /* For fixed navbar */
     position: relative;

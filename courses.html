@@ -52,11 +52,11 @@
                 <!-- Course Filters -->
                 <div class="row mb-4">
                     <div class="col-12">
-                        <div class="btn-group">
-                            <button class="btn btn-purple active">All Courses</button>
-                            <button class="btn btn-outline-secondary">Beginner</button>
-                            <button class="btn btn-outline-secondary">Intermediate</button>
-                            <button class="btn btn-outline-secondary">Advanced</button>
+                        <div class="btn-group" id="levelFilters">
+                            <button type="button" class="btn btn-purple active" data-level="all">All Courses</button>
+                            <button type="button" class="btn btn-outline-secondary" data-level="Beginner">Beginner</button>
+                            <button type="button" class="btn btn-outline-secondary" data-level="Intermediate">Intermediate</button>
+                            <button type="button" class="btn btn-outline-secondary" data-level="Advanced">Advanced</button>
                         </div>
                     </div>
                 </div>
@@ -75,16 +75,27 @@
         // Check Auth
         App.checkAuth();
 
-        // Render Courses
-        async function loadCourses() {
-            const courses = await App.getCourses();
+        let allCourses = [];
+
+        async function loadCourses(filterLevel = 'all') {
+            if (!allCourses.length) {
+                allCourses = await App.getCourses();
+            }
             const grid = document.getElementById('coursesGrid');
             grid.innerHTML = '';
             const user = App.getCurrentUser();
             const userPlan = (user.plan || 'free').toLowerCase();
             const isAdmin = user.role === 'admin';
 
-            courses.forEach(course => {
+            const normalizedFilter = filterLevel.toLowerCase();
+
+            const visibleCourses = allCourses.filter(course => {
+                if (normalizedFilter === 'all') return true;
+                const level = (course.level || '').toLowerCase();
+                return level === normalizedFilter;
+            });
+
+            visibleCourses.forEach(course => {
                 const coursePlan = (course.plan_availability || 'Free').toLowerCase();
                 let locked = true;
 
@@ -143,7 +154,26 @@
             });
         }
         
-        loadCourses();
+        const levelFilters = document.getElementById('levelFilters');
+        if (levelFilters) {
+            levelFilters.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-level]');
+                if (!btn) return;
+
+                levelFilters.querySelectorAll('button').forEach(b => {
+                    b.classList.remove('btn-purple', 'active');
+                    b.classList.add('btn-outline-secondary');
+                });
+
+                btn.classList.remove('btn-outline-secondary');
+                btn.classList.add('btn-purple', 'active');
+
+                const level = btn.getAttribute('data-level') || 'all';
+                loadCourses(level);
+            });
+        }
+
+        loadCourses('all');
     </script>
 </body>
 </html>
