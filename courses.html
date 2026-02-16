@@ -93,7 +93,7 @@
                 } else if (coursePlan === 'free') {
                     locked = false;
                 } else if (coursePlan === 'pro') {
-                    if (userPlan === 'pro' || userPlan === 'premium') locked = false;
+                    if (userPlan === 'pro' || userPlan === 'premium' || userPlan === 'elite') locked = false;
                 } else if (coursePlan === 'premium' || coursePlan === 'elite') {
                     if (userPlan === 'premium' || userPlan === 'elite') locked = false;
                 }
