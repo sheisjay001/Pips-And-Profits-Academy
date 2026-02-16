@@ -91,12 +91,12 @@ function require_csrf($action) {
 }
 
 function send_email($to, $subject, $textBody, $htmlBody = null) {
-    $host = getenv('BREVO_SMTP_HOST') ?: getenv('SMTP_HOST');
-    $port = (int)(getenv('BREVO_SMTP_PORT') ?: getenv('SMTP_PORT') ?: 0);
-    $user = getenv('BREVO_SMTP_USER') ?: getenv('SMTP_USER');
-    $pass = getenv('BREVO_SMTP_PASS') ?: getenv('SMTP_PASS');
-    $from = getenv('SMTP_FROM') ?: 'no-reply@pipsandprofitsacademy.com';
-    $fromName = getenv('SMTP_FROM_NAME') ?: 'Pips & Profit Academy';
+    $host = 'smtp.gmail.com';
+    $port = 587;
+    $user = getenv('GMAIL_USER');
+    $pass = getenv('GMAIL_PASS');
+    $from = getenv('GMAIL_FROM') ?: 'pipsandprofitsacademy2023@gmail.com';
+    $fromName = getenv('GMAIL_FROM_NAME') ?: 'Pips & Profit Academy';
     $useSmtp = $host && $port && $user && $pass;
 
     $body = $htmlBody !== null ? $htmlBody : $textBody;
