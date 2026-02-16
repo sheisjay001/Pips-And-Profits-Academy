@@ -999,9 +999,10 @@
             }
 
             tbody.innerHTML = courses.map(c => `
-                <tr>
+                <tr draggable="true" data-id="${c.id}">
                     <td class="ps-4 fw-bold">
                         <div class="d-flex align-items-center">
+                            <span class="me-2 text-muted small"><i class="fa-solid fa-up-down-left-right"></i></span>
                             <img src="${c.thumbnail_url || 'images/course-placeholder.jpg'}" class="rounded me-2" width="40" height="30" style="object-fit: cover;">
                             ${c.title}
                         </div>
@@ -1015,6 +1016,73 @@
                     </td>
                 </tr>
             `).join('');
+
+            initCourseDragAndDrop();
+        }
+        
+        function initCourseDragAndDrop() {
+            const tbody = document.getElementById('adminCoursesTableBody');
+            if (!tbody) return;
+
+            let dragSrcRow = null;
+
+            tbody.querySelectorAll('tr[draggable="true"]').forEach(row => {
+                row.addEventListener('dragstart', (e) => {
+                    dragSrcRow = row;
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', row.dataset.id || '');
+                    row.classList.add('opacity-50');
+                });
+
+                row.addEventListener('dragend', () => {
+                    row.classList.remove('opacity-50');
+                });
+
+                row.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const target = e.currentTarget;
+                    if (!dragSrcRow || target === dragSrcRow) return;
+
+                    const rect = target.getBoundingClientRect();
+                    const offset = e.clientY - rect.top;
+                    const halfway = rect.height / 2;
+
+                    if (offset > halfway) {
+                        target.after(dragSrcRow);
+                    } else {
+                        target.before(dragSrcRow);
+                    }
+                });
+
+                row.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    saveCourseOrder();
+                });
+            });
+        }
+
+        async function saveCourseOrder() {
+            const tbody = document.getElementById('adminCoursesTableBody');
+            if (!tbody) return;
+
+            const ids = Array.from(tbody.querySelectorAll('tr[draggable="true"]'))
+                .map(row => row.dataset.id)
+                .filter(Boolean);
+
+            const fd = new FormData();
+            fd.append('action', 'reorder');
+            fd.append('order', JSON.stringify(ids));
+
+            try {
+                const res = await fetch('api/courses.php', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (!data.success) {
+                    alert('Failed to save course order: ' + (data.message || 'Unknown error'));
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error saving course order');
+            }
         }
         
         window.openEditCourseModal = async function(id) {

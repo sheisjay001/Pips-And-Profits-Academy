@@ -195,15 +195,11 @@
                     
                     if (embedUrl || videoSrc.includes('player.vimeo.com')) {
                         const finalUrl = embedUrl || videoSrc;
-                        videoContainer.innerHTML = `<iframe src="${finalUrl}" title="${course.title}" allowfullscreen style="width:100%; height:100%; border:0;"></iframe>`;
+                        videoContainer.innerHTML = `<div oncontextmenu="return false;" style="width:100%;height:100%;"><iframe src="${finalUrl}" title="${course.title}" allowfullscreen referrerpolicy="no-referrer" style="width:100%; height:100%; border:0;"></iframe></div>`;
                     } 
-                    // Assume it's a direct video file (local or remote)
                     else {
-                        // Fix path if it's a local file upload (e.g., uploads/courses/...)
-                        // If it starts with 'uploads/', make sure it's relative to root or handled correctly.
-                        // Assuming the file is served from root/uploads/...
                         videoContainer.innerHTML = `
-                            <video controls class="w-100 h-100" style="object-fit: cover;">
+                            <video controls controlsList="nodownload noplaybackrate" oncontextmenu="return false;" class="w-100 h-100" style="object-fit: cover;">
                                 <source src="${videoSrc}" type="video/mp4">
                                 Your browser does not support the video tag.
                             </video>

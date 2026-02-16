@@ -67,8 +67,9 @@ body {
 
 /* Hero Section */
 .hero-section {
-    background: linear-gradient(135deg, rgba(48, 21, 90, 0.6) 0%, rgba(72, 37, 131, 0.6) 100%), url("../pips and profit.jpg");
-    background-size: cover;
+    background-color: var(--primary-dark);
+    background-image: url("../images/logo.jpg");
+    background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
     min-height: 100vh;

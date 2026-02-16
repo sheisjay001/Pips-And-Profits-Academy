@@ -95,6 +95,13 @@ try {
 
     require_once 'db_connect.php';
 
+    try {
+        $checkSort = $conn->query("SHOW COLUMNS FROM courses LIKE 'sort_order'");
+        if ($checkSort->rowCount() == 0) {
+            $conn->exec("ALTER TABLE courses ADD COLUMN sort_order INT NULL AFTER created_at");
+        }
+    } catch (Exception $e) { }
+
     $method = $_SERVER['REQUEST_METHOD'];
 
     if ($method === 'GET') {
@@ -116,17 +123,16 @@ try {
             exit;
         }
 
-        // Fetch courses with progress if user is logged in
         if (isset($_SESSION['user_id'])) {
             $user_id = $_SESSION['user_id'];
             $sql = "SELECT c.*, COALESCE(up.progress_percentage, 0) as progress 
                     FROM courses c 
                     LEFT JOIN user_progress up ON c.id = up.course_id AND up.user_id = ? 
-                    ORDER BY c.created_at DESC";
+                    ORDER BY COALESCE(c.sort_order, 999999) ASC, c.created_at DESC";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$user_id]);
         } else {
-            $stmt = $conn->query("SELECT *, 0 as progress FROM courses ORDER BY created_at DESC");
+            $stmt = $conn->query("SELECT *, 0 as progress FROM courses ORDER BY COALESCE(sort_order, 999999) ASC, created_at DESC");
         }
         
         $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -342,6 +348,32 @@ try {
                     'plan_availability' => $plan
                 ]
             ]);
+        } elseif ($action === 'reorder') {
+            $orderJson = $_POST['order'] ?? '[]';
+            $ids = json_decode($orderJson, true);
+
+            if (!is_array($ids)) {
+                echo json_encode(['success' => false, 'message' => 'Invalid order format']);
+                exit;
+            }
+
+            try {
+                $conn->beginTransaction();
+                $stmt = $conn->prepare("UPDATE courses SET sort_order = ? WHERE id = ?");
+                $position = 1;
+                foreach ($ids as $id) {
+                    $stmt->execute([$position, $id]);
+                    $position++;
+                }
+                $conn->commit();
+                echo json_encode(['success' => true, 'message' => 'Course order updated']);
+            } catch (PDOException $e) {
+                if ($conn->inTransaction()) {
+                    $conn->rollBack();
+                }
+                echo json_encode(['success' => false, 'message' => 'Database Error: ' . $e->getMessage()]);
+            }
+            exit;
         }
     } else {
         echo json_encode(['success' => false, 'message' => 'Method not allowed']);
