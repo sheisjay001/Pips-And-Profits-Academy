@@ -279,6 +279,7 @@
                                         <th class="border-0 ps-4">Name</th>
                                         <th class="border-0">Email</th>
                                         <th class="border-0">Role</th>
+                                        <th class="border-0">Plan</th>
                                         <th class="border-0">Action</th>
                                     </tr>
                                 </thead>
@@ -1217,11 +1218,38 @@
                     <td>${user.email}</td>
                     <td><span class="badge ${user.role === 'admin' ? 'bg-danger' : 'bg-primary'}">${user.role}</span></td>
                     <td>
-                        ${user.role !== 'admin' ? `<button class="btn btn-sm btn-light text-danger" onclick="deleteUser(${user.id})"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        <select class="form-select form-select-sm w-auto" onchange="upgradeUser(${user.id}, this.value)" ${user.role === 'admin' ? 'disabled' : ''}>
+                            <option value="free" ${user.plan === 'free' ? 'selected' : ''}>Free</option>
+                            <option value="pro" ${user.plan === 'pro' ? 'selected' : ''}>Pro</option>
+                            <option value="elite" ${user.plan === 'elite' || user.plan === 'premium' ? 'selected' : ''}>Elite</option>
+                        </select>
+                    </td>
+                    <td>
+                        ${user.role !== 'admin' ? `<button class="btn btn-sm btn-light text-danger" onclick="deleteUser(${user.id})" title="Delete User"><i class="fa-solid fa-trash"></i></button>` : ''}
                     </td>
                 </tr>
             `).join('');
         }
+
+        window.upgradeUser = async function(id, plan) {
+            if (confirm(`Change user plan to ${plan.toUpperCase()}?`)) {
+                const res = await App.api('auth.php', 'POST', {
+                    action: 'update_plan',
+                    id: id,
+                    plan: plan
+                });
+                
+                if (res && res.success) {
+                    alert('User plan updated successfully!');
+                    await renderUsers();
+                } else {
+                    alert('Failed to update user plan: ' + (res.message || 'Unknown error'));
+                }
+            } else {
+                // Refresh to reset the select value
+                renderUsers();
+            }
+        };
 
         async function renderTickets() {
             const tickets = await App.getTickets();
@@ -1355,7 +1383,7 @@
                                     <span class="fw-bold">${user.name}</span>
                                 </div>
                             </td>
-                            <td><span class="badge bg-purple">Student</span></td>
+                            <td><span class="badge bg-purple">${(user.plan || 'Free').toUpperCase()}</span></td>
                             <td><span class="text-success fw-bold">Active</span></td>
                             <td class="text-muted small">${new Date(user.created_at).toLocaleDateString()}</td>
                             <td>

@@ -472,7 +472,7 @@ if ($action === 'register') {
     echo json_encode(['success' => true, 'message' => 'Password updated']);
 } elseif ($action === 'get_users') {
     // Fetch all users (admin only ideally)
-    $stmt = $conn->query("SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC");
+    $stmt = $conn->query("SELECT id, name, email, role, plan, created_at FROM users ORDER BY created_at DESC");
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode($users);
 } elseif ($action === 'delete_user') {
@@ -491,11 +491,14 @@ if ($action === 'register') {
     require_csrf($action);
     $id = $data->id ?? null;
     $plan = $data->plan ?? '';
-    $allowed = ['free', 'pro', 'premium'];
+    $allowed = ['free', 'pro', 'premium', 'elite'];
     if (!$id || !in_array($plan, $allowed)) {
         echo json_encode(['success' => false, 'message' => 'Invalid plan update']);
         exit;
     }
+    // Normalize 'premium' to 'elite' if needed for DB consistency
+    if ($plan === 'premium') $plan = 'elite';
+    
     $stmt = $conn->prepare("UPDATE users SET plan = ? WHERE id = ?");
     if ($stmt->execute([$plan, $id])) {
         echo json_encode(['success' => true, 'message' => 'Plan updated']);
