@@ -78,7 +78,7 @@ if ($method === 'GET') {
             }
 
             $stmt = $conn->prepare("
-                SELECT au.*, u.name, u.email 
+                SELECT au.*, u.username as name, u.email 
                 FROM affiliate_users au 
                 JOIN users u ON au.user_id = u.id 
                 WHERE au.user_id = ?
@@ -152,7 +152,7 @@ if ($method === 'GET') {
         
         try {
             $stmt = $conn->prepare("
-                SELECT au.*, u.name as affiliate_name 
+                SELECT au.*, u.username as affiliate_name 
                 FROM affiliate_users au 
                 JOIN users u ON au.user_id = u.id 
                 WHERE au.affiliate_code = ? AND au.status = 'active'

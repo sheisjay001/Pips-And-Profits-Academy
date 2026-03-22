@@ -66,7 +66,7 @@ if ($method === 'GET') {
     if ($action === 'get_all_affiliates') {
         try {
             $stmt = $conn->prepare("
-                SELECT au.*, u.name, u.email 
+                SELECT au.*, u.username as name, u.email 
                 FROM affiliate_users au 
                 JOIN users u ON au.user_id = u.id 
                 ORDER BY au.created_at DESC
@@ -82,8 +82,8 @@ if ($method === 'GET') {
         try {
             $stmt = $conn->prepare("
                 SELECT ar.*, 
-                       u1.name as referred_name, u1.email as referred_email,
-                       u2.name as affiliate_name
+                       u1.username as referred_name, u1.email as referred_email,
+                       u2.username as affiliate_name
                 FROM affiliate_referrals ar
                 JOIN users u1 ON ar.referred_user_id = u1.id
                 JOIN affiliate_users au ON ar.affiliate_id = au.id
@@ -102,7 +102,7 @@ if ($method === 'GET') {
             $stmt = $conn->prepare("
                 SELECT ap.*, 
                        au.user_id,
-                       u.name as affiliate_name
+                       u.username as affiliate_name
                 FROM affiliate_payouts ap
                 JOIN affiliate_users au ON ap.affiliate_id = au.id
                 JOIN users u ON au.user_id = u.id
