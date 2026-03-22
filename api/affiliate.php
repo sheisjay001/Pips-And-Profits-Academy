@@ -187,10 +187,16 @@ if ($method === 'GET') {
         
         try {
             // Check if user is already an affiliate
-            $stmt = $conn->prepare("SELECT id FROM affiliate_users WHERE user_id = ?");
+            $stmt = $conn->prepare("SELECT id, status FROM affiliate_users WHERE user_id = ?");
             $stmt->execute([$userId]);
-            if ($stmt->fetch()) {
-                echo json_encode(['success' => false, 'message' => 'You are already an affiliate']);
+            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($existing) {
+                if ($existing['status'] === 'pending') {
+                    echo json_encode(['success' => false, 'message' => 'Your affiliate application is already pending approval.']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'You are already an affiliate']);
+                }
                 exit;
             }
             
@@ -199,7 +205,7 @@ if ($method === 'GET') {
             $affiliateCode = generateAffiliateCode($conn);
             $affiliateLink = generateAffiliateLink($affiliateCode);
             
-            // Create affiliate account
+            // Create affiliate account with 'pending' status
             $stmt = $conn->prepare("
                 INSERT INTO affiliate_users 
                 (user_id, affiliate_code, affiliate_link, commission_rate, status) 
@@ -209,9 +215,8 @@ if ($method === 'GET') {
             
             echo json_encode([
                 'success' => true,
-                'message' => 'Affiliate account created successfully. Your application is pending approval.',
-                'affiliate_code' => $affiliateCode,
-                'affiliate_link' => $affiliateLink
+                'message' => 'Success! Your affiliate application has been submitted and is pending approval. You will get access to your code once an admin approves you.',
+                'status' => 'pending'
             ]);
         } catch (PDOException $e) {
             echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);

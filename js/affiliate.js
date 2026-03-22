@@ -85,6 +85,11 @@ const AffiliateDashboard = {
     },
 
     showDashboard() {
+        if (this.affiliateData.affiliate.status === 'pending') {
+            this.showPendingApproval();
+            return;
+        }
+
         document.getElementById('becomeAffiliateSection').style.display = 'none';
         document.getElementById('affiliateDashboard').style.display = 'block';
         document.getElementById('mainContent').style.display = 'block';
@@ -98,6 +103,30 @@ const AffiliateDashboard = {
         this.updateBankAccountInfo();
         this.updateWithdrawalsTable();
         this.initializeChart();
+    },
+
+    showPendingApproval() {
+        document.getElementById('becomeAffiliateSection').style.display = 'none';
+        document.getElementById('affiliateDashboard').style.display = 'none';
+        document.getElementById('mainContent').innerHTML = `
+            <div class="text-center py-5">
+                <div class="card border-0 shadow-sm mx-auto" style="max-width: 600px;">
+                    <div class="card-body p-5">
+                        <i class="fa-solid fa-clock fa-4x text-warning mb-4"></i>
+                        <h2 class="fw-bold">Application Pending</h2>
+                        <p class="text-muted mb-4">Thank you for applying to the affiliate program! Your application is currently being reviewed by our administration team.</p>
+                        <div class="alert alert-warning small">
+                            <i class="fa-solid fa-info-circle me-2"></i>
+                            Once approved, you will receive your unique affiliate code and referral link here.
+                        </div>
+                        <button class="btn btn-purple mt-3" onclick="location.reload()">
+                            <i class="fa-solid fa-sync me-2"></i>Check Status
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('mainContent').style.display = 'block';
     },
 
     showBecomeAffiliate() {
