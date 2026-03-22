@@ -33,6 +33,19 @@ function checkAdminAccess() {
     }
     
     global $conn;
+    // Check if role_id exists (for your database) or fallback to role
+    try {
+        $stmt = $conn->prepare("SELECT role_id FROM users WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($user && $user['role_id'] == 1) {
+            return; // Admin access granted
+        }
+    } catch (PDOException $e) {
+        // Fallback to role column if role_id doesn't exist
+    }
+
     $stmt = $conn->prepare("SELECT role FROM users WHERE id = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);

@@ -236,12 +236,25 @@ if ($action === 'register') {
     $email = $data->email;
     $password = $data->password;
 
-    $stmt = $conn->prepare("SELECT id, name, email, password_hash, role, plan, profile_picture, bio, created_at, COALESCE(email_verified, 0) as email_verified FROM users WHERE email = ?");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    // Check for username vs name and role_id vs role
+    try {
+        $stmt = $conn->prepare("SELECT id, username as name, email, password, role_id as role, plan, profile_picture, bio, created_at, COALESCE(email_verified, 0) as email_verified FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Map role_id 1 to 'admin'
+        if ($user) {
+            $user['role'] = ($user['role'] == 1) ? 'admin' : 'user';
+        }
+    } catch (PDOException $e) {
+        // Fallback to old schema
+        $stmt = $conn->prepare("SELECT id, name, email, password_hash as password, role, plan, profile_picture, bio, created_at, COALESCE(email_verified, 0) as email_verified FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
 
-    if ($user && password_verify($password, $user['password_hash'])) {
-        unset($user['password_hash']); // Don't send password hash back
+    if ($user && password_verify($password, $user['password'])) {
+        unset($user['password']); // Don't send password back
         $_SESSION['user_id'] = $user['id'];
         
         echo json_encode(['success' => true, 'user' => $user]);
