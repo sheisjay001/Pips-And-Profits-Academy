@@ -8,15 +8,7 @@ header('X-Frame-Options: SAMEORIGIN');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header("Content-Security-Policy: default-src 'self' https: data:; img-src 'self' https: data:; script-src 'self' https:; style-src 'self' https: 'unsafe-inline'; connect-src 'self' https:; frame-ancestors 'self';");
 
-session_set_cookie_params([
-    'lifetime' => 0,
-    'path' => '/',
-    'domain' => '',
-    'secure' => isset($_SERVER['HTTPS']),
-    'httponly' => true,
-    'samesite' => 'Lax'
-]);
-session_start();
+require_once 'session_config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
@@ -184,11 +176,7 @@ if ($method === 'GET') {
     $action = $params['action'] ?? '';
     
     // CSRF protection
-    $csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-    if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-        echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
-        exit;
-    }
+    validate_csrf();
     
     if ($action === 'become_affiliate') {
         // User requests to become an affiliate

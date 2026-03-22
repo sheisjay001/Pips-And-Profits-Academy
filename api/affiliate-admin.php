@@ -8,15 +8,7 @@ header('X-Frame-Options: SAMEORIGIN');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header("Content-Security-Policy: default-src 'self' https: data:; img-src 'self' https: data:; script-src 'self' https:; style-src 'self' https: 'unsafe-inline'; connect-src 'self' https:; frame-ancestors 'self';");
 
-session_set_cookie_params([
-    'lifetime' => 0,
-    'path' => '/',
-    'domain' => '',
-    'secure' => isset($_SERVER['HTTPS']),
-    'httponly' => true,
-    'samesite' => 'Lax'
-]);
-session_start();
+require_once 'session_config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
@@ -127,7 +119,7 @@ if ($method === 'GET') {
     
 } elseif ($method === 'POST') {
     checkAdminAccess();
-    
+    validate_csrf();
     $params = getPostParams();
     $action = $params['action'] ?? '';
     

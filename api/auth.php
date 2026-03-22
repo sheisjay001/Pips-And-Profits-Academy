@@ -19,19 +19,7 @@ header('X-Frame-Options: SAMEORIGIN');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header("Content-Security-Policy: default-src 'self' https: data:; img-src 'self' https: data:; script-src 'self' https:; style-src 'self' https: 'unsafe-inline'; connect-src 'self' https:; frame-ancestors 'self';");
 
-// Determine if we are using HTTPS
-$isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') 
-           || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
-
-session_set_cookie_params([
-    'lifetime' => 0,
-    'path' => '/',
-    'domain' => '',
-    'secure' => $isHttps, // True if HTTPS, False otherwise
-    'httponly' => true,
-    'samesite' => $isHttps ? 'None' : 'Lax' // None for HTTPS (Cross-Site), Lax for HTTP (Same-Site/Localhost)
-]);
-session_start();
+require_once 'session_config.php';
 
 // For CLI testing (allows simulation of request method)
 if (php_sapi_name() === 'cli') {
@@ -72,21 +60,10 @@ $baseUrl = getenv('BASE_URL') ?: (
     : 'http://localhost:8000'
 );
 
-if (!isset($_SESSION['csrf_token'])) {
-    try {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    } catch (Exception $e) {
-        $_SESSION['csrf_token'] = md5(uniqid((string)mt_rand(), true));
-    }
-}
 function require_csrf($action) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (in_array($action, ['login','csrf'])) return;
-        $header = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-        if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $header)) {
-            echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
-            exit;
-        }
+        validate_csrf();
     }
 }
 
