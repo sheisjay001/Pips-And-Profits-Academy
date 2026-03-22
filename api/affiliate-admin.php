@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once 'db_connect.php';
+require_once 'db_helper.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -33,24 +34,16 @@ function checkAdminAccess() {
     }
     
     global $conn;
-    // Check if role_id exists (for your database) or fallback to role
-    try {
-        $stmt = $conn->prepare("SELECT role_id FROM users WHERE id = ?");
-        $stmt->execute([$_SESSION['user_id']]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($user && $user['role_id'] == 1) {
-            return; // Admin access granted
-        }
-    } catch (PDOException $e) {
-        // Fallback to role column if role_id doesn't exist
-    }
-
-    $stmt = $conn->prepare("SELECT role FROM users WHERE id = ?");
+    $roleCol = getRoleColumn($conn);
+    
+    $stmt = $conn->prepare("SELECT $roleCol as role FROM users WHERE id = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    if (!$user || $user['role'] !== 'admin') {
+    // Check if admin (role_id 1 or role 'admin')
+    $isAdmin = $user && ($user['role'] == 1 || $user['role'] === 'admin');
+    
+    if (!$isAdmin) {
         echo json_encode(['success' => false, 'message' => 'Access denied. Admin privileges required.']);
         exit;
     }
@@ -75,11 +68,12 @@ if ($method === 'GET') {
     }
 
     $action = $_GET['action'] ?? '';
+    $nameCol = getUserNameColumn($conn);
     
     if ($action === 'get_all_affiliates') {
         try {
             $stmt = $conn->prepare("
-                SELECT au.*, u.username as name, u.email 
+                SELECT au.*, u.$nameCol as name, u.email 
                 FROM affiliate_users au 
                 JOIN users u ON au.user_id = u.id 
                 ORDER BY au.created_at DESC
@@ -95,8 +89,8 @@ if ($method === 'GET') {
         try {
             $stmt = $conn->prepare("
                 SELECT ar.*, 
-                       u1.username as referred_name, u1.email as referred_email,
-                       u2.username as affiliate_name
+                       u1.$nameCol as referred_name, u1.email as referred_email,
+                       u2.$nameCol as affiliate_name
                 FROM affiliate_referrals ar
                 JOIN users u1 ON ar.referred_user_id = u1.id
                 JOIN affiliate_users au ON ar.affiliate_id = au.id
@@ -115,7 +109,7 @@ if ($method === 'GET') {
             $stmt = $conn->prepare("
                 SELECT ap.*, 
                        au.user_id,
-                       u.username as affiliate_name
+                       u.$nameCol as affiliate_name
                 FROM affiliate_payouts ap
                 JOIN affiliate_users au ON ap.affiliate_id = au.id
                 JOIN users u ON au.user_id = u.id

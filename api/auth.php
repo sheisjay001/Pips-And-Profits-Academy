@@ -20,6 +20,7 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 header("Content-Security-Policy: default-src 'self' https: data:; img-src 'self' https: data:; script-src 'self' https:; style-src 'self' https: 'unsafe-inline'; connect-src 'self' https:; frame-ancestors 'self';");
 
 require_once 'session_config.php';
+require_once 'db_helper.php';
 
 // For CLI testing (allows simulation of request method)
 if (php_sapi_name() === 'cli') {
@@ -236,18 +237,23 @@ if ($action === 'register') {
     $email = $data->email;
     $password = $data->password;
 
+    $nameCol = getUserNameColumn($conn);
+    $roleCol = getRoleColumn($conn);
+
     // Check for username vs name and role_id vs role
     try {
-        $stmt = $conn->prepare("SELECT id, username as name, email, password, role_id as role, plan, profile_picture, bio, created_at, COALESCE(email_verified, 0) as email_verified FROM users WHERE email = ?");
+        $stmt = $conn->prepare("SELECT id, $nameCol as name, email, password, $roleCol as role, plan, profile_picture, bio, created_at, COALESCE(email_verified, 0) as email_verified FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         
         // Map role_id 1 to 'admin'
         if ($user) {
-            $user['role'] = ($user['role'] == 1) ? 'admin' : 'user';
+            if ($roleCol === 'role_id') {
+                $user['role'] = ($user['role'] == 1) ? 'admin' : 'user';
+            }
         }
     } catch (PDOException $e) {
-        // Fallback to old schema
+        // Fallback to legacy schema if detection failed
         $stmt = $conn->prepare("SELECT id, name, email, password_hash as password, role, plan, profile_picture, bio, created_at, COALESCE(email_verified, 0) as email_verified FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);

@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once 'db_connect.php';
+require_once 'db_helper.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -77,8 +78,9 @@ if ($method === 'GET') {
                 exit;
             }
 
+            $nameCol = getUserNameColumn($conn);
             $stmt = $conn->prepare("
-                SELECT au.*, u.username as name, u.email 
+                SELECT au.*, u.$nameCol as name, u.email 
                 FROM affiliate_users au 
                 JOIN users u ON au.user_id = u.id 
                 WHERE au.user_id = ?
@@ -151,8 +153,9 @@ if ($method === 'GET') {
         }
         
         try {
+            $nameCol = getUserNameColumn($conn);
             $stmt = $conn->prepare("
-                SELECT au.*, u.username as affiliate_name 
+                SELECT au.*, u.$nameCol as affiliate_name 
                 FROM affiliate_users au 
                 JOIN users u ON au.user_id = u.id 
                 WHERE au.affiliate_code = ? AND au.status = 'active'
