@@ -44,12 +44,8 @@ function generateAffiliateLink($code) {
 
 // Get commission rate for user plan
 function getCommissionRate($conn, $userId) {
-    // This would typically check user's subscription plan
-    // For now, we'll use default rates
-    $stmt = $conn->prepare("SELECT commission_rate FROM commission_rates WHERE user_plan = 'pro'");
-    $stmt->execute();
-    $rate = $stmt->fetchColumn();
-    return $rate ?: 10.00;
+    // Affiliate commission is 50% for all plans
+    return 50.00;
 }
 
 if ($method === 'GET') {
