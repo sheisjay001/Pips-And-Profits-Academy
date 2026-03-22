@@ -4,15 +4,15 @@
  * This script will create all necessary affiliate tables
  */
 
-require_once 'db_connect.php';
+require_once 'api/db_connect.php';
 
 echo "<h2>Affiliate Migration Script</h2>";
 
 try {
     // Read and execute migration SQL
-    $migrationFile = __DIR__ . '/../affiliate_migration.sql';
+    $migrationFile = __DIR__ . '/affiliate_migration.sql';
     if (!file_exists($migrationFile)) {
-        die("Error: affiliate_migration.sql file not found!");
+        die("Error: affiliate_migration.sql file not found at $migrationFile");
     }
     
     $sql = file_get_contents($migrationFile);
