@@ -320,6 +320,185 @@ const AffiliateAdmin = {
         }
     },
 
+    async viewAffiliateDetails(id) {
+        try {
+            const result = await App.api(`affiliate-admin.php?action=get_affiliate_details&id=${id}`);
+            if (!result.success) {
+                this.showAlert(result.message, 'danger');
+                return;
+            }
+
+            const { affiliate, bank, referrals } = result;
+            const content = document.getElementById('affiliateDetailsContent');
+            
+            content.innerHTML = `
+                <div class="row">
+                    <div class="col-md-4 text-center mb-4">
+                        <img src="${affiliate.profile_picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(affiliate.name)}&background=6f42c1&color=fff`}" 
+                             class="rounded-circle mb-3" width="120" height="120">
+                        <h5 class="fw-bold mb-1">${affiliate.name}</h5>
+                        <p class="text-muted small">${affiliate.email}</p>
+                        <span class="badge bg-${this.getStatusColor(affiliate.status)} mb-3">${affiliate.status}</span>
+                    </div>
+                    <div class="col-md-8">
+                        <h6 class="text-muted small text-uppercase fw-bold mb-3">Affiliate Info</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                <label class="text-muted small d-block">Affiliate Code</label>
+                                <code>${affiliate.affiliate_code}</code>
+                            </div>
+                            <div class="col-6">
+                                <label class="text-muted small d-block">Commission Rate</label>
+                                <strong>${affiliate.commission_rate}%</strong>
+                            </div>
+                            <div class="col-6">
+                                <label class="text-muted small d-block">Total Earnings</label>
+                                <strong>$${parseFloat(affiliate.total_earnings).toFixed(2)}</strong>
+                            </div>
+                            <div class="col-6">
+                                <label class="text-muted small d-block">Current Balance</label>
+                                <strong>$${parseFloat(affiliate.current_balance).toFixed(2)}</strong>
+                            </div>
+                        </div>
+
+                        <h6 class="text-muted small text-uppercase fw-bold mb-3">Bank Details</h6>
+                        ${bank ? `
+                            <div class="card bg-light border-0 mb-4">
+                                <div class="card-body p-3">
+                                    <div class="row g-2">
+                                        <div class="col-6 small"><strong>Bank:</strong> ${bank.bank_name}</div>
+                                        <div class="col-6 small"><strong>Account:</strong> ${bank.account_number}</div>
+                                        <div class="col-6 small"><strong>Name:</strong> ${bank.account_name}</div>
+                                        <div class="col-6 small"><strong>Country:</strong> ${bank.country}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : '<p class="text-muted small mb-4">No bank account linked.</p>'}
+
+                        <h6 class="text-muted small text-uppercase fw-bold mb-3">Recent Referrals</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm small">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${referrals.length ? referrals.map(r => `
+                                        <tr>
+                                            <td>${r.referred_name}</td>
+                                            <td>${App.formatDate(r.signup_date)}</td>
+                                            <td><span class="badge bg-${this.getStatusColor(r.status)}">${r.status}</span></td>
+                                        </tr>
+                                    `).join('') : '<tr><td colspan="3" class="text-center">No referrals yet</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            new bootstrap.Modal(document.getElementById('affiliateDetailsModal')).show();
+        } catch (error) {
+            console.error('Error fetching details:', error);
+            this.showAlert('Failed to load details', 'danger');
+        }
+    },
+
+    async viewPayoutDetails(id) {
+        try {
+            const result = await App.api(`affiliate-admin.php?action=get_payout_details&id=${id}`);
+            if (!result.success) {
+                this.showAlert(result.message, 'danger');
+                return;
+            }
+
+            const { payout } = result;
+            const content = document.getElementById('payoutDetailsContent');
+            const actionButtons = document.getElementById('payoutActionButtons');
+            
+            content.innerHTML = `
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted small text-uppercase fw-bold mb-0">Payout Information</h6>
+                        <span class="badge bg-${this.getStatusColor(payout.status)}">${payout.status}</span>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="text-muted small d-block">Affiliate</label>
+                            <strong>${payout.affiliate_name}</strong>
+                        </div>
+                        <div class="col-6">
+                            <label class="text-muted small d-block">Amount</label>
+                            <strong class="text-success">$${parseFloat(payout.amount).toFixed(2)}</strong>
+                        </div>
+                        <div class="col-6">
+                            <label class="text-muted small d-block">Requested Date</label>
+                            <span>${App.formatDate(payout.payout_date)}</span>
+                        </div>
+                        <div class="col-6">
+                            <label class="text-muted small d-block">Processed Date</label>
+                            <span>${payout.processed_date ? App.formatDate(payout.processed_date) : 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-0">
+                    <h6 class="text-muted small text-uppercase fw-bold mb-3">Banking Details</h6>
+                    <div class="card bg-light border-0">
+                        <div class="card-body p-3">
+                            <div class="row g-2">
+                                <div class="col-12 mb-2 border-bottom pb-2">
+                                    <label class="text-muted small d-block">Bank Name</label>
+                                    <strong>${payout.bank_name || 'N/A'}</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block">Account Name</label>
+                                    <strong>${payout.account_name || 'N/A'}</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block">Account Number</label>
+                                    <strong>${payout.account_number || 'N/A'}</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block">SWIFT/BIC</label>
+                                    <strong>${payout.swift_code || 'N/A'}</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block">Country</label>
+                                    <strong>${payout.country || 'N/A'}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Update action buttons based on status
+            actionButtons.innerHTML = '';
+            if (payout.status === 'pending') {
+                actionButtons.innerHTML = `
+                    <button class="btn btn-primary" onclick="updatePayoutStatus(${payout.id}, 'processing'); bootstrap.Modal.getInstance(document.getElementById('payoutDetailsModal')).hide();">
+                        <i class="fa-solid fa-play me-1"></i> Start Processing
+                    </button>
+                `;
+            } else if (payout.status === 'processing') {
+                actionButtons.innerHTML = `
+                    <button class="btn btn-success" onclick="updatePayoutStatus(${payout.id}, 'completed'); bootstrap.Modal.getInstance(document.getElementById('payoutDetailsModal')).hide();">
+                        <i class="fa-solid fa-check me-1"></i> Mark Completed
+                    </button>
+                `;
+            }
+
+            new bootstrap.Modal(document.getElementById('payoutDetailsModal')).show();
+        } catch (error) {
+            console.error('Error fetching payout details:', error);
+            this.showAlert('Failed to load payout details', 'danger');
+        }
+    },
+
     async updatePayoutStatus(id, status) {
         if (!confirm(`Mark payout as ${status}?`)) return;
 
@@ -392,8 +571,8 @@ const AffiliateAdmin = {
 window.toggleAffiliateStatus = (id, status) => AffiliateAdmin.toggleAffiliateStatus(id, status);
 window.updatePayoutStatus = (id, status) => AffiliateAdmin.updatePayoutStatus(id, status);
 window.processMonthlyPayouts = () => AffiliateAdmin.processMonthlyPayouts();
-window.viewAffiliateDetails = (id) => alert('Details view for affiliate ' + id + ' to be implemented');
-window.viewPayoutDetails = (id) => alert('Details view for payout ' + id + ' to be implemented');
+window.viewAffiliateDetails = (id) => AffiliateAdmin.viewAffiliateDetails(id);
+window.viewPayoutDetails = (id) => AffiliateAdmin.viewPayoutDetails(id);
 
 // Init
 document.addEventListener('DOMContentLoaded', () => AffiliateAdmin.init());

@@ -123,6 +123,84 @@ if ($method === 'GET') {
         } catch (PDOException $e) {
             echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
         }
+    } elseif ($action === 'get_affiliate_details') {
+        $id = $_GET['id'] ?? null;
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'Affiliate ID required']);
+            exit;
+        }
+
+        try {
+            // Get affiliate info
+            $stmt = $conn->prepare("
+                SELECT au.*, u.$nameCol as name, u.email, u.profile_picture, u.bio, u.created_at as user_created_at
+                FROM affiliate_users au 
+                LEFT JOIN users u ON au.user_id = u.id 
+                WHERE au.id = ?
+            ");
+            $stmt->execute([$id]);
+            $affiliate = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$affiliate) {
+                echo json_encode(['success' => false, 'message' => 'Affiliate not found']);
+                exit;
+            }
+
+            // Get bank account
+            $stmt = $conn->prepare("SELECT * FROM affiliate_bank_accounts WHERE affiliate_id = ?");
+            $stmt->execute([$id]);
+            $bank = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Get recent referrals
+            $stmt = $conn->prepare("
+                SELECT ar.*, u.$nameCol as referred_name, u.email as referred_email
+                FROM affiliate_referrals ar
+                LEFT JOIN users u ON ar.referred_user_id = u.id
+                WHERE ar.affiliate_id = ?
+                ORDER BY ar.signup_date DESC
+                LIMIT 5
+            ");
+            $stmt->execute([$id]);
+            $referrals = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            echo json_encode([
+                'success' => true,
+                'affiliate' => $affiliate,
+                'bank' => $bank,
+                'referrals' => $referrals
+            ]);
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    } elseif ($action === 'get_payout_details') {
+        $id = $_GET['id'] ?? null;
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'Payout ID required']);
+            exit;
+        }
+
+        try {
+            $stmt = $conn->prepare("
+                SELECT ap.*, au.affiliate_code, u.$nameCol as affiliate_name, u.email as affiliate_email,
+                       ba.bank_name, ba.account_number, ba.account_name, ba.country, ba.swift_code
+                FROM affiliate_payouts ap
+                JOIN affiliate_users au ON ap.affiliate_id = au.id
+                JOIN users u ON au.user_id = u.id
+                LEFT JOIN affiliate_bank_accounts ba ON au.id = ba.affiliate_id
+                WHERE ap.id = ?
+            ");
+            $stmt->execute([$id]);
+            $payout = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$payout) {
+                echo json_encode(['success' => false, 'message' => 'Payout not found']);
+                exit;
+            }
+
+            echo json_encode(['success' => true, 'payout' => $payout]);
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+        }
     }
     
 } elseif ($method === 'POST') {
