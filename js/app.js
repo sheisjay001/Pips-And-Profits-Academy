@@ -141,11 +141,17 @@ const App = {
     },
 
     // --- Authentication ---
-    async register(name, email, password) {
-        const result = await this.api('auth.php', 'POST', {
+    async register(name, email, password, referralCode = null) {
+        const data = {
             action: 'register',
             name, email, password
-        });
+        };
+        
+        if (referralCode) {
+            data.referral_code = referralCode;
+        }
+        
+        const result = await this.api('auth.php', 'POST', data);
         return result;
     },
 

@@ -183,13 +183,31 @@ if ($method === 'GET') {
             // If Approved, update user plan
             if ($status === 'Approved') {
                 // Get payment details to know which user and plan
-                $stmt = $conn->prepare("SELECT user_id, plan FROM payments WHERE id = ?");
+                $stmt = $conn->prepare("SELECT user_id, plan, amount FROM payments WHERE id = ?");
                 $stmt->execute([$id]);
                 $payment = $stmt->fetch(PDO::FETCH_ASSOC);
 
                 if ($payment) {
                     $stmt = $conn->prepare("UPDATE users SET plan = ? WHERE id = ?");
                     $stmt->execute([$payment['plan'], $payment['user_id']]);
+                    
+                    // Process affiliate commission
+                    $commissionData = [
+                        'action' => 'process_commission',
+                        'user_id' => $payment['user_id'],
+                        'amount' => $payment['amount'],
+                        'payment_id' => $id
+                    ];
+                    
+                    // Make internal API call to process commission
+                    $ch = curl_init('http://' . $_SERVER['HTTP_HOST'] . '/api/affiliate_commissions.php');
+                    curl_setopt($ch, CURLOPT_POST, 1);
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($commissionData));
+                    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-CSRF-Token: ' . ($_SESSION['csrf_token'] ?? '')]);
+                    curl_exec($ch);
+                    curl_close($ch);
                 }
             }
 

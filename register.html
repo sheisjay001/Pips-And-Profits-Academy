@@ -17,6 +17,9 @@
                 <img src="images/logo.jpg" alt="Logo" width="80" class="rounded-circle mb-3">
                 <h4 class="fw-bold text-purple">Create Account</h4>
                 <p class="text-muted small">Join Pips and Profit Academy today</p>
+                <div id="referralInfo" class="alert alert-success small" style="display: none;">
+                    <i class="fas fa-gift me-2"></i>Referred by: <span id="referralCodeDisplay"></span>
+                </div>
             </div>
 
             <form id="registerForm">
@@ -42,6 +45,7 @@
                     </div>
                     <div class="form-text text-warning small"><i class="fas fa-exclamation-triangle me-1"></i> For your security, please use a unique password.</div>
                 </div>
+                <input type="hidden" id="referralCode" name="referral_code" value="">
                 <div class="d-grid">
                     <button type="submit" class="btn btn-purple py-2">Sign Up</button>
                 </div>
@@ -60,16 +64,45 @@
     <script src="js/app.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
+        // Check for referral code in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const referralCode = urlParams.get('ref');
+        
+        if (referralCode) {
+            document.getElementById('referralCode').value = referralCode;
+            document.getElementById('referralCodeDisplay').textContent = referralCode;
+            document.getElementById('referralInfo').style.display = 'block';
+            
+            // Validate referral code
+            validateReferralCode(referralCode);
+        }
+        
+        // Validate referral code
+        async function validateReferralCode(code) {
+            try {
+                const response = await fetch(`api/affiliate.php?action=check_referral_code&code=${code}`);
+                const result = await response.json();
+                
+                if (!result.success) {
+                    document.getElementById('referralInfo').className = 'alert alert-warning small';
+                    document.getElementById('referralInfo').innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Invalid referral code';
+                }
+            } catch (error) {
+                console.error('Error validating referral code:', error);
+            }
+        }
+        
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = e.target.name.value;
             const email = e.target.email.value;
             const password = e.target.password.value;
+            const referralCode = e.target.referral_code.value;
 
             try {
-                const result = await App.register(name, email, password);
+                const result = await App.register(name, email, password, referralCode);
                 if (result.success) {
-                    alert('Registration successful! Please login.');
+                    alert('Registration successful! Please check your email to verify your account.');
                     window.location.href = 'login.html';
                 } else {
                     alert(result.message || 'Registration failed');

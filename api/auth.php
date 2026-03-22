@@ -183,6 +183,7 @@ if ($action === 'register') {
     $name = $data->name;
     $email = $data->email;
     $password = $data->password;
+    $referralCode = $data->referral_code ?? null;
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         echo json_encode(['success' => false, 'message' => 'Invalid email']);
@@ -214,6 +215,27 @@ if ($action === 'register') {
     }
     $stmt = $conn->prepare("INSERT INTO users (name, email, password_hash, role, plan, email_verified, verification_token, verification_sent_at) VALUES (?, ?, ?, ?, ?, 0, ?, NOW())");
     if ($stmt->execute([$name, $email, $password_hash, $role, $plan, $verification_token])) {
+        $userId = $conn->lastInsertId();
+        
+        // Track referral if code provided
+        if ($referralCode) {
+            require_once 'affiliate.php';
+            $affiliateData = [
+                'action' => 'track_referral',
+                'user_id' => $userId,
+                'referral_code' => $referralCode
+            ];
+            
+            // Make internal API call to track referral
+            $ch = curl_init('http://' . $_SERVER['HTTP_HOST'] . '/api/affiliate.php');
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($affiliateData));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_exec($ch);
+            curl_close($ch);
+        }
+        
         $verifyLink = $baseUrl . "/verify_email.html?token=" . urlencode($verification_token) . "&email=" . urlencode($email);
         send_email($email, "Verify your email - Pips & Profit Academy", "Please verify your email by visiting: " . $verifyLink);
         echo json_encode(['success' => true, 'message' => 'Registration successful. Please verify your email.', 'verify_link' => $verifyLink]);
@@ -557,6 +579,19 @@ if ($action === 'register') {
         echo json_encode(['success' => false, 'message' => 'Failed to resend verification']);
     }
 } elseif ($action === 'me') {
+    if (!isset($_SESSION['user_id'])) {
+        echo json_encode(['success' => false, 'message' => 'Not logged in']);
+        exit;
+    }
+    $stmt = $conn->prepare("SELECT id, name, email, role, plan, profile_picture, bio, COALESCE(email_verified, 0) as email_verified, created_at FROM users WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $u = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($u) {
+        echo json_encode(['success' => true, 'user' => $u]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'User not found']);
+    }
+} elseif ($action === 'check_session') {
     if (!isset($_SESSION['user_id'])) {
         echo json_encode(['success' => false, 'message' => 'Not logged in']);
         exit;
