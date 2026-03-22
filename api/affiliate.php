@@ -42,8 +42,8 @@ function generateAffiliateLink($code) {
     $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') 
                || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
     $protocol = $isHttps ? 'https' : 'http';
-    $baseUrl = $protocol . '://' . $_SERVER['HTTP_HOST'];
-    return $baseUrl . '/register.html?ref=' . $code;
+    $host = $_SERVER['HTTP_HOST'] ?? 'pips-and-profits-academy.vercel.app';
+    return $protocol . '://' . $host . '/register.html?ref=' . $code;
 }
 
 // Get commission rate for user plan
