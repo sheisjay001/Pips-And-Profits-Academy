@@ -83,9 +83,13 @@
                 const response = await fetch(`api/affiliate.php?action=check_referral_code&code=${code}`);
                 const result = await response.json();
                 
-                if (!result.success) {
+                if (result.success && result.affiliate) {
+                    document.getElementById('referralCodeDisplay').textContent = result.affiliate.affiliate_name || code;
+                    document.getElementById('referralInfo').style.display = 'block';
+                } else {
                     document.getElementById('referralInfo').className = 'alert alert-warning small';
                     document.getElementById('referralInfo').innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Invalid referral code';
+                    document.getElementById('referralInfo').style.display = 'block';
                 }
             } catch (error) {
                 console.error('Error validating referral code:', error);

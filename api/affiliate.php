@@ -38,8 +38,11 @@ function generateAffiliateCode($conn) {
 
 // Generate affiliate link
 function generateAffiliateLink($code) {
-    $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
-    return $baseUrl . '/register?ref=' . $code;
+    $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') 
+               || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+    $protocol = $isHttps ? 'https' : 'http';
+    $baseUrl = $protocol . '://' . $_SERVER['HTTP_HOST'];
+    return $baseUrl . '/register.html?ref=' . $code;
 }
 
 // Get commission rate for user plan
