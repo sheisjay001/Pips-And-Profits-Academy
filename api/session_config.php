@@ -9,7 +9,7 @@ session_set_cookie_params([
     'domain' => '',
     'secure' => $isHttps, // True if HTTPS, False otherwise
     'httponly' => true,
-    'samesite' => $isHttps ? 'None' : 'Lax' // None for HTTPS (Cross-Site), Lax for HTTP (Same-Site/Localhost)
+    'samesite' => 'Lax' // Use 'Lax' for same-domain requests (fixes Vercel cookie issues)
 ]);
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -29,8 +29,18 @@ if (!isset($_SESSION['csrf_token'])) {
 function validate_csrf() {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $headerToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        
+        // Debug: Log token mismatch if it occurs
         if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $headerToken)) {
-            echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
+            // Optional: Log mismatch to help identify session loss issues
+            // error_log("CSRF Mismatch: SessionToken=" . ($_SESSION['csrf_token'] ?? 'NULL') . ", HeaderToken=" . ($headerToken ?: 'NULL'));
+            
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Invalid CSRF token',
+                'session_active' => isset($_SESSION['user_id']),
+                'token_mismatch' => true
+            ]);
             exit;
         }
     }

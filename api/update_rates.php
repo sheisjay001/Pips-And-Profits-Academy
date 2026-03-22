@@ -1,5 +1,5 @@
 <?php
-require_once 'api/db_connect.php';
+require_once 'db_connect.php';
 
 echo "<h2>Updating Commission Rates to 50%</h2>";
 
