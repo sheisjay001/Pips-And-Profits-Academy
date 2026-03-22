@@ -2,6 +2,7 @@
 /**
  * Comprehensive Live Diagnostic & Repair Tool
  */
+require_once 'session_config.php';
 require_once 'db_connect.php';
 require_once 'db_helper.php';
 

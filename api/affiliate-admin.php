@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
+require_once 'session_config.php';
 require_once 'db_connect.php';
 require_once 'db_helper.php';
 
