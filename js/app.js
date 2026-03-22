@@ -75,12 +75,33 @@ const App = {
     },
     
     async ensureCsrf() {
+        // 1. Try to read from cookie first (Stateless/Serverless support)
+        const cookieToken = this.getCookie('ppa_csrf_token');
+        if (cookieToken) {
+            localStorage.setItem('ppa_csrf_token', cookieToken);
+            return cookieToken;
+        }
+
+        // 2. Fallback to localStorage if cookie not accessible
         const existing = localStorage.getItem('ppa_csrf_token');
         if (existing) return existing;
+
+        // 3. Last resort: API call to auth.php to generate/get token
         const result = await this.api('auth.php', 'POST', { action: 'csrf' });
         if (result && result.token) {
             localStorage.setItem('ppa_csrf_token', result.token);
             return result.token;
+        }
+        return null;
+    },
+
+    getCookie(name) {
+        try {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        } catch (e) {
+            console.error('Error reading cookie:', e);
         }
         return null;
     },
