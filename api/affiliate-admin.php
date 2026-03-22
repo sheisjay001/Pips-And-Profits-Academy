@@ -29,7 +29,8 @@ function getPostParams() {
 
 // Check admin access
 function checkAdminAccess() {
-    if (!isset($_SESSION['user_id'])) {
+    $userId = get_authenticated_user_id();
+    if (!$userId) {
         echo json_encode(['success' => false, 'message' => 'Not logged in']);
         exit;
     }
@@ -38,7 +39,7 @@ function checkAdminAccess() {
     $roleCol = getRoleColumn($conn);
     
     $stmt = $conn->prepare("SELECT $roleCol as role FROM users WHERE id = ?");
-    $stmt->execute([$_SESSION['user_id']]);
+    $stmt->execute([$userId]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
     // Check if admin (role_id 1 or role 'admin')

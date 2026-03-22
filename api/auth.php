@@ -261,7 +261,9 @@ if ($action === 'register') {
 
     if ($user && password_verify($password, $user['password'])) {
         unset($user['password']); // Don't send password back
-        $_SESSION['user_id'] = $user['id'];
+        
+        // Use secure session setter (Stateless support for Vercel)
+        set_authenticated_user_id($user['id']);
         
         echo json_encode(['success' => true, 'user' => $user]);
     } else {

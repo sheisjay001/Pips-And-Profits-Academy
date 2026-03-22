@@ -63,11 +63,12 @@ try {
 
     // 3. Show Current Admin
     echo "<h3>3. Current Session Status</h3>";
-    if (isset($_SESSION['user_id'])) {
+    $userId = get_authenticated_user_id();
+    if ($userId) {
         $stmt = $conn->prepare("SELECT id, $nameCol as name, $roleCol as role FROM users WHERE id = ?");
-        $stmt->execute([$_SESSION['user_id']]);
+        $stmt->execute([$userId]);
         $curr = $stmt->fetch(PDO::FETCH_ASSOC);
-        echo "<p>Logged in as: <strong>" . ($curr['name'] ?? 'Unknown') . "</strong> (ID: {$_SESSION['user_id']})</p>";
+        echo "<p>Logged in as: <strong>" . ($curr['name'] ?? 'Unknown') . "</strong> (ID: $userId)</p>";
         echo "<p>Role: <strong>" . ($curr['role'] ?? 'None') . "</strong></p>";
         
         $isAdmin = $curr && ($curr['role'] == 1 || $curr['role'] === 'admin');
