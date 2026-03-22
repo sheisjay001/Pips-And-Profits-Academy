@@ -75,8 +75,7 @@ if ($method === 'GET') {
             $stmt = $conn->prepare("
                 SELECT au.*, u.$nameCol as name, u.email 
                 FROM affiliate_users au 
-                LEFT JOIN users u ON au.user_id = u.id 
-                ORDER BY au.created_at DESC
+                LEFT JOIN users u ON au.user_id = u.id
             ");
             $stmt->execute();
             $affiliates = $stmt->fetchAll(PDO::FETCH_ASSOC);
