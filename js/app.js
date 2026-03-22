@@ -32,7 +32,8 @@ const App = {
         if (data) options.body = JSON.stringify(data);
         try {
             if (method !== 'GET') {
-                const token = localStorage.getItem('ppa_csrf_token');
+                // Ensure we have the freshest token from the cookie
+                const token = this.getCookie('ppa_csrf_token') || localStorage.getItem('ppa_csrf_token');
                 if (token) {
                     options.headers['X-CSRF-Token'] = token;
                 }

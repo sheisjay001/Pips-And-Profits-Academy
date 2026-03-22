@@ -131,13 +131,6 @@ if ($method === 'GET') {
     $params = getPostParams();
     $action = $params['action'] ?? '';
     
-    // CSRF protection
-    $csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-    if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-        echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
-        exit;
-    }
-    
     if ($action === 'update_affiliate_status') {
         $affiliateId = $params['affiliate_id'] ?? null;
         $newStatus = $params['status'] ?? null;
