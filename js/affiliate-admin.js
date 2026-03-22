@@ -52,6 +52,11 @@ const AffiliateAdmin = {
                 App.api('affiliate-admin.php?action=get_all_payouts')
             ]);
 
+            if (affRes.setup_required) {
+                this.showSetupRequired();
+                return;
+            }
+
             if (affRes.success) this.adminData.affiliates = affRes.affiliates || [];
             if (refRes.success) this.adminData.referrals = refRes.referrals || [];
             if (payRes.success) this.adminData.payouts = payRes.payouts || [];
@@ -60,6 +65,34 @@ const AffiliateAdmin = {
         } catch (error) {
             console.error('Error loading admin data:', error);
             this.showAlert('Failed to load affiliate data', 'danger');
+        }
+    },
+
+    showSetupRequired() {
+        const container = document.querySelector('.container-fluid.p-4');
+        if (container) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="card border-0 shadow-sm mx-auto" style="max-width: 600px;">
+                        <div class="card-body p-5">
+                            <i class="fa-solid fa-screwdriver-wrench fa-4x text-danger mb-4"></i>
+                            <h2 class="fw-bold">Database Migration Required</h2>
+                            <p class="text-muted mb-4">The affiliate database tables have not been created yet on this server environment.</p>
+                            <div class="bg-light p-3 rounded mb-4 text-start">
+                                <p class="small fw-bold mb-2 text-uppercase">How to fix:</p>
+                                <ol class="small mb-0">
+                                    <li>Ensure your production database credentials are correct.</li>
+                                    <li>Run the <code>run_affiliate_migration.php</code> script via browser or CLI.</li>
+                                    <li>Verify the <code>affiliate_users</code> table exists.</li>
+                                </ol>
+                            </div>
+                            <button class="btn btn-dark" onclick="location.reload()">
+                                <i class="fa-solid fa-sync me-2"></i>Retry Connection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
     },
 

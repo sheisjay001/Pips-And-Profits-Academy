@@ -54,6 +54,21 @@ function checkAdminAccess() {
 if ($method === 'GET') {
     checkAdminAccess();
     
+    // Check if affiliate_users table exists
+    try {
+        $conn->query("SELECT 1 FROM affiliate_users LIMIT 1");
+    } catch (PDOException $e) {
+        echo json_encode([
+            'success' => true, 
+            'affiliates' => [], 
+            'referrals' => [], 
+            'payouts' => [],
+            'message' => 'Database tables not setup yet.',
+            'setup_required' => true
+        ]);
+        exit;
+    }
+
     $action = $_GET['action'] ?? '';
     
     if ($action === 'get_all_affiliates') {

@@ -40,6 +40,11 @@ const AffiliateDashboard = {
             const result = await App.api(`affiliate.php?action=get_affiliate_info&user_id=${this.currentUserId}`);
             
             if (result.success) {
+                if (result.setup_required) {
+                    this.showSetupRequired();
+                    return;
+                }
+
                 if (result.affiliate) {
                     this.affiliateData = result;
                     this.showDashboard();
@@ -55,6 +60,28 @@ const AffiliateDashboard = {
         } finally {
             this.showLoading(false);
         }
+    },
+
+    showSetupRequired() {
+        document.getElementById('mainContent').innerHTML = `
+            <div class="text-center py-5">
+                <div class="card border-0 shadow-sm mx-auto" style="max-width: 600px;">
+                    <div class="card-body p-5">
+                        <i class="fa-solid fa-database fa-4x text-warning mb-4"></i>
+                        <h2 class="fw-bold">System Setup in Progress</h2>
+                        <p class="text-muted mb-4">The affiliate system is currently being configured on this server. Please check back shortly.</p>
+                        <div class="alert alert-info small">
+                            <i class="fa-solid fa-info-circle me-2"></i>
+                            Admin: Please ensure you have run the database migration scripts.
+                        </div>
+                        <button class="btn btn-purple mt-3" onclick="location.reload()">
+                            <i class="fa-solid fa-sync me-2"></i>Refresh Page
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('mainContent').style.display = 'block';
     },
 
     showDashboard() {
