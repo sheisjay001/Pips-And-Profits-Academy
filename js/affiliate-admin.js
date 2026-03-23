@@ -21,45 +21,6 @@ const AffiliateAdmin = {
         this.updateAdminNav(user);
         this.setupEventListeners();
         await this.loadData();
-        await this.loadSettings();
-    },
-
-    async loadSettings() {
-        try {
-            const result = await App.api('admin_settings.php');
-            if (result.success && result.settings) {
-                const s = result.settings;
-                document.getElementById('signal_notifications_enabled').checked = s.signal_notifications_enabled === '1';
-                document.getElementById('webhook_url').value = s.webhook_url || '';
-                
-                // Set feed URL
-                const feedUrl = window.location.origin + window.location.pathname.replace('affiliate-admin.html', 'api/signals.php?action=feed');
-                document.getElementById('signalFeedUrl').textContent = feedUrl;
-            }
-        } catch (error) {
-            console.error('Error loading settings:', error);
-        }
-    },
-
-    async saveSettings() {
-        const settings = {
-            signal_notifications_enabled: document.getElementById('signal_notifications_enabled').checked ? '1' : '0',
-            webhook_url: document.getElementById('webhook_url').value
-        };
-
-        try {
-            const result = await App.api('admin_settings.php', 'POST', {
-                action: 'update_settings',
-                settings: settings
-            });
-            if (result.success) {
-                this.showAlert('Settings saved successfully!', 'success');
-            } else {
-                this.showAlert(result.message, 'danger');
-            }
-        } catch (error) {
-            this.showAlert('Failed to save settings', 'danger');
-        }
     },
 
     updateAdminNav(user) {
@@ -81,14 +42,6 @@ const AffiliateAdmin = {
             e.preventDefault();
             document.getElementById('wrapper').classList.toggle('toggled');
         });
-
-        const settingsForm = document.getElementById('globalSettingsForm');
-        if (settingsForm) {
-            settingsForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.saveSettings();
-            });
-        }
     },
 
     async loadData() {

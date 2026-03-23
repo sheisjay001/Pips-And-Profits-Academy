@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Performance Auditor - Pips and Profit Academy</title>
+    <!-- Favicon -->
+    <link rel="icon" href="images/logo.jpg" type="image/jpeg">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-light">
+
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div class="bg-purple text-white border-end" id="sidebar-wrapper">
+            <div class="sidebar-heading border-bottom bg-purple-dark fw-bold d-flex align-items-center p-3">
+                <img src="images/logo.jpg" alt="Logo" width="30" height="30" class="me-2 rounded-circle">
+                Pips & Profit
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="dashboard.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
+                    <i class="fa-solid fa-gauge me-2"></i> Dashboard
+                </a>
+                <a href="courses.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
+                    <i class="fa-solid fa-graduation-cap me-2"></i> My Courses
+                </a>
+                <a href="signals.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
+                    <i class="fa-solid fa-signal me-2"></i> Signals
+                </a>
+                <a href="auditor.html" class="list-group-item list-group-item-action bg-purple text-white border-0 active p-3">
+                    <i class="fa-solid fa-robot me-2"></i> AI Performance Auditor <span class="badge bg-danger rounded-pill float-end">New</span>
+                </a>
+                <a href="tools.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
+                    <i class="fa-solid fa-tools me-2"></i> Trading Tools
+                </a>
+                <a href="community.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
+                    <i class="fa-brands fa-telegram me-2"></i> Community
+                </a>
+                <a href="affiliate.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
+                    <i class="fa-solid fa-chart-line me-2"></i> Affiliate Program
+                </a>
+                <a href="settings.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3 mt-5">
+                    <i class="fa-solid fa-gear me-2"></i> Settings
+                </a>
+                <a href="#" onclick="App.logout()" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
+                    <i class="fa-solid fa-right-from-bracket me-2"></i> Logout
+                </a>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper" class="w-100">
+            
+            <!-- Top Navigation -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
+                <div class="container-fluid">
+                    <button class="btn btn-purple btn-sm" id="sidebarToggle"><i class="fa-solid fa-bars"></i></button>
+                    
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul class="navbar-nav ms-auto mt-2 mt-lg-0 align-items-center">
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                    <img src="https://ui-avatars.com/api/?name=Trader+Joe&background=6f42c1&color=fff" alt="User" class="rounded-circle me-2" width="32" height="32" id="navUserAvatar">
+                                    <span class="fw-bold text-dark" id="navUserName">Trader Joe</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end border-0 shadow">
+                                    <li><a class="dropdown-item" href="settings.html">Profile</a></li>
+                                    <li><a class="dropdown-item" href="settings.html#billing">Billing</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="App.logout()">Logout</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Auditor Content -->
+            <div class="container-fluid p-4">
+                <div class="row mb-4 align-items-center">
+                    <div class="col-md-6">
+                        <h2 class="fw-bold text-purple">AI Performance Auditor</h2>
+                        <p class="text-secondary">Upload your MT4/MT5 history to identify your psychological biases.</p>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Upload Section -->
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+                                <h5 class="fw-bold mb-4">Step 1: Upload Journal</h5>
+                                <form id="uploadForm">
+                                    <div class="mb-3">
+                                        <label for="trade_file" class="form-label small text-muted">Select CSV Export (MT4/MT5)</label>
+                                        <input type="file" class="form-control" id="trade_file" accept=".csv" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-purple w-100 fw-bold" id="uploadBtn">
+                                        <i class="fa-solid fa-upload me-2"></i> Analyze My Trading
+                                    </button>
+                                </form>
+                                <div class="mt-4 p-3 bg-light rounded-3">
+                                    <h6 class="fw-bold small mb-2"><i class="fa-solid fa-circle-info me-1"></i> How to export:</h6>
+                                    <ol class="small text-secondary mb-0 ps-3">
+                                        <li>Open MT4/MT5 Account History</li>
+                                        <li>Right-click on any trade</li>
+                                        <li>Select "Save as Report" or "Export to CSV"</li>
+                                        <li>Upload that file here</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Report Section -->
+                    <div class="col-md-8">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-4" id="reportSection">
+                                <div class="text-center py-5" id="reportPlaceholder">
+                                    <i class="fa-solid fa-chart-pie fa-4x text-light mb-3"></i>
+                                    <h5 class="text-secondary">Your report will appear here</h5>
+                                    <p class="text-muted small">Upload your trade history to see the analysis.</p>
+                                </div>
+                                
+                                <div id="reportContent" style="display: none;">
+                                    <h4 class="fw-bold text-purple mb-4">Psychological Bias Report</h4>
+                                    
+                                    <!-- Stats Grid -->
+                                    <div class="row g-3 mb-4 text-center">
+                                        <div class="col-4">
+                                            <div class="p-3 bg-light rounded-3">
+                                                <small class="text-muted d-block">Win Rate</small>
+                                                <span class="h4 fw-bold text-success" id="winRate">0%</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="p-3 bg-light rounded-3">
+                                                <small class="text-muted d-block">Total Trades</small>
+                                                <span class="h4 fw-bold text-dark" id="totalTrades">0</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="p-3 bg-light rounded-3">
+                                                <small class="text-muted d-block">Net Profit</small>
+                                                <span class="h4 fw-bold" id="netProfit">$0</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- AI Biases -->
+                                    <h6 class="fw-bold mb-3"><i class="fa-solid fa-brain text-danger me-2"></i> Detected Biases & Bad Habits</h6>
+                                    <div id="biasList" class="mb-4">
+                                        <!-- Biases will be injected here -->
+                                    </div>
+
+                                    <!-- Recommendation -->
+                                    <div class="alert alert-purple border-0 mb-0">
+                                        <h6 class="fw-bold mb-2"><i class="fa-solid fa-lightbulb me-2"></i> Digital Mentor Recommendation</h6>
+                                        <p class="small mb-0" id="recommendationText">Your data suggests you are doing great! Keep following your plan.</p>
+                                    </div>
+                                </div>
+
+                                <div class="text-center py-5" id="loadingSpinner" style="display: none;">
+                                    <div class="spinner-border text-purple" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-3 text-secondary">AI is analyzing your trades...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="js/script.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            App.checkAuth();
+            if (!App.checkAccess('performance_auditor')) {
+                const wrapper = document.getElementById('page-content-wrapper');
+                wrapper.innerHTML = `
+                    <div class="container p-5 text-center">
+                        <div class="card border-0 shadow-sm p-5">
+                            <i class="fa-solid fa-lock fa-4x text-muted mb-4"></i>
+                            <h3 class="fw-bold">Premium Feature</h3>
+                            <p class="text-secondary mb-4">The AI Performance Auditor is only available to Pro and Elite members.</p>
+                            <div class="d-grid gap-2 col-sm-6 mx-auto">
+                                <button class="btn btn-warning text-dark fw-bold" onclick="App.initiatePayment('paystack','pro')">Upgrade to Pro</button>
+                                <button class="btn btn-purple fw-bold text-white" onclick="App.initiatePayment('paystack','premium')">Upgrade to Premium</button>
+                                <a href="dashboard.html" class="btn btn-link text-decoration-none">Back to Dashboard</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            const user = App.getCurrentUser();
+            if (user) {
+                const navUserName = document.getElementById('navUserName');
+                const navUserAvatar = document.getElementById('navUserAvatar');
+                if (navUserName) navUserName.textContent = user.name;
+                if (navUserAvatar) {
+                    navUserAvatar.src = user.profile_picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff`;
+                }
+            }
+
+            const uploadForm = document.getElementById('uploadForm');
+            uploadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const fileInput = document.getElementById('trade_file');
+                const formData = new FormData();
+                formData.append('trade_file', fileInput.files[0]);
+
+                document.getElementById('reportPlaceholder').style.display = 'none';
+                document.getElementById('reportContent').style.display = 'none';
+                document.getElementById('loadingSpinner').style.display = 'block';
+
+                try {
+                    const uploadRes = await fetch('api/auditor.php?action=upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const uploadData = await uploadRes.json();
+
+                    if (uploadData.success) {
+                        const analyzeRes = await fetch('api/auditor.php?action=analyze');
+                        const analyzeData = await analyzeRes.json();
+
+                        if (analyzeData.success) {
+                            renderReport(analyzeData.report);
+                        } else {
+                            alert(analyzeData.message);
+                        }
+                    } else {
+                        alert(uploadData.message);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred during analysis.');
+                } finally {
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                }
+            });
+        });
+
+        function renderReport(report) {
+            const content = document.getElementById('reportContent');
+            const biasList = document.getElementById('biasList');
+            const winRateEl = document.getElementById('winRate');
+            const totalTradesEl = document.getElementById('totalTrades');
+            const netProfitEl = document.getElementById('netProfit');
+            const recommendationText = document.getElementById('recommendationText');
+
+            const winRate = (report.wins / report.total_trades * 100).toFixed(1);
+            winRateEl.textContent = winRate + '%';
+            totalTradesEl.textContent = report.total_trades;
+            netProfitEl.textContent = (report.total_profit >= 0 ? '$' : '-$') + Math.abs(report.total_profit).toFixed(2);
+            netProfitEl.className = 'h4 fw-bold ' + (report.total_profit >= 0 ? 'text-success' : 'text-danger');
+
+            biasList.innerHTML = '';
+            if (report.biases.length === 0) {
+                biasList.innerHTML = '<div class="p-3 bg-light rounded-3 text-secondary small">No significant negative biases detected in this sample size.</div>';
+                recommendationText.textContent = "Your trading discipline seems solid based on this data. Maintain your risk management and keep journaling.";
+            } else {
+                report.biases.forEach(bias => {
+                    const div = document.createElement('div');
+                    div.className = 'p-3 bg-light rounded-3 border-start border-danger border-4 mb-2 small';
+                    div.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-danger me-2"></i> ${bias}`;
+                    biasList.appendChild(div);
+                });
+                recommendationText.textContent = "Focus on eliminating the specific habits identified above. Review your plan before each session and avoid trading during your low-performance periods.";
+            }
+
+            content.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

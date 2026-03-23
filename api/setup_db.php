@@ -111,6 +111,29 @@ try {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )");
 
+    // 10. Trade History Table (Feature 1: AI Performance Auditor)
+    $conn->exec("CREATE TABLE IF NOT EXISTS trade_history (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        ticket VARCHAR(50),
+        symbol VARCHAR(20),
+        type VARCHAR(10),
+        lots DECIMAL(10, 2),
+        open_time DATETIME,
+        open_price DECIMAL(10, 5),
+        close_time DATETIME,
+        close_price DECIMAL(10, 5),
+        sl DECIMAL(10, 5),
+        tp DECIMAL(10, 5),
+        profit DECIMAL(10, 2),
+        pips DECIMAL(10, 1),
+        duration_minutes INT,
+        day_of_week VARCHAR(15),
+        hour_of_day INT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )");
+
     // 9. Settings Table
     $conn->exec("CREATE TABLE IF NOT EXISTS settings (
         setting_key VARCHAR(50) PRIMARY KEY,

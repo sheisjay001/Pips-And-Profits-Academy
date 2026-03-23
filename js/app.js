@@ -120,7 +120,8 @@ const App = {
         const pro = [
             'premium_signals',
             'live_trading',
-            'advanced_courses'
+            'advanced_courses',
+            'performance_auditor'
         ];
         const premium = [
             'mentorship',
