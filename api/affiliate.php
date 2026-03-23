@@ -209,8 +209,8 @@ if ($method === 'GET') {
              // Specific manual link for joyrobertauta@gmail.com to soteriamaa@gmail.com
              try {
                  $conn->exec("
-                    INSERT IGNORE INTO affiliate_referrals (affiliate_id, referred_user_id, referral_code, status)
-                    SELECT au.id, u.id, au.affiliate_code, 'pending'
+                    INSERT IGNORE INTO affiliate_referrals (affiliate_id, referred_user_id, referral_code, status, signup_date)
+                    SELECT au.id, u.id, au.affiliate_code, 'pending', u.created_at
                     FROM users u
                     JOIN users ua ON ua.email = 'soteriamaa@gmail.com'
                     JOIN affiliate_users au ON au.user_id = ua.id
@@ -287,7 +287,8 @@ if ($method === 'GET') {
                 
                 // Get recent referrals
                 $stmt = $conn->prepare("
-                    SELECT ar.*, IFNULL(ar.commission_earned, 0) as commission_amount, u.$nameCol as referred_name, u.email as referred_email, u.created_at as user_signup_date
+                    SELECT ar.*, IFNULL(ar.signup_date, u.created_at) as signup_date, IFNULL(ar.commission_earned, 0) as commission_amount, 
+                           u.$nameCol as referred_name, u.email as referred_email, u.plan as referred_plan, u.profile_picture as referred_profile_picture
                     FROM affiliate_referrals ar
                     JOIN users u ON ar.referred_user_id = u.id
                     WHERE ar.affiliate_id = ?
@@ -364,7 +365,7 @@ if ($method === 'GET') {
         try {
             $nameCol = getUserNameColumn($conn);
             $stmt = $conn->prepare("
-                SELECT u.$nameCol as name, au.referral_count, au.total_earnings, u.profile_picture
+                SELECT u.$nameCol as name, IFNULL(au.referral_count, 0) as referral_count, IFNULL(au.total_earnings, 0) as total_earnings, u.profile_picture
                 FROM affiliate_users au
                 JOIN users u ON au.user_id = u.id
                 WHERE au.status = 'active'

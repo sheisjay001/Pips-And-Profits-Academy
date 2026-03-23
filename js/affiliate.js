@@ -189,25 +189,30 @@ const AffiliateDashboard = {
 
     updateReferralsTable() {
         const tbody = document.getElementById('referralsTableBody');
+        if (!tbody) return;
+        
         const referrals = this.affiliateData.recentReferrals || [];
         
         if (referrals.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No referrals yet</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No referrals yet</td></tr>';
             return;
         }
         
         tbody.innerHTML = referrals.map(referral => `
             <tr>
-                <td>${referral.referred_name || 'N/A'}</td>
-                <td>${referral.referred_email || 'N/A'}</td>
-                <td>${App.formatDate(referral.signup_date)}</td>
-                <td>$${(parseFloat(referral.commission_amount) || 0).toFixed(2)}</td>
-                <td><span class="badge bg-${this.getStatusColor(referral.status)}">${referral.status}</span></td>
+                <td>
+                    <div class="fw-bold">${referral.referred_name || 'Trader'}</div>
+                    <div class="text-muted small">${referral.referred_email || 'N/A'}</div>
+                </td>
+                <td>${referral.signup_date ? App.formatDate(referral.signup_date) : 'N/A'}</td>
+                <td class="fw-bold text-success">$${(parseFloat(referral.commission_amount) || 0).toFixed(2)}</td>
+                <td><span class="badge bg-${this.getStatusColor(referral.status || 'pending')}">${referral.status || 'Pending'}</span></td>
             </tr>
         `).join('');
     },
 
     getStatusColor(status) {
+        if (!status) return 'secondary';
         switch(status.toLowerCase()) {
             case 'confirmed': return 'success';
             case 'pending': return 'warning';
@@ -259,6 +264,8 @@ const AffiliateDashboard = {
 
     updateWithdrawalsTable() {
         const tbody = document.getElementById('withdrawalsTableBody');
+        if (!tbody) return;
+        
         const withdrawals = this.affiliateData.payoutHistory || [];
         
         if (withdrawals.length === 0) {
@@ -269,8 +276,8 @@ const AffiliateDashboard = {
         tbody.innerHTML = withdrawals.map(withdrawal => `
             <tr>
                 <td class="fw-bold">$${parseFloat(withdrawal.amount).toFixed(2)}</td>
-                <td><span class="badge bg-${this.getStatusColor(withdrawal.status)}">${withdrawal.status}</span></td>
-                <td>${App.formatDate(withdrawal.payout_date)}</td>
+                <td><span class="badge bg-${this.getStatusColor(withdrawal.status || 'pending')}">${withdrawal.status || 'Pending'}</span></td>
+                <td>${withdrawal.payout_date ? App.formatDate(withdrawal.payout_date) : 'N/A'}</td>
                 <td>${withdrawal.processed_date ? App.formatDate(withdrawal.processed_date) : '<span class="text-muted">Pending</span>'}</td>
                 <td><small class="text-muted">${withdrawal.transaction_id || 'N/A'}</small></td>
             </tr>
@@ -382,7 +389,9 @@ const AffiliateDashboard = {
             // Filter referrals for this month
             const monthTotal = (this.affiliateData.recentReferrals || [])
                 .filter(ref => {
-                    const refDate = new Date(ref.signup_date);
+                    const dateStr = ref.signup_date || ref.user_signup_date;
+                    if (!dateStr) return false;
+                    const refDate = new Date(dateStr);
                     return refDate.getMonth() === monthIdx && refDate.getFullYear() === d.getFullYear() && ref.status === 'confirmed';
                 })
                 .reduce((sum, ref) => sum + (parseFloat(ref.commission_amount) || 0), 0);
