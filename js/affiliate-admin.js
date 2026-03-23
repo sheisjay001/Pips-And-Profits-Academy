@@ -339,6 +339,11 @@ const AffiliateAdmin = {
                         <h5 class="fw-bold mb-1">${affiliate.name}</h5>
                         <p class="text-muted small">${affiliate.email}</p>
                         <span class="badge bg-${this.getStatusColor(affiliate.status)} mb-3">${affiliate.status}</span>
+                        ${affiliate.status === 'pending' ? `
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-success btn-sm" onclick="toggleAffiliateStatus(${affiliate.id}, 'pending')">Approve Affiliate</button>
+                            </div>
+                        ` : ''}
                     </div>
                     <div class="col-md-8">
                         <h6 class="text-muted small text-uppercase fw-bold mb-3">Affiliate Info</h6>
@@ -361,7 +366,14 @@ const AffiliateAdmin = {
                             </div>
                         </div>
 
-                        <h6 class="text-muted small text-uppercase fw-bold mb-3">Bank Details</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="text-muted small text-uppercase fw-bold mb-0">Bank Details</h6>
+                            ${bank ? `
+                                <span class="badge bg-${bank.is_verified ? 'success' : 'warning'}">
+                                    ${bank.is_verified ? 'Verified' : 'Pending Verification'}
+                                </span>
+                            ` : ''}
+                        </div>
                         ${bank ? `
                             <div class="card bg-light border-0 mb-4">
                                 <div class="card-body p-3">
@@ -370,7 +382,16 @@ const AffiliateAdmin = {
                                         <div class="col-6 small"><strong>Account:</strong> ${bank.account_number}</div>
                                         <div class="col-6 small"><strong>Name:</strong> ${bank.account_name}</div>
                                         <div class="col-6 small"><strong>Country:</strong> ${bank.country}</div>
+                                        <div class="col-6 small"><strong>Currency:</strong> ${bank.currency}</div>
+                                        <div class="col-6 small"><strong>Swift/BIC:</strong> ${bank.swift_code || 'N/A'}</div>
                                     </div>
+                                    ${!bank.is_verified ? `
+                                        <div class="mt-3 text-end">
+                                            <button class="btn btn-purple btn-sm" onclick="verifyBankAccount(${bank.id})">
+                                                <i class="fa-solid fa-check-circle me-1"></i> Verify Bank Details
+                                            </button>
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
                         ` : '<p class="text-muted small mb-4">No bank account linked.</p>'}
@@ -404,6 +425,26 @@ const AffiliateAdmin = {
         } catch (error) {
             console.error('Error fetching details:', error);
             this.showAlert('Failed to load details', 'danger');
+        }
+    },
+
+    async verifyBankAccount(bankAccountId) {
+        if (!confirm('Are you sure you want to verify these bank details?')) return;
+
+        try {
+            const res = await App.api('affiliate-admin.php', 'POST', {
+                action: 'verify_bank_account',
+                bank_account_id: bankAccountId
+            });
+            if (res.success) {
+                this.showAlert('Bank account verified!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('affiliateDetailsModal')).hide();
+                this.loadData();
+            } else {
+                this.showAlert(res.message, 'danger');
+            }
+        } catch (error) {
+            this.showAlert('Verification failed', 'danger');
         }
     },
 
@@ -573,6 +614,7 @@ window.updatePayoutStatus = (id, status) => AffiliateAdmin.updatePayoutStatus(id
 window.processMonthlyPayouts = () => AffiliateAdmin.processMonthlyPayouts();
 window.viewAffiliateDetails = (id) => AffiliateAdmin.viewAffiliateDetails(id);
 window.viewPayoutDetails = (id) => AffiliateAdmin.viewPayoutDetails(id);
+window.verifyBankAccount = (id) => AffiliateAdmin.verifyBankAccount(id);
 
 // Init
 document.addEventListener('DOMContentLoaded', () => AffiliateAdmin.init());

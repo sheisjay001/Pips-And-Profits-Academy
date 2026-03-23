@@ -565,13 +565,18 @@ const App = {
         }
     },
 
-    copyToClipboard(elementId) {
-        const copyText = document.getElementById(elementId);
-        copyText.select();
-        copyText.setSelectionRange(0, 99999); 
-        navigator.clipboard.writeText(copyText.value).then(() => {
-            alert("Address copied to clipboard!");
-        });
+    copyToClipboard(textOrId, message = "Copied to clipboard!") {
+        if (document.getElementById(textOrId)) {
+            const copyText = document.getElementById(textOrId);
+            const value = copyText.value || copyText.textContent;
+            navigator.clipboard.writeText(value).then(() => {
+                alert(message);
+            });
+        } else {
+            navigator.clipboard.writeText(textOrId).then(() => {
+                alert(message);
+            });
+        }
     },
 
     async submitCryptoPayment(event) {

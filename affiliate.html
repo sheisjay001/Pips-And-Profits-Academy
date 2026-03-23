@@ -167,7 +167,10 @@
                         <!-- Page Header -->
                         <div class="row mb-4 align-items-center">
                             <div class="col-md-8">
-                                <h2 class="fw-bold text-purple">Affiliate Dashboard</h2>
+                                <div class="d-flex align-items-center mb-1">
+                                    <h2 class="fw-bold text-purple mb-0">Affiliate Dashboard</h2>
+                                    <span id="affiliateTier" class="badge bg-secondary ms-3">Standard Affiliate</span>
+                                </div>
                                 <p class="text-secondary mb-0">Track your referrals and earnings</p>
                             </div>
                             <div class="col-md-4 text-md-end">
@@ -179,96 +182,104 @@
 
                         <!-- Affiliate Code Box -->
                         <div class="card border-0 shadow-sm mb-4">
-                            <div class="card-body bg-purple text-white text-center">
-                                <h4 class="mb-3">Your Affiliate Code</h4>
-                                <div class="bg-white text-dark p-3 rounded mb-3" style="font-family: monospace; font-size: 1.2rem; letter-spacing: 2px;" id="affiliateCode">LOADING...</div>
-                                <div class="d-flex gap-3 justify-content-center flex-wrap">
-                                    <button class="btn btn-light text-purple" onclick="copyAffiliateCode()">
-                                        <i class="fa-solid fa-copy me-2"></i>Copy Code
-                                    </button>
-                                    <button class="btn btn-light text-purple" onclick="copyAffiliateLink()">
-                                        <i class="fa-solid fa-link me-2"></i>Copy Link
-                                    </button>
+                            <div class="card-body bg-purple text-white text-center p-4">
+                                <div class="row align-items-center">
+                                    <div class="col-lg-6 text-lg-start mb-3 mb-lg-0">
+                                        <h4 class="mb-2">Your Affiliate Link</h4>
+                                        <p class="small text-white text-opacity-75 mb-0">Share this link to earn up to 75% commission on referrals!</p>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="bg-white text-dark p-2 rounded d-flex align-items-center shadow-sm">
+                                            <div class="flex-grow-1 text-truncate px-2" id="affiliateLink" style="font-family: monospace; font-size: 0.9rem;">LOADING...</div>
+                                            <button class="btn btn-purple btn-sm ms-2" onclick="copyAffiliateLink()">
+                                                <i class="fa-solid fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Statistics Cards -->
                         <div class="row g-4 mb-5">
-                            <div class="col-md-3">
+                            <div class="col-md-3 col-sm-6">
                                 <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body d-flex justify-content-between align-items-center">
-                                        <div>
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between mb-3">
                                             <h6 class="text-muted text-uppercase small fw-bold">Total Referrals</h6>
-                                            <h3 class="fw-bold text-dark mb-0" id="totalReferrals">0</h3>
+                                            <div class="icon-box-sm bg-purple-light text-purple rounded-circle">
+                                                <i class="fa-solid fa-users"></i>
+                                            </div>
                                         </div>
-                                        <div class="icon-box bg-purple-light text-purple rounded-circle p-3">
-                                            <i class="fa-solid fa-users fa-lg"></i>
-                                        </div>
+                                        <h3 class="fw-bold text-dark mb-0" id="totalReferrals">0</h3>
+                                        <p class="text-success small mt-2 mb-0"><i class="fa-solid fa-arrow-up me-1"></i> Lifetime</p>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 col-sm-6">
                                 <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body d-flex justify-content-between align-items-center">
-                                        <div>
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between mb-3">
                                             <h6 class="text-muted text-uppercase small fw-bold">Total Earnings</h6>
-                                            <h3 class="fw-bold text-success mb-0" id="totalEarnings">$0</h3>
+                                            <div class="icon-box-sm bg-success bg-opacity-10 text-success rounded-circle">
+                                                <i class="fa-solid fa-dollar-sign"></i>
+                                            </div>
                                         </div>
-                                        <div class="icon-box bg-success bg-opacity-10 text-success rounded-circle p-3">
-                                            <i class="fa-solid fa-dollar-sign fa-lg"></i>
-                                        </div>
+                                        <h3 class="fw-bold text-dark mb-0" id="totalEarnings">$0</h3>
+                                        <p class="text-muted small mt-2 mb-0">Paid & Pending</p>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 col-sm-6">
                                 <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body d-flex justify-content-between align-items-center">
-                                        <div>
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between mb-3">
+                                            <h6 class="text-muted text-uppercase small fw-bold">Conversion</h6>
+                                            <div class="icon-box-sm bg-info bg-opacity-10 text-info rounded-circle">
+                                                <i class="fa-solid fa-chart-pie"></i>
+                                            </div>
+                                        </div>
+                                        <h3 class="fw-bold text-dark mb-0" id="convRate">0%</h3>
+                                        <p class="text-muted small mt-2 mb-0"><span id="clickCount">0</span> Clicks</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between mb-3">
                                             <h6 class="text-muted text-uppercase small fw-bold">Current Balance</h6>
-                                            <h3 class="fw-bold text-warning mb-0" id="currentBalance">$0</h3>
+                                            <div class="icon-box-sm bg-warning bg-opacity-10 text-warning rounded-circle">
+                                                <i class="fa-solid fa-wallet"></i>
+                                            </div>
                                         </div>
-                                        <div class="icon-box bg-warning bg-opacity-10 text-warning rounded-circle p-3">
-                                            <i class="fa-solid fa-wallet fa-lg"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h6 class="text-muted text-uppercase small fw-bold">Pending Referrals</h6>
-                                            <h3 class="fw-bold text-info mb-0" id="pendingReferrals">0</h3>
-                                        </div>
-                                        <div class="icon-box bg-info bg-opacity-10 text-info rounded-circle p-3">
-                                            <i class="fa-solid fa-clock fa-lg"></i>
-                                        </div>
+                                        <h3 class="fw-bold text-purple mb-0" id="currentBalance">$0</h3>
+                                        <p class="text-muted small mt-2 mb-0">Available for payout</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Tabs Section -->
-                        <ul class="nav nav-tabs mb-4" id="affiliateTabs" role="tablist">
+                        <ul class="nav nav-tabs mb-4 border-0 gap-2" id="affiliateTabs" role="tablist">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="referrals-tab" data-bs-toggle="tab" data-bs-target="#referrals" type="button" role="tab">
+                                <button class="nav-link active rounded-pill px-4 border-0" id="referrals-tab" data-bs-toggle="tab" data-bs-target="#referrals" type="button" role="tab">
                                     <i class="fa-solid fa-users me-2"></i>Referrals
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="earnings-tab" data-bs-toggle="tab" data-bs-target="#earnings" type="button" role="tab">
-                                    <i class="fa-solid fa-chart-line me-2"></i>Earnings Chart
+                                <button class="nav-link rounded-pill px-4 border-0" id="resources-tab" data-bs-toggle="tab" data-bs-target="#resources" type="button" role="tab">
+                                    <i class="fa-solid fa-bullhorn me-2"></i>Resources
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="bank-tab" data-bs-toggle="tab" data-bs-target="#bank" type="button" role="tab">
-                                    <i class="fa-solid fa-university me-2"></i>Bank Account
+                                <button class="nav-link rounded-pill px-4 border-0" id="bank-tab" data-bs-toggle="tab" data-bs-target="#bank" type="button" role="tab">
+                                    <i class="fa-solid fa-university me-2"></i>Payments
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="withdrawals-tab" data-bs-toggle="tab" data-bs-target="#withdrawals" type="button" role="tab">
-                                    <i class="fa-solid fa-money-bill-wave me-2"></i>Withdrawals
+                                <button class="nav-link rounded-pill px-4 border-0" id="withdrawals-tab" data-bs-toggle="tab" data-bs-target="#withdrawals" type="button" role="tab">
+                                    <i class="fa-solid fa-history me-2"></i>History
                                 </button>
                             </li>
                         </ul>
@@ -276,38 +287,79 @@
                         <div class="tab-content" id="affiliateTabsContent">
                             <!-- Referrals Tab -->
                             <div class="tab-pane fade show active" id="referrals" role="tabpanel">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <h5 class="card-title mb-4">Recent Referrals</h5>
-                                        <div class="table-responsive">
-                                            <table class="table table-hover">
-                                                <thead class="table-light">
-                                                    <tr>
-                                                        <th>Name</th>
-                                                        <th>Email</th>
-                                                        <th>Sign Up Date</th>
-                                                        <th>Commission</th>
-                                                        <th>Status</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="referralsTableBody">
-                                                    <tr>
-                                                        <td colspan="5" class="text-center text-muted">Loading referrals...</td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
+                                <div class="row">
+                                    <div class="col-lg-8">
+                                        <div class="card border-0 shadow-sm mb-4">
+                                            <div class="card-body">
+                                                <h5 class="card-title mb-4">Recent Referrals</h5>
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>Name</th>
+                                                                <th>Sign Up Date</th>
+                                                                <th>Commission</th>
+                                                                <th>Status</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="referralsTableBody">
+                                                            <tr>
+                                                                <td colspan="4" class="text-center text-muted">Loading referrals...</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="card border-0 shadow-sm mb-4">
+                                            <div class="card-body">
+                                                <h5 class="card-title mb-4">Earnings Progress</h5>
+                                                <div style="height: 250px;">
+                                                    <canvas id="earningsChart"></canvas>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Earnings Chart Tab -->
-                            <div class="tab-pane fade" id="earnings" role="tabpanel">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <h5 class="card-title mb-4">Monthly Earnings</h5>
-                                        <div style="height: 400px;">
-                                            <canvas id="earningsChart"></canvas>
+                            <!-- Resources Tab -->
+                            <div class="tab-pane fade" id="resources" role="tabpanel">
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <div class="card border-0 shadow-sm h-100">
+                                            <div class="card-body">
+                                                <h5 class="fw-bold mb-3"><i class="fa-solid fa-pen-nib text-purple me-2"></i>Promotional Copy</h5>
+                                                <p class="text-muted small">Use these high-converting templates for your social media posts.</p>
+                                                
+                                                <div class="bg-light p-3 rounded mb-3 position-relative">
+                                                    <p class="small mb-0 italic">"I finally found a trading community that actually delivers results! 🚀 Join me at Pips & Profit Academy and learn how to trade like a pro. Use my link to get started: [Your Link]"</p>
+                                                    <button class="btn btn-sm btn-link position-absolute top-0 end-0 mt-1" onclick="App.copyToClipboard('I finally found a trading community that actually delivers results! 🚀 Join me at Pips & Profit Academy and learn how to trade like a pro. Use my link to get started: ' + AffiliateDashboard.affiliateData.affiliate.affiliate_link)"><i class="fa-solid fa-copy"></i></button>
+                                                </div>
+                                                
+                                                <div class="bg-light p-3 rounded position-relative">
+                                                    <p class="small mb-0">"Stop guessing and start trading with confidence. The mentorship at Pips & Profit Academy is world-class. Check it out here: [Your Link]"</p>
+                                                    <button class="btn btn-sm btn-link position-absolute top-0 end-0 mt-1" onclick="App.copyToClipboard('Stop guessing and start trading with confidence. The mentorship at Pips & Profit Academy is world-class. Check it out here: ' + AffiliateDashboard.affiliateData.affiliate.affiliate_link)"><i class="fa-solid fa-copy"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card border-0 shadow-sm h-100">
+                                            <div class="card-body">
+                                                <h5 class="fw-bold mb-3"><i class="fa-solid fa-image text-purple me-2"></i>Banners & Assets</h5>
+                                                <p class="text-muted small">Download our official branding assets to use in your marketing.</p>
+                                                <div class="d-grid gap-2">
+                                                    <a href="images/logo.jpg" download class="btn btn-outline-purple btn-sm text-start">
+                                                        <i class="fa-solid fa-download me-2"></i> Official Logo (JPG)
+                                                    </a>
+                                                    <div class="alert alert-info small py-2 mb-0">
+                                                        <i class="fa-solid fa-info-circle me-2"></i> More banners coming soon!
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -318,13 +370,13 @@
                                 <div class="card border-0 shadow-sm">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-center mb-4">
-                                            <h5 class="card-title mb-0">Bank Account Details</h5>
+                                            <h5 class="card-title mb-0">Payout Settings</h5>
                                             <button class="btn btn-purple" onclick="showBankAccountModal()">
-                                                <i class="fa-solid fa-plus me-2"></i>Add/Edit Bank Account
+                                                <i class="fa-solid fa-edit me-2"></i>Update Bank Details
                                             </button>
                                         </div>
                                         <div id="bankAccountInfo">
-                                            <p class="text-muted">No bank account added yet. Add your bank account to receive payouts.</p>
+                                            <!-- Populated by JS -->
                                         </div>
                                     </div>
                                 </div>
@@ -346,14 +398,14 @@
                                                     <tr>
                                                         <th>Amount</th>
                                                         <th>Status</th>
-                                                        <th>Payout Date</th>
-                                                        <th>Processed Date</th>
-                                                        <th>Transaction ID</th>
+                                                        <th>Requested</th>
+                                                        <th>Processed</th>
+                                                        <th>ID</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="withdrawalsTableBody">
                                                     <tr>
-                                                        <td colspan="5" class="text-center text-muted">Loading withdrawal history...</td>
+                                                        <td colspan="5" class="text-center text-muted">Loading history...</td>
                                                     </tr>
                                                 </tbody>
                                             </table>

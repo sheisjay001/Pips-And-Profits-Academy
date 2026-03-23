@@ -123,6 +123,23 @@ if ($method === 'GET') {
         } catch (PDOException $e) {
             echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
         }
+    } elseif ($action === 'get_pending_bank_accounts') {
+        try {
+            $stmt = $conn->prepare("
+                SELECT aba.*, u.$nameCol as affiliate_name, u.email, au.affiliate_code
+                FROM affiliate_bank_accounts aba
+                JOIN affiliate_users au ON aba.affiliate_id = au.id
+                JOIN users u ON au.user_id = u.id
+                WHERE aba.is_verified = FALSE
+                ORDER BY aba.created_at DESC
+            ");
+            $stmt->execute();
+            $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode(['success' => true, 'accounts' => $accounts]);
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+        }
     } elseif ($action === 'get_affiliate_details') {
         $id = $_GET['id'] ?? null;
         if (!$id) {
@@ -227,6 +244,26 @@ if ($method === 'GET') {
             $stmt->execute([$newStatus, $affiliateId]);
             
             echo json_encode(['success' => true, 'message' => 'Affiliate status updated successfully']);
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    } elseif ($action === 'verify_bank_account') {
+        $bankAccountId = $params['bank_account_id'] ?? null;
+        
+        if (!$bankAccountId) {
+            echo json_encode(['success' => false, 'message' => 'Bank account ID required']);
+            exit;
+        }
+        
+        try {
+            $stmt = $conn->prepare("
+                UPDATE affiliate_bank_accounts 
+                SET is_verified = TRUE, updated_at = NOW()
+                WHERE id = ?
+            ");
+            $stmt->execute([$bankAccountId]);
+            
+            echo json_encode(['success' => true, 'message' => 'Bank account verified successfully']);
         } catch (PDOException $e) {
             echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
         }

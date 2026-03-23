@@ -48,15 +48,34 @@ function generateAffiliateLink($code) {
 
 // Get commission rate for user plan
 function getCommissionRate($conn, $userId) {
-    // Affiliate commission is 50% for all plans
-    return 50.00;
+    // Check referral count for tiered commissions
+    try {
+        $stmt = $conn->prepare("SELECT referral_count FROM affiliate_users WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        $count = $stmt->fetchColumn() ?: 0;
+        
+        if ($count >= 50) return 75.00; // Elite: 75%
+        if ($count >= 10) return 60.00; // Pro: 60%
+        return 50.00; // Standard: 50%
+    } catch (Exception $e) {
+        return 50.00;
+    }
 }
 
 if ($method === 'GET') {
     $action = $_GET['action'] ?? '';
     $userId = $_GET['user_id'] ?? null;
     
-    if ($action === 'get_affiliate_info') {
+    // Ensure table structure is updated
+    static $migrationRun = false;
+    if (!$migrationRun) {
+        try {
+            $conn->exec("ALTER TABLE affiliate_users ADD COLUMN IF NOT EXISTS click_count INT DEFAULT 0");
+            $conn->exec("ALTER TABLE affiliate_users ADD COLUMN IF NOT EXISTS total_withdrawn DECIMAL(10, 2) DEFAULT 0.00");
+            $conn->exec("ALTER TABLE affiliate_bank_accounts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+        } catch (Exception $e) {}
+        $migrationRun = true;
+    }
         // Get affiliate information for a user
         if (!$userId) {
             echo json_encode(['success' => false, 'message' => 'User ID required']);
@@ -164,6 +183,10 @@ if ($method === 'GET') {
             $affiliate = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($affiliate) {
+                // Increment click count
+                $stmt = $conn->prepare("UPDATE affiliate_users SET click_count = click_count + 1 WHERE id = ?");
+                $stmt->execute([$affiliate['id']]);
+                
                 echo json_encode(['success' => true, 'affiliate' => $affiliate]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Invalid referral code']);
@@ -203,23 +226,34 @@ if ($method === 'GET') {
                 exit;
             }
             
+            // Check if user is a student (has a paid plan)
+            $stmt = $conn->prepare("SELECT plan FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $userPlan = $stmt->fetchColumn();
+            $isStudent = in_array($userPlan, ['pro', 'elite', 'premium']);
+            $status = $isStudent ? 'active' : 'pending';
+
             // Get commission rate for user
             $commissionRate = getCommissionRate($conn, $userId);
             $affiliateCode = generateAffiliateCode($conn);
             $affiliateLink = generateAffiliateLink($affiliateCode);
             
-            // Create affiliate account with 'pending' status
+            // Create affiliate account
             $stmt = $conn->prepare("
                 INSERT INTO affiliate_users 
                 (user_id, affiliate_code, affiliate_link, commission_rate, status) 
-                VALUES (?, ?, ?, ?, 'pending')
+                VALUES (?, ?, ?, ?, ?)
             ");
-            $stmt->execute([$userId, $affiliateCode, $affiliateLink, $commissionRate]);
+            $stmt->execute([$userId, $affiliateCode, $affiliateLink, $commissionRate, $status]);
             
+            $message = $isStudent 
+                ? 'Success! You are now an affiliate partner. Your unique code and link are ready!' 
+                : 'Success! Your affiliate application has been submitted and is pending approval. You will get access to your code once an admin approves you.';
+
             echo json_encode([
                 'success' => true,
-                'message' => 'Success! Your affiliate application has been submitted and is pending approval. You will get access to your code once an admin approves you.',
-                'status' => 'pending'
+                'message' => $message,
+                'status' => $status
             ]);
         } catch (PDOException $e) {
             echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
@@ -296,6 +330,18 @@ if ($method === 'GET') {
         }
         
         try {
+            // Check if user is a student (has a paid plan)
+            $stmt = $conn->prepare("
+                SELECT u.plan 
+                FROM users u 
+                JOIN affiliate_users au ON u.id = au.user_id 
+                WHERE au.id = ?
+            ");
+            $stmt->execute([$affiliateId]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $isStudent = $user && in_array($user['plan'], ['pro', 'elite', 'premium']);
+            $isVerified = $isStudent ? 1 : 0;
+
             // Check if bank account already exists
             $stmt = $conn->prepare("SELECT id FROM affiliate_bank_accounts WHERE affiliate_id = ?");
             $stmt->execute([$affiliateId]);
@@ -305,21 +351,25 @@ if ($method === 'GET') {
                     UPDATE affiliate_bank_accounts 
                     SET bank_name = ?, account_name = ?, account_number = ?, 
                         routing_number = ?, swift_code = ?, country = ?, currency = ?,
-                        is_verified = FALSE
+                        is_verified = ?
                     WHERE affiliate_id = ?
                 ");
-                $stmt->execute([$bankName, $accountName, $accountNumber, $routingNumber, $swiftCode, $country, $currency, $affiliateId]);
+                $stmt->execute([$bankName, $accountName, $accountNumber, $routingNumber, $swiftCode, $country, $currency, $isVerified, $affiliateId]);
             } else {
                 // Insert new account
                 $stmt = $conn->prepare("
                     INSERT INTO affiliate_bank_accounts 
-                    (affiliate_id, bank_name, account_name, account_number, routing_number, swift_code, country, currency) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    (affiliate_id, bank_name, account_name, account_number, routing_number, swift_code, country, currency, is_verified) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
-                $stmt->execute([$affiliateId, $bankName, $accountName, $accountNumber, $routingNumber, $swiftCode, $country, $currency]);
+                $stmt->execute([$affiliateId, $bankName, $accountName, $accountNumber, $routingNumber, $swiftCode, $country, $currency, $isVerified]);
             }
             
-            echo json_encode(['success' => true, 'message' => 'Bank account added successfully']);
+            echo json_encode([
+                'success' => true, 
+                'message' => $isStudent ? 'Bank account added and automatically verified!' : 'Bank account added and pending verification.',
+                'is_verified' => $isStudent
+            ]);
         } catch (PDOException $e) {
             echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
         }

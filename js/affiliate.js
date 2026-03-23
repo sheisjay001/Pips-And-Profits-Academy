@@ -94,9 +94,11 @@ const AffiliateDashboard = {
         document.getElementById('affiliateDashboard').style.display = 'block';
         document.getElementById('mainContent').style.display = 'block';
         
-        // Update affiliate code
+        // Update affiliate code and link
         const codeEl = document.getElementById('affiliateCode');
+        const linkEl = document.getElementById('affiliateLink');
         if (codeEl) codeEl.textContent = this.affiliateData.affiliate.affiliate_code;
+        if (linkEl) linkEl.textContent = this.affiliateData.affiliate.affiliate_link;
         
         this.updateStatistics();
         this.updateReferralsTable();
@@ -143,6 +145,29 @@ const AffiliateDashboard = {
         document.getElementById('totalEarnings').textContent = '$' + (parseFloat(affiliate.total_earnings) || 0).toFixed(2);
         document.getElementById('currentBalance').textContent = '$' + (parseFloat(affiliate.current_balance) || 0).toFixed(2);
         document.getElementById('pendingReferrals').textContent = stats.pending_referrals || 0;
+
+        // Update Click Count and Conversion Rate if elements exist
+        const clickCountEl = document.getElementById('clickCount');
+        const convRateEl = document.getElementById('convRate');
+        if (clickCountEl) clickCountEl.textContent = affiliate.click_count || 0;
+        if (convRateEl) {
+            const clicks = parseInt(affiliate.click_count) || 0;
+            const refs = parseInt(stats.total_referrals) || 0;
+            const rate = clicks > 0 ? (refs / clicks * 100).toFixed(1) : '0.0';
+            convRateEl.textContent = rate + '%';
+        }
+
+        // Update Tier badge if element exists
+        const tierBadgeEl = document.getElementById('affiliateTier');
+        if (tierBadgeEl) {
+            const count = parseInt(stats.total_referrals) || 0;
+            let tier = 'Standard';
+            let color = 'secondary';
+            if (count >= 50) { tier = 'Elite'; color = 'danger'; }
+            else if (count >= 10) { tier = 'Pro'; color = 'purple'; }
+            tierBadgeEl.textContent = tier + ' Affiliate';
+            tierBadgeEl.className = `badge bg-${color}`;
+        }
     },
 
     updateReferralsTable() {
