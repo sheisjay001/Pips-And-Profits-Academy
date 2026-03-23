@@ -39,10 +39,10 @@ function generateAffiliateCode($conn) {
 
 // Generate affiliate link
 function generateAffiliateLink($code) {
-    $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') 
-               || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
-    $protocol = $isHttps ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'pips-and-profits-academy.vercel.app';
+    // Force use the Vercel live link for affiliate links
+    $protocol = 'https';
+    $host = 'pips-and-profits-academy.vercel.app';
+    
     return $protocol . '://' . $host . '/register.html?ref=' . $code;
 }
 
