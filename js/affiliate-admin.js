@@ -31,8 +31,6 @@ const AffiliateAdmin = {
                 const s = result.settings;
                 document.getElementById('signal_notifications_enabled').checked = s.signal_notifications_enabled === '1';
                 document.getElementById('webhook_url').value = s.webhook_url || '';
-                document.getElementById('telegram_bot_token').value = s.telegram_bot_token || '';
-                document.getElementById('telegram_chat_id').value = s.telegram_chat_id || '';
                 
                 // Set feed URL
                 const feedUrl = window.location.origin + window.location.pathname.replace('affiliate-admin.html', 'api/signals.php?action=feed');
@@ -46,9 +44,7 @@ const AffiliateAdmin = {
     async saveSettings() {
         const settings = {
             signal_notifications_enabled: document.getElementById('signal_notifications_enabled').checked ? '1' : '0',
-            webhook_url: document.getElementById('webhook_url').value,
-            telegram_bot_token: document.getElementById('telegram_bot_token').value,
-            telegram_chat_id: document.getElementById('telegram_chat_id').value
+            webhook_url: document.getElementById('webhook_url').value
         };
 
         try {

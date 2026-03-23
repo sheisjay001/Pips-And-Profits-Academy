@@ -44,44 +44,19 @@ function getSetting($conn, $key, $default = '') {
     }
 }
 
-// Function to send Webhook/Telegram notifications
+// Function to send Webhook notifications
 function dispatchSignalNotification($conn, $signal) {
     $enabled = getSetting($conn, 'signal_notifications_enabled', '0');
     if ($enabled !== '1') return;
 
     $webhookUrl = getSetting($conn, 'webhook_url');
-    $tgToken = getSetting($conn, 'telegram_bot_token');
-    $tgChatId = getSetting($conn, 'telegram_chat_id');
 
-    $message = "🚀 NEW SIGNAL: {$signal['pair']} {$signal['type']}\n";
-    $message .= "🔹 Entry: {$signal['entry_price']}\n";
-    $message .= "🛑 SL: {$signal['stop_loss']}\n";
-    $message .= "🎯 TP: {$signal['take_profit']}\n";
-    $message .= "⏰ Time: " . date('Y-m-d H:i');
-
-    // 1. Send to Custom Webhook if configured
+    // Send to Custom Webhook if configured
     if ($webhookUrl) {
         $ch = curl_init($webhookUrl);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($signal));
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        curl_exec($ch);
-        curl_close($ch);
-    }
-
-    // 2. Send to Telegram if configured
-    if ($tgToken && $tgChatId) {
-        $tgUrl = "https://api.telegram.org/bot{$tgToken}/sendMessage";
-        $data = [
-            'chat_id' => $tgChatId,
-            'text' => $message,
-            'parse_mode' => 'HTML'
-        ];
-        $ch = curl_init($tgUrl);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         curl_exec($ch);

@@ -1,91 +1,52 @@
-# 🚀 Automated Signal Integration Guide
+# 🚀 Automated Signal Integration Guide (Mobile & Cloud)
 
-Pips and Profit Academy now supports automated signal execution and notifications. This allows you to bridge signals from your academy dashboard directly to MetaTrader 4/5, Telegram, or custom external tools—completely for free.
-
-## 📍 Where to make these settings?
-
-### **For Administrators (Platform Setup)**
-As an admin, you control the entire automation engine. You can configure webhooks, Telegram bots, and monitor the global feed.
-1.  Log in to the **Admin Panel**.
-2.  Go to the **Affiliate Program** menu (or [affiliate-admin.html](file:///c:/Users/USER/Documents/XAMMP%20NEW/htdocs/Pips%20And%20Profits%20Academy/affiliate-admin.html)).
-3.  Click the **"Global Settings"** tab.
-4.  Here you can:
-    *   Enable/Disable the entire notification system.
-    *   Set the **Custom Webhook URL**.
-    *   Set the **Telegram Bot Token** and **Chat ID**.
-    *   Copy the **Master Signal Feed URL**.
-
-### **For Students (Connecting to MT4/5)**
-Students only need to "bridge" the signals to their trading accounts.
-1.  Log in to your **Student Dashboard**.
-2.  Go to the **Signals** page (or [signals.html](file:///c:/Users/USER/Documents/XAMMP%20NEW/htdocs/Pips%20And%20Profits%20Academy/signals.html)).
-3.  Locate the **"Auto-Trade (MT4/5)"** card at the top.
-4.  Click the **"Connect Account"** button.
-5.  Copy your unique **Signal Feed URL** from the popup.
-6.  Paste this URL into your MetaTrader Receiver EA (see Section 1 for MetaTrader setup).
+Pips and Profit Academy now supports automated signal execution. This allows you to bridge signals from your academy dashboard directly to your trading account using your **mobile phone**—no 24/7 PC required.
 
 ---
 
-## 🔗 1. Signal Bridge (MetaTrader 4/5 Integration)
-The Signal Bridge allows your MetaTrader platform to "listen" for new signals from your academy and execute them instantly.
+## � 1. Mobile Setup (No PC Required)
+To receive and execute signals directly on your phone, we use **Cloud Trade Copiers**. These services act as a bridge between the Academy and your Broker account.
+
+### **Recommended Services:**
+*   **SignalStart**
+*   **SocialTraderTools**
+*   **DupliTrade**
+
+### **How to setup on Mobile:**
+1.  **Create a Cloud Copier Account**: Sign up for one of the services above (most offer a free trial).
+2.  **Connect your Broker**: Link your MetaTrader 4 or 5 account to the Cloud service using your login credentials.
+3.  **Get your Webhook URL**: In your Cloud Copier dashboard, locate the **"Webhook Receiver"** or **"Signal API"** section. Copy the unique Webhook URL provided.
+4.  **Connect the Academy**:
+    *   **Students**: Provide your Webhook URL to the Academy Admin or paste it into your profile settings (if enabled).
+    *   **Admins**: Go to **Global Settings** and paste the **Custom Webhook URL**.
+5.  **Done!**: When a signal is posted, it is sent to the Cloud service, which instantly places the trade on your account. You can monitor everything from your mobile MT4/MT5 app.
+
+---
+
+## 🔗 2. Desktop Setup (MetaTrader 4/5 Integration)
+If you prefer using a desktop platform, follow these steps to bridge signals directly.
 
 ### **Step-by-Step MetaTrader Setup:**
 
 #### **A. Authorize the Academy Domain**
-MetaTrader restricts external connections for security. You must explicitly allow it to talk to your academy:
 1.  Open **MetaTrader 4** or **MetaTrader 5**.
 2.  Go to **Tools > Options** (or press `Ctrl+O`).
 3.  Click the **Expert Advisors** tab.
-4.  Check the box: **"Allow WebRequest for listed URL"**.
-5.  Double-click the green plus icon `(+)` and add your live academy URL:
-    *   `https://pips-and-profits-academy.vercel.app`
+4.  Check: **"Allow WebRequest for listed URL"**.
+5.  Add: `https://pips-and-profits-academy.vercel.app`
 6.  Click **OK**.
 
 #### **B. Install a Signal Receiver EA**
-Since MetaTrader doesn't have a built-in JSON reader, you need a "Receiver EA" (Expert Advisor):
-1.  **Download/Obtain an EA**: Use any free "JSON Signal Receiver" or "Webhook to MT4" EA from the MQL5 Market or your community resources.
-2.  **Install the EA**:
-    *   In MetaTrader, go to **File > Open Data Folder**.
-    *   Navigate to `MQL4/Experts` (or `MQL5/Experts`).
-    *   Paste the `.ex4` or `.ex5` file there.
-    *   Restart MetaTrader or right-click **Experts** in the Navigator and click **Refresh**.
-
-#### **C. Link your Feed**
-1.  **Get your URL**:
-    *   **Students**: Go to your **Signals Dashboard** and click the **"Connect Account"** button in the Auto-Trade card.
-    *   **Admins**: Go to your **Admin Dashboard > Global Settings**.
-2.  Copy your unique **Signal Feed URL**.
-3.  In MetaTrader, drag the **Signal Receiver EA** onto any chart (H1 timeframe recommended).
-4.  In the EA's **Inputs** tab:
-    *   Find the field labeled **"Signal URL"** or **"JSON Feed"**.
-    *   Paste your copied **Signal Feed URL**.
-    *   Set **"Check Frequency"** to `1 Minute` (or `60 seconds`).
-5.  Ensure **"Algo Trading"** (or **"AutoTrading"**) is turned **ON** (Green) at the top of your MetaTrader window.
-
-### **How it works:**
-The EA will now "ping" your academy every minute. The moment you post a new signal, the EA will detect it, read the Entry, SL, and TP, and place the trade on your MetaTrader account automatically.
-
----
-
-## 📢 2. Telegram Integration
-Automatically push your academy signals to a Telegram Channel or Group.
-
-### **How to setup:**
-1.  **Create a Bot**: Message [@BotFather](https://t.me/botfather) on Telegram to create a new bot and get your **API Token**.
-2.  **Get Chat ID**:
-    *   Add your bot to your target Telegram Channel/Group.
-    *   Make the bot an **Administrator**.
-    *   Use a tool like [@IDBot](https://t.me/myidbot) to get the Chat ID (it usually starts with `-100`).
-3.  **Configure Academy**:
-    *   Go to **Admin Dashboard > Global Settings**.
-    *   Enter your **Bot Token** and **Chat ID**.
-    *   Toggle **"Enable Automated Signal Notifications"** to ON.
-    *   Click **Save Settings**.
+1.  **Download**: Use any free "JSON Signal Receiver" EA from the MQL5 Market.
+2.  **Install**: Paste the EA into your `MQL4/Experts` folder.
+3.  **Link your Feed**:
+    *   **Students**: Click **"Connect Account"** on your Signals page to get your Feed URL.
+    *   **MetaTrader**: Drag the EA onto a chart and paste your **Signal Feed URL** into the settings.
 
 ---
 
 ## ⚡ 3. Custom Webhooks (Developer API)
-Integrate with third-party automation tools like Zapier, IFTTT, or your own custom servers.
+Integrate with third-party automation tools like Zapier or your own custom servers.
 
 ### **Technical Specification:**
 *   **Method**: `POST`
@@ -104,17 +65,11 @@ Integrate with third-party automation tools like Zapier, IFTTT, or your own cust
     }
     ```
 
-### **How to setup:**
-1.  Generate a Webhook URL from your target tool (e.g., a Zapier "Catch Webhook" trigger).
-2.  Paste the URL into **Admin Dashboard > Global Settings > Custom Webhook URL**.
-3.  New signals will now be sent to that URL as soon as they are posted.
-
 ---
 
 ## 🛠️ Troubleshooting
-*   **No notifications?**: Ensure "Enable Automated Signal Notifications" is toggled **ON** in Admin Settings.
-*   **MT4/5 not receiving?**: Check the "Journal" tab in MetaTrader for WebRequest errors. Ensure your domain is added to the "Allow WebRequest" list.
-*   **Localhost issues?**: Webhooks and Telegram notifications may fail on local XAMPP environments if your server doesn't have an active internet connection or valid SSL. They work best on your live Vercel/Production server.
+*   **Localhost issues?**: Webhooks work best on your live Vercel/Production server.
+*   **Mobile Tracking**: Use the official MT4/MT5 mobile app to monitor trades placed by the cloud bridge.
 
 ---
 *© 2024 Pips and Profit Academy - World Standard Trading Education*
