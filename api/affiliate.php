@@ -41,9 +41,8 @@ function generateAffiliateCode($conn) {
 
 // Generate affiliate link
 function generateAffiliateLink($code) {
-    $protocol = 'https';
-    $host = 'pips-and-profits-academy.vercel.app';
-    return $protocol . '://' . $host . '/register.html?ref=' . $code;
+    // ALWAYS force the production URL for affiliate links to prevent localhost links in production
+    return 'https://pips-and-profits-academy.vercel.app/register.html?ref=' . $code;
 }
 
 // Get commission rate for user plan
@@ -178,6 +177,18 @@ function runMigration($conn) {
 
 if ($method === 'GET') {
     $action = $_GET['action'] ?? '';
+    
+    // Add debug helper
+    if ($action === 'debug_info') {
+        echo json_encode([
+            'success' => true,
+            'php_version' => PHP_VERSION,
+            'server' => $_SERVER['SERVER_SOFTWARE'],
+            'user_id' => $_GET['user_id'] ?? 'not set'
+        ]);
+        exit;
+    }
+
     $userId = $_GET['user_id'] ?? null;
     
     if ($action === 'migrate') {
@@ -198,11 +209,21 @@ if ($method === 'GET') {
         try {
             $nameCol = getUserNameColumn($conn);
             $loadData = function($conn, $userId, $nameCol) {
+                // Ensure nameCol is clean
+                $nameCol = str_replace(['`', ' '], '', $nameCol);
+                
                 $stmt = $conn->prepare("SELECT au.*, u.$nameCol as name, u.email FROM affiliate_users au LEFT JOIN users u ON au.user_id = u.id WHERE au.user_id = ?");
                 $stmt->execute([$userId]);
                 $affiliate = $stmt->fetch(PDO::FETCH_ASSOC);
                 
                 if ($affiliate) {
+                    // Update: Force correct link if it's currently a localhost link
+                    if (strpos($affiliate['affiliate_link'], '127.0.0.1') !== false || strpos($affiliate['affiliate_link'], 'localhost') !== false) {
+                        $correctLink = generateAffiliateLink($affiliate['affiliate_code']);
+                        $conn->prepare("UPDATE affiliate_users SET affiliate_link = ? WHERE id = ?")->execute([$correctLink, $affiliate['id']]);
+                        $affiliate['affiliate_link'] = $correctLink;
+                    }
+
                     // Quick sync
                     $conn->prepare("UPDATE affiliate_users SET referral_count = (SELECT COUNT(*) FROM affiliate_referrals WHERE affiliate_id = ?) WHERE id = ?")->execute([$affiliate['id'], $affiliate['id']]);
                     $conn->prepare("UPDATE affiliate_users SET total_earnings = (SELECT IFNULL(SUM(commission_earned), 0) FROM affiliate_referrals WHERE affiliate_id = ? AND status = 'confirmed') WHERE id = ?")->execute([$affiliate['id'], $affiliate['id']]);
