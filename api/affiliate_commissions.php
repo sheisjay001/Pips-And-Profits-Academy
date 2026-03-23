@@ -124,11 +124,11 @@ if ($method === 'POST') {
             // Start transaction
             $conn->beginTransaction();
             
-            // Update referral status and commission amount
+            // Update referral status and commission earned
             $stmt = $conn->prepare("
                 UPDATE affiliate_referrals 
                 SET status = 'confirmed', 
-                    commission_amount = ?,
+                    commission_earned = ?,
                     confirmation_date = NOW()
                 WHERE id = ?
             ");

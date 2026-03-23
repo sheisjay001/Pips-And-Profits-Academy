@@ -97,6 +97,7 @@ if ($method === 'GET') {
                 status ENUM('pending', 'confirmed', 'rejected') DEFAULT 'pending',
                 commission_earned DECIMAL(10, 2) DEFAULT 0.00,
                 signup_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                confirmation_date TIMESTAMP NULL,
                 FOREIGN KEY (affiliate_id) REFERENCES affiliate_users(id) ON DELETE CASCADE,
                 FOREIGN KEY (referred_user_id) REFERENCES users(id) ON DELETE CASCADE
             )");
@@ -135,6 +136,8 @@ if ($method === 'GET') {
             $conn->exec("CREATE TABLE IF NOT EXISTS affiliate_transactions (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 affiliate_id INT NOT NULL,
+                referral_id INT NULL,
+                payment_id INT NULL,
                 transaction_type ENUM('commission', 'withdrawal', 'adjustment') NOT NULL,
                 amount DECIMAL(10, 2) NOT NULL,
                 description TEXT,
@@ -165,6 +168,18 @@ if ($method === 'GET') {
             }
             if (!$checkColumn($conn, 'affiliate_payouts', 'notes')) {
                 $conn->exec("ALTER TABLE affiliate_payouts ADD COLUMN notes TEXT");
+            }
+            if (!$checkColumn($conn, 'affiliate_referrals', 'commission_earned')) {
+                $conn->exec("ALTER TABLE affiliate_referrals ADD COLUMN commission_earned DECIMAL(10, 2) DEFAULT 0.00");
+            }
+            if (!$checkColumn($conn, 'affiliate_referrals', 'confirmation_date')) {
+                $conn->exec("ALTER TABLE affiliate_referrals ADD COLUMN confirmation_date TIMESTAMP NULL");
+            }
+            if (!$checkColumn($conn, 'affiliate_transactions', 'referral_id')) {
+                $conn->exec("ALTER TABLE affiliate_transactions ADD COLUMN referral_id INT NULL");
+            }
+            if (!$checkColumn($conn, 'affiliate_transactions', 'payment_id')) {
+                $conn->exec("ALTER TABLE affiliate_transactions ADD COLUMN payment_id INT NULL");
             }
         } catch (Exception $e) {
             // Log error or ignore if tables don't exist yet

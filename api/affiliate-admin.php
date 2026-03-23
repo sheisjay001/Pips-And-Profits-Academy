@@ -89,7 +89,7 @@ if ($method === 'GET') {
     } elseif ($action === 'get_all_referrals') {
         try {
             $stmt = $conn->prepare("
-                SELECT ar.*, 
+                SELECT ar.*, ar.commission_earned as commission_amount,
                        u1.$nameCol as referred_name, u1.email as referred_email,
                        u2.$nameCol as affiliate_name
                 FROM affiliate_referrals ar
@@ -170,7 +170,7 @@ if ($method === 'GET') {
 
             // Get recent referrals
             $stmt = $conn->prepare("
-                SELECT ar.*, u.$nameCol as referred_name, u.email as referred_email
+                SELECT ar.*, ar.commission_earned as commission_amount, u.$nameCol as referred_name, u.email as referred_email
                 FROM affiliate_referrals ar
                 LEFT JOIN users u ON ar.referred_user_id = u.id
                 WHERE ar.affiliate_id = ?
