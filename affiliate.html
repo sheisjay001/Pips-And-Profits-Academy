@@ -273,6 +273,11 @@
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
+                                <button class="nav-link rounded-pill px-4 border-0" id="leaderboard-tab" data-bs-toggle="tab" data-bs-target="#leaderboard" type="button" role="tab">
+                                    <i class="fa-solid fa-trophy me-2 text-warning"></i>Leaderboard
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
                                 <button class="nav-link rounded-pill px-4 border-0" id="bank-tab" data-bs-toggle="tab" data-bs-target="#bank" type="button" role="tab">
                                     <i class="fa-solid fa-university me-2"></i>Payments
                                 </button>
@@ -360,6 +365,38 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Leaderboard Tab -->
+                            <div class="tab-pane fade" id="leaderboard" role="tabpanel">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-body p-4">
+                                        <div class="text-center mb-4">
+                                            <h4 class="fw-bold"><i class="fa-solid fa-trophy text-warning me-2"></i>Top Performance Leaderboard</h4>
+                                            <p class="text-muted">Top 10 earners in our community. Join the elite traders!</p>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-hover align-middle">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th class="ps-3" style="width: 80px;">Rank</th>
+                                                        <th>Affiliate</th>
+                                                        <th>Referrals</th>
+                                                        <th class="text-end pe-3">Total Earnings</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="leaderboardTableBody">
+                                                    <tr>
+                                                        <td colspan="4" class="text-center text-muted py-4">Loading leaderboard...</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="alert alert-purple-light small mt-4 mb-0">
+                                            <i class="fa-solid fa-info-circle me-2"></i> Leaderboard updates in real-time. Earnings are calculated based on confirmed referrals.
                                         </div>
                                     </div>
                                 </div>

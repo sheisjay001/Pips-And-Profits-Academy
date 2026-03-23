@@ -104,6 +104,7 @@ const AffiliateDashboard = {
         this.updateReferralsTable();
         this.updateBankAccountInfo();
         this.updateWithdrawalsTable();
+        this.updateLeaderboard();
         this.initializeChart();
     },
 
@@ -258,6 +259,54 @@ const AffiliateDashboard = {
                 <td><small class="text-muted">${withdrawal.transaction_id || 'N/A'}</small></td>
             </tr>
         `).join('');
+    },
+
+    async updateLeaderboard() {
+        const tbody = document.getElementById('leaderboardTableBody');
+        if (!tbody) return;
+
+        try {
+            const result = await App.api('affiliate.php?action=get_leaderboard');
+            if (result.success) {
+                const leaderboard = result.leaderboard || [];
+                if (leaderboard.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No data available yet</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = leaderboard.map((entry, index) => {
+                    const rank = index + 1;
+                    let rankDisplay = rank;
+                    let rowClass = '';
+                    
+                    if (rank === 1) {
+                        rankDisplay = '<i class="fa-solid fa-crown text-warning"></i>';
+                        rowClass = 'table-warning bg-opacity-10';
+                    } else if (rank === 2) {
+                        rankDisplay = '<i class="fa-solid fa-medal text-secondary"></i>';
+                    } else if (rank === 3) {
+                        rankDisplay = '<i class="fa-solid fa-medal text-bronze"></i>';
+                    }
+
+                    return `
+                        <tr class="${rowClass}">
+                            <td class="ps-3 fw-bold text-center">${rankDisplay}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="${entry.profile_picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.display_name)}&background=6f42c1&color=fff`}" 
+                                         class="rounded-circle me-2" width="30" height="30">
+                                    <span>${entry.display_name}</span>
+                                </div>
+                            </td>
+                            <td>${entry.referral_count}</td>
+                            <td class="text-end pe-3 fw-bold text-success">$${parseFloat(entry.total_earnings).toFixed(2)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        } catch (error) {
+            console.error('Error loading leaderboard:', error);
+        }
     },
 
     initializeChart() {

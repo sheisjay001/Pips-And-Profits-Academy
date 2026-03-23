@@ -194,6 +194,35 @@ if ($method === 'GET') {
         } catch (PDOException $e) {
             echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
         }
+    } elseif ($action === 'get_leaderboard') {
+        try {
+            $nameCol = getUserNameColumn($conn);
+            $stmt = $conn->prepare("
+                SELECT u.$nameCol as name, au.referral_count, au.total_earnings, u.profile_picture
+                FROM affiliate_users au
+                JOIN users u ON au.user_id = u.id
+                WHERE au.status = 'active'
+                ORDER BY au.total_earnings DESC
+                LIMIT 10
+            ");
+            $stmt->execute();
+            $leaderboard = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Mask names for privacy if needed, but let's keep it first name + initial
+            foreach ($leaderboard as &$entry) {
+                $names = explode(' ', $entry['name']);
+                if (count($names) > 1) {
+                    $entry['display_name'] = $names[0] . ' ' . substr($names[1], 0, 1) . '.';
+                } else {
+                    $entry['display_name'] = $entry['name'];
+                }
+                unset($entry['name']); // Hide full name
+            }
+            
+            echo json_encode(['success' => true, 'leaderboard' => $leaderboard]);
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+        }
     }
     
 } elseif ($method === 'POST') {
