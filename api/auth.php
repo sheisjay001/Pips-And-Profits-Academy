@@ -272,6 +272,19 @@ if ($action === 'register') {
     if ($user && password_verify($password, $user['password'])) {
         unset($user['password']); // Don't send password back
         
+        // Fix localhost links during login
+        try {
+            $stmtAff = $conn->prepare("SELECT id, affiliate_link, affiliate_code FROM affiliate_users WHERE user_id = ?");
+            $stmtAff->execute([$user['id']]);
+            $affRecord = $stmtAff->fetch(PDO::FETCH_ASSOC);
+            
+            if ($affRecord && (strpos($affRecord['affiliate_link'], '127.0.0.1') !== false || strpos($affRecord['affiliate_link'], 'localhost') !== false)) {
+                $correctLink = 'https://pips-and-profits-academy.vercel.app/register.html?ref=' . $affRecord['affiliate_code'];
+                $stmtUpdate = $conn->prepare("UPDATE affiliate_users SET affiliate_link = ? WHERE id = ?");
+                $stmtUpdate->execute([$correctLink, $affRecord['id']]);
+            }
+        } catch (Exception $e) {}
+
         // Use secure session setter (Stateless support for Vercel)
         set_authenticated_user_id($user['id']);
         

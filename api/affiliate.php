@@ -208,67 +208,89 @@ if ($method === 'GET') {
 
         try {
             $nameCol = getUserNameColumn($conn);
-            $loadData = function($conn, $userId, $nameCol) {
-                // Ensure nameCol is clean
-                $nameCol = str_replace(['`', ' '], '', $nameCol);
-                
-                $stmt = $conn->prepare("SELECT au.*, u.$nameCol as name, u.email FROM affiliate_users au LEFT JOIN users u ON au.user_id = u.id WHERE au.user_id = ?");
-                $stmt->execute([$userId]);
-                $affiliate = $stmt->fetch(PDO::FETCH_ASSOC);
-                
-                if ($affiliate) {
-                    // Update: Force correct link if it's currently a localhost link
-                    if (strpos($affiliate['affiliate_link'], '127.0.0.1') !== false || strpos($affiliate['affiliate_link'], 'localhost') !== false) {
-                        $correctLink = generateAffiliateLink($affiliate['affiliate_code']);
-                        $conn->prepare("UPDATE affiliate_users SET affiliate_link = ? WHERE id = ?")->execute([$correctLink, $affiliate['id']]);
-                        $affiliate['affiliate_link'] = $correctLink;
-                    }
+            $nameCol = str_replace(['`', ' '], '', $nameCol);
 
-                    // Quick sync
-                    $conn->prepare("UPDATE affiliate_users SET referral_count = (SELECT COUNT(*) FROM affiliate_referrals WHERE affiliate_id = ?) WHERE id = ?")->execute([$affiliate['id'], $affiliate['id']]);
-                    $conn->prepare("UPDATE affiliate_users SET total_earnings = (SELECT IFNULL(SUM(commission_earned), 0) FROM affiliate_referrals WHERE affiliate_id = ? AND status = 'confirmed') WHERE id = ?")->execute([$affiliate['id'], $affiliate['id']]);
-                    
-                    $stmtStats = $conn->prepare("SELECT COUNT(*) as total_referrals, SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed_referrals, SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_referrals FROM affiliate_referrals WHERE affiliate_id = ?");
-                    $stmtStats->execute([$affiliate['id']]);
-                    $stats = $stmtStats->fetch(PDO::FETCH_ASSOC);
+            // 1. Get Affiliate Basic Info
+            $stmt = $conn->prepare("SELECT au.*, u.$nameCol as name, u.email FROM affiliate_users au LEFT JOIN users u ON au.user_id = u.id WHERE au.user_id = ?");
+            $stmt->execute([$userId]);
+            $affiliate = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                    $stmtRecent = $conn->prepare("SELECT ar.id, ar.status, IFNULL(ar.commission_earned, 0) as commission_amount, u.$nameCol as referred_name, u.email as referred_email, u.plan as referred_plan, u.created_at as signup_date FROM affiliate_referrals ar JOIN users u ON ar.referred_user_id = u.id WHERE ar.affiliate_id = ? ORDER BY ar.id DESC LIMIT 10");
-                    $stmtRecent->execute([$affiliate['id']]);
-                    $recentReferrals = $stmtRecent->fetchAll(PDO::FETCH_ASSOC);
-
-                    $stmtBank = $conn->prepare("SELECT * FROM affiliate_bank_accounts WHERE affiliate_id = ?");
-                    $stmtBank->execute([$affiliate['id']]);
-                    $bankAccount = $stmtBank->fetch(PDO::FETCH_ASSOC);
-
-                    $stmtPayout = $conn->prepare("SELECT * FROM affiliate_payouts WHERE affiliate_id = ? ORDER BY id DESC LIMIT 10");
-                    $stmtPayout->execute([$affiliate['id']]);
-                    $payoutHistory = $stmtPayout->fetchAll(PDO::FETCH_ASSOC);
-
-                    return [
-                        'success' => true,
-                        'affiliate' => $affiliate,
-                        'stats' => $stats,
-                        'recentReferrals' => $recentReferrals,
-                        'bankAccount' => $bankAccount,
-                        'payoutHistory' => $payoutHistory
-                    ];
-                }
-                return ['success' => true, 'affiliate' => null];
-            };
-
-            try {
-                echo json_encode($loadData($conn, $userId, $nameCol));
-            } catch (PDOException $e) {
-                // If table missing, try migrate once
-                if ($e->getCode() == '42S02' || $e->getCode() == '42S22') {
-                    runMigration($conn);
-                    echo json_encode($loadData($conn, $userId, $nameCol));
-                } else {
-                    throw $e;
-                }
+            if (!$affiliate) {
+                echo json_encode(['success' => true, 'affiliate' => null]);
+                exit;
             }
+
+            // 2. Force correct link if it's currently a localhost link
+            if (strpos($affiliate['affiliate_link'] ?? '', '127.0.0.1') !== false || strpos($affiliate['affiliate_link'] ?? '', 'localhost') !== false) {
+                $correctLink = generateAffiliateLink($affiliate['affiliate_code']);
+                $conn->prepare("UPDATE affiliate_users SET affiliate_link = ? WHERE id = ?")->execute([$correctLink, $affiliate['id']]);
+                $affiliate['affiliate_link'] = $correctLink;
+            }
+
+            // 3. Get referral statistics (Resilient)
+            $stats = ['total_referrals' => 0, 'confirmed_referrals' => 0, 'pending_referrals' => 0];
+            try {
+                $stmtStats = $conn->prepare("
+                    SELECT COUNT(*) as total_referrals,
+                           SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed_referrals,
+                           SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_referrals
+                    FROM affiliate_referrals 
+                    WHERE affiliate_id = ?
+                ");
+                $stmtStats->execute([$affiliate['id']]);
+                $res = $stmtStats->fetch(PDO::FETCH_ASSOC);
+                if ($res) $stats = array_merge($stats, $res);
+            } catch (Exception $e) {}
+
+            // 4. Get recent referrals (Resilient)
+            $recentReferrals = [];
+            try {
+                $stmtRecent = $conn->prepare("
+                    SELECT ar.id, ar.status, IFNULL(ar.commission_earned, 0) as commission_amount, 
+                           u.$nameCol as referred_name, u.email as referred_email, u.plan as referred_plan,
+                           u.created_at as signup_date
+                    FROM affiliate_referrals ar
+                    JOIN users u ON ar.referred_user_id = u.id
+                    WHERE ar.affiliate_id = ?
+                    ORDER BY ar.id DESC
+                    LIMIT 10
+                ");
+                $stmtRecent->execute([$affiliate['id']]);
+                $recentReferrals = $stmtRecent->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {}
+
+            // 5. Get bank account info (Resilient)
+            $bankAccount = null;
+            try {
+                $stmtBank = $conn->prepare("SELECT * FROM affiliate_bank_accounts WHERE affiliate_id = ?");
+                $stmtBank->execute([$affiliate['id']]);
+                $bankAccount = $stmtBank->fetch(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {}
+
+            // 6. Get payout history (Resilient)
+            $payoutHistory = [];
+            try {
+                $stmtPayout = $conn->prepare("SELECT * FROM affiliate_payouts WHERE affiliate_id = ? ORDER BY id DESC LIMIT 10");
+                $stmtPayout->execute([$affiliate['id']]);
+                $payoutHistory = $stmtPayout->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {}
+
+            // Success response with all parts
+            echo json_encode([
+                'success' => true,
+                'affiliate' => $affiliate,
+                'stats' => $stats,
+                'recentReferrals' => $recentReferrals,
+                'bankAccount' => $bankAccount,
+                'payoutHistory' => $payoutHistory
+            ]);
+
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'API Error: ' . $e->getMessage(),
+                'line' => $e->getLine()
+            ]);
         }
         exit;
     }
