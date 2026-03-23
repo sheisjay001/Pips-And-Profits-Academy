@@ -1,16 +1,39 @@
 <?php
 header('Content-Type: application/json');
+
+// CORS Handling
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if ($origin) {
+    header("Access-Control-Allow-Origin: $origin");
+    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Max-Age: 86400');
+} else {
+    header('Access-Control-Allow-Origin: *');
+}
+
+header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit(0);
+}
+
+require_once 'session_config.php';
 require_once 'db_connect.php';
 
-session_start();
+// CSRF Validation for POST requests (Upload)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    validate_csrf();
+}
+
+$user_id = get_authenticated_user_id();
 
 // Ensure user is logged in
-if (!isset($_SESSION['user_id'])) {
+if (!$user_id) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
 
-$user_id = $_SESSION['user_id'];
 $action = $_GET['action'] ?? '';
 
 // Self-healing: Create table if not exists

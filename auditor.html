@@ -234,14 +234,21 @@
                 document.getElementById('loadingSpinner').style.display = 'block';
 
                 try {
+                    const csrfToken = localStorage.getItem('ppa_csrf_token') || App.getCookie('ppa_csrf_token');
                     const uploadRes = await fetch('api/auditor.php?action=upload', {
                         method: 'POST',
-                        body: formData
+                        body: formData,
+                        credentials: 'include',
+                        headers: {
+                            'X-CSRF-Token': csrfToken
+                        }
                     });
                     const uploadData = await uploadRes.json();
 
                     if (uploadData.success) {
-                        const analyzeRes = await fetch('api/auditor.php?action=analyze');
+                        const analyzeRes = await fetch('api/auditor.php?action=analyze', {
+                            credentials: 'include'
+                        });
                         const analyzeData = await analyzeRes.json();
 
                         if (analyzeData.success) {
