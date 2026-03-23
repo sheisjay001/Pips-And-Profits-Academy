@@ -2,6 +2,28 @@
 
 Pips and Profit Academy now supports automated signal execution and notifications. This allows you to bridge signals from your academy dashboard directly to MetaTrader 4/5, Telegram, or custom external tools—completely for free.
 
+## 📍 Where to make these settings?
+
+### **For Administrators (Platform Setup)**
+As an admin, you control the entire automation engine. You can configure webhooks, Telegram bots, and monitor the global feed.
+1.  Log in to the **Admin Panel**.
+2.  Go to the **Affiliate Program** menu (or [affiliate-admin.html](file:///c:/Users/USER/Documents/XAMMP%20NEW/htdocs/Pips%20And%20Profits%20Academy/affiliate-admin.html)).
+3.  Click the **"Global Settings"** tab.
+4.  Here you can:
+    *   Enable/Disable the entire notification system.
+    *   Set the **Custom Webhook URL**.
+    *   Set the **Telegram Bot Token** and **Chat ID**.
+    *   Copy the **Master Signal Feed URL**.
+
+### **For Students (Connecting to MT4/5)**
+Students only need to "bridge" the signals to their trading accounts.
+1.  Log in to your **Student Dashboard**.
+2.  Go to the **Signals** page (or [signals.html](file:///c:/Users/USER/Documents/XAMMP%20NEW/htdocs/Pips%20And%20Profits%20Academy/signals.html)).
+3.  Locate the **"Auto-Trade (MT4/5)"** card at the top.
+4.  Click the **"Connect Account"** button.
+5.  Copy your unique **Signal Feed URL** from the popup.
+6.  Paste this URL into your MetaTrader Receiver EA (see Section 1 for MetaTrader setup).
+
 ---
 
 ## 🔗 1. Signal Bridge (MetaTrader 4/5 Integration)
