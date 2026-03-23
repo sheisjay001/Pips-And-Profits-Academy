@@ -197,26 +197,34 @@ if ($action === 'register') {
         
         // Track referral if code provided
         if ($referralCode) {
-            $affiliateData = [
-                'action' => 'track_referral',
-                'user_id' => $userId,
-                'referral_code' => $referralCode
-            ];
-            
-            // Make internal API call to track referral
-            $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') 
-                       || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
-            $protocol = $isHttps ? 'https' : 'http';
-            $apiUrl = $protocol . '://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['SCRIPT_NAME']) . '/affiliate.php';
-            
-            $ch = curl_init($apiUrl);
-            curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($affiliateData));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // For local/XAMPP environments
-            curl_exec($ch);
-            curl_close($ch);
+            try {
+                // Get affiliate info
+                $stmtAff = $conn->prepare("SELECT id, status FROM affiliate_users WHERE affiliate_code = ? AND status IN ('active', 'pending')");
+                $stmtAff->execute([$referralCode]);
+                $affiliate = $stmtAff->fetch(PDO::FETCH_ASSOC);
+                
+                if ($affiliate) {
+                    // Create referral record
+                    $stmtRef = $conn->prepare("INSERT IGNORE INTO affiliate_referrals (affiliate_id, referred_user_id, referral_code, status) VALUES (?, ?, ?, 'pending')");
+                    $stmtRef->execute([$affiliate['id'], $userId, $referralCode]);
+                    
+                    if ($stmtRef->rowCount() > 0) {
+                        // Update referral count
+                        $stmtUpdate = $conn->prepare("UPDATE affiliate_users SET referral_count = referral_count + 1 WHERE id = ?");
+                        $stmtUpdate->execute([$affiliate['id']]);
+                        
+                        // Update user record (ensure columns exist first or ignore if missing)
+                        try {
+                            $conn->exec("UPDATE users SET referred_by_affiliate_id = " . $affiliate['id'] . ", referral_code_used = '" . $referralCode . "' WHERE id = " . $userId);
+                        } catch (Exception $e) {
+                            // Columns might be missing, we'll fix this in the migration block
+                        }
+                    }
+                }
+            } catch (Exception $e) {
+                // Silently fail referral tracking to not break registration
+                error_log("Referral tracking failed: " . $e->getMessage());
+            }
         }
         
         $verifyLink = $baseUrl . "/verify_email.html?token=" . urlencode($verification_token) . "&email=" . urlencode($email);

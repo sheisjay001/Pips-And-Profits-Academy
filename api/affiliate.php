@@ -181,6 +181,31 @@ if ($method === 'GET') {
             if (!$checkColumn($conn, 'affiliate_transactions', 'payment_id')) {
                 $conn->exec("ALTER TABLE affiliate_transactions ADD COLUMN payment_id INT NULL");
             }
+
+            // Ensure users table has referral columns
+            if (!$checkColumn($conn, 'users', 'referred_by_affiliate_id')) {
+                $conn->exec("ALTER TABLE users ADD COLUMN referred_by_affiliate_id INT NULL");
+            }
+            if (!$checkColumn($conn, 'users', 'referral_code_used')) {
+                $conn->exec("ALTER TABLE users ADD COLUMN referral_code_used VARCHAR(20) NULL");
+            }
+
+            // Fix for soteriamaa@gmail.com or any user who might have missing referrals
+            // This will link any users who signed up with a code but weren't recorded in affiliate_referrals
+            $conn->exec("
+                INSERT IGNORE INTO affiliate_referrals (affiliate_id, referred_user_id, referral_code, status)
+                SELECT au.id, u.id, u.referral_code_used, 'pending'
+                FROM users u
+                JOIN affiliate_users au ON u.referral_code_used = au.affiliate_code
+                WHERE u.referral_code_used IS NOT NULL
+                 AND u.id NOT IN (SELECT referred_user_id FROM affiliate_referrals)
+             ");
+
+             // Sync referral counts for all affiliates
+             $conn->exec("
+                 UPDATE affiliate_users au 
+                 SET referral_count = (SELECT COUNT(*) FROM affiliate_referrals WHERE affiliate_id = au.id)
+             ");
         } catch (Exception $e) {
             // Log error or ignore if tables don't exist yet
         }
@@ -300,7 +325,7 @@ if ($method === 'GET') {
                 SELECT au.*, u.$nameCol as affiliate_name 
                 FROM affiliate_users au 
                 LEFT JOIN users u ON au.user_id = u.id 
-                WHERE au.affiliate_code = ? AND au.status = 'active'
+                WHERE au.affiliate_code = ? AND au.status IN ('active', 'pending')
             ");
             $stmt->execute([$code]);
             $affiliate = $stmt->fetch(PDO::FETCH_ASSOC);
