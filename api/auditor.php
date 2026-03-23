@@ -55,12 +55,17 @@ try {
         tp DECIMAL(10, 5),
         profit DECIMAL(10, 2),
         pips DECIMAL(10, 1),
-        duration_minutes INT,
+        duration_minutes BIGINT,
         day_of_week VARCHAR(15),
         hour_of_day INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )");
+
+    // Migration: Ensure duration_minutes is BIGINT
+    try {
+        $conn->exec("ALTER TABLE trade_history MODIFY COLUMN duration_minutes BIGINT");
+    } catch (Exception $e) {}
 
     if ($action === 'upload') {
         if (!isset($_FILES['trade_file'])) {
@@ -139,7 +144,12 @@ try {
             
             if (!$open_ts || !$close_ts) continue;
 
-            $duration_mins = round(($close_ts - $open_ts) / 60);
+            // Ensure duration is non-negative and handle massive gaps
+            $duration_mins = round(abs($close_ts - $open_ts) / 60);
+            
+            // Limit duration to a reasonable range (e.g., 10 years in minutes) to prevent overflow
+            if ($duration_mins > 5256000) $duration_mins = 0; 
+
             $day = date('l', $open_ts);
             $hour = date('H', $open_ts);
             
