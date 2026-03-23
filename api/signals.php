@@ -33,7 +33,91 @@ require_once 'db_connect.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
+// Helper to get global settings
+function getSetting($conn, $key, $default = '') {
+    try {
+        $stmt = $conn->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
+        $stmt->execute([$key]);
+        return $stmt->fetchColumn() ?: $default;
+    } catch (Exception $e) {
+        return $default;
+    }
+}
+
+// Function to send Webhook/Telegram notifications
+function dispatchSignalNotification($conn, $signal) {
+    $enabled = getSetting($conn, 'signal_notifications_enabled', '0');
+    if ($enabled !== '1') return;
+
+    $webhookUrl = getSetting($conn, 'webhook_url');
+    $tgToken = getSetting($conn, 'telegram_bot_token');
+    $tgChatId = getSetting($conn, 'telegram_chat_id');
+
+    $message = "🚀 NEW SIGNAL: {$signal['pair']} {$signal['type']}\n";
+    $message .= "🔹 Entry: {$signal['entry_price']}\n";
+    $message .= "🛑 SL: {$signal['stop_loss']}\n";
+    $message .= "🎯 TP: {$signal['take_profit']}\n";
+    $message .= "⏰ Time: " . date('Y-m-d H:i');
+
+    // 1. Send to Custom Webhook if configured
+    if ($webhookUrl) {
+        $ch = curl_init($webhookUrl);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($signal));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_exec($ch);
+        curl_close($ch);
+    }
+
+    // 2. Send to Telegram if configured
+    if ($tgToken && $tgChatId) {
+        $tgUrl = "https://api.telegram.org/bot{$tgToken}/sendMessage";
+        $data = [
+            'chat_id' => $tgChatId,
+            'text' => $message,
+            'parse_mode' => 'HTML'
+        ];
+        $ch = curl_init($tgUrl);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_exec($ch);
+        curl_close($ch);
+    }
+}
+
 if ($method === 'GET') {
+    $action = $_GET['action'] ?? '';
+
+    // Machine-readable feed for EAs/Bots
+    if ($action === 'feed') {
+        // No rate limit for feed to allow EAs to poll
+        $stmt = $conn->query("SELECT * FROM signals WHERE status = 'Running' ORDER BY created_at DESC LIMIT 1");
+        $latest = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($latest) {
+            // Clean format for easy parsing in MT4/MT5
+            echo json_encode([
+                'status' => 'success',
+                'signal' => [
+                    'id' => $latest['id'],
+                    'symbol' => str_replace('/', '', $latest['pair']),
+                    'type' => $latest['type'],
+                    'entry' => (float)$latest['entry_price'],
+                    'sl' => (float)$latest['stop_loss'],
+                    'tp' => (float)$latest['take_profit'],
+                    'timestamp' => strtotime($latest['created_at'])
+                ]
+            ]);
+        } else {
+            echo json_encode(['status' => 'empty', 'message' => 'No active signals']);
+        }
+        exit;
+    }
+
     $now = time();
     $bucket = $_SESSION['signals_get_bucket'] ?? ['count' => 0, 'reset' => $now + 60];
     if ($now > ($bucket['reset'] ?? $now)) {
@@ -118,6 +202,10 @@ if ($method === 'GET') {
             'status' => $status,
             'created_at' => date('Y-m-d H:i:s')
         ];
+        
+        // Dispatch notifications (Webhook/Telegram)
+        dispatchSignalNotification($conn, $newSignal);
+        
         echo json_encode(['success' => true, 'signal' => $newSignal]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to add signal']);

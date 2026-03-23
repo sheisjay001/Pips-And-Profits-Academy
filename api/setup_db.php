@@ -111,6 +111,26 @@ try {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )");
 
+    // 9. Settings Table
+    $conn->exec("CREATE TABLE IF NOT EXISTS settings (
+        setting_key VARCHAR(50) PRIMARY KEY,
+        setting_value TEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )");
+
+    // Seed default settings if they don't exist
+    $defaultSettings = [
+        'webhook_url' => '',
+        'telegram_bot_token' => '',
+        'telegram_chat_id' => '',
+        'signal_notifications_enabled' => '0'
+    ];
+
+    foreach ($defaultSettings as $key => $val) {
+        $stmt = $conn->prepare("INSERT IGNORE INTO settings (setting_key, setting_value) VALUES (?, ?)");
+        $stmt->execute([$key, $val]);
+    }
+
     // Ensure 'plan' column exists on existing installations
     $stmt = $conn->query("SHOW COLUMNS FROM users LIKE 'plan'");
     if ($stmt->rowCount() == 0) {
