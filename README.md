@@ -2,12 +2,12 @@
 
 Pips and Profits Academy is a world-class trading education platform designed to empower traders with real-time signals, comprehensive courses, and advanced performance analysis tools.
 
-## 🌟 Key Features
+##  Key Features
 
 ### 1. AI-Powered Performance Auditor (New!)
 Unlike traditional academies, we don't just tell you what to do; we identify why you are personally failing. This digital mentor analyzes your trade history to uncover psychological biases and bad habits.
 
-#### 📈 How to Use the AI Performance Auditor:
+####  How to Use the AI Performance Auditor:
 1.  **Export Your Trade History:**
     -   Open your **MetaTrader 4 (MT4)** or **MetaTrader 5 (MT5)** terminal.
     -   Go to the **Account History** tab.
@@ -35,7 +35,7 @@ Get high-probability trade setups directly on your dashboard.
 
 ---
 
-## 🛠️ Technical Setup
+##  Technical Setup
 
 ### Prerequisites
 -   **XAMPP** (or any PHP/MySQL server).
@@ -59,12 +59,12 @@ Get high-probability trade setups directly on your dashboard.
 
 ---
 
-## 🚀 Deployment
+##  Deployment
 The project is configured for deployment on **Vercel** with a PHP-compatible runtime.
 -   Ensure your database is hosted on a cloud provider like **TiDB Cloud** or **PlanetScale**.
 -   Update all environment variables in the Vercel dashboard.
 
 ---
 
-## ⚖️ License
+##  License
 © 2026 Pips and Profits Academy. All Rights Reserved.
