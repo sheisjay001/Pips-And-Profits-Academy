@@ -169,6 +169,9 @@ if ($method === 'GET') {
             if (!$checkColumn($conn, 'affiliate_payouts', 'notes')) {
                 $conn->exec("ALTER TABLE affiliate_payouts ADD COLUMN notes TEXT");
             }
+            if (!$checkColumn($conn, 'affiliate_referrals', 'signup_date')) {
+                $conn->exec("ALTER TABLE affiliate_referrals ADD COLUMN signup_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
             if (!$checkColumn($conn, 'affiliate_referrals', 'commission_earned')) {
                 $conn->exec("ALTER TABLE affiliate_referrals ADD COLUMN commission_earned DECIMAL(10, 2) DEFAULT 0.00");
             }
@@ -269,11 +272,11 @@ if ($method === 'GET') {
                 
                 // Get recent referrals
                 $stmt = $conn->prepare("
-                    SELECT ar.*, ar.commission_earned as commission_amount, u.$nameCol as referred_name, u.email as referred_email, u.signup_date
+                    SELECT ar.*, IFNULL(ar.commission_earned, 0) as commission_amount, u.$nameCol as referred_name, u.email as referred_email, u.created_at as user_signup_date
                     FROM affiliate_referrals ar
                     JOIN users u ON ar.referred_user_id = u.id
                     WHERE ar.affiliate_id = ?
-                    ORDER BY ar.signup_date DESC
+                    ORDER BY ar.id DESC
                     LIMIT 10
                 ");
                 $stmt->execute([$affiliate['id']]);

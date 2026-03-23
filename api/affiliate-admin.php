@@ -96,7 +96,7 @@ if ($method === 'GET') {
                 LEFT JOIN users u1 ON ar.referred_user_id = u1.id
                 LEFT JOIN affiliate_users au ON ar.affiliate_id = au.id
                 LEFT JOIN users u2 ON au.user_id = u2.id
-                ORDER BY ar.signup_date DESC
+                ORDER BY ar.id DESC
             ");
             $stmt->execute();
             $referrals = $stmt->fetchAll(PDO::FETCH_ASSOC);
