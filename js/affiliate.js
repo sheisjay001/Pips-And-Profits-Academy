@@ -3,6 +3,7 @@ const AffiliateDashboard = {
     currentUserId: null,
     affiliateData: null,
     earningsChart: null,
+    refreshInterval: null,
 
     async init() {
         // Ensure user is authenticated
@@ -19,6 +20,21 @@ const AffiliateDashboard = {
         
         // Load data
         await this.loadData();
+
+        // Set up real-time refresh (every 30 seconds)
+        this.startAutoRefresh();
+    },
+
+    startAutoRefresh() {
+        if (this.refreshInterval) clearInterval(this.refreshInterval);
+        this.refreshInterval = setInterval(() => {
+            // Only refresh if we are on the dashboard and not showing a modal
+            const dashboard = document.getElementById('affiliateDashboard');
+            const modalOpen = document.querySelector('.modal.show');
+            if (dashboard && dashboard.style.display !== 'none' && !modalOpen) {
+                this.loadData(false); // Silent refresh
+            }
+        }, 30000);
     },
 
     updateUserNav(user) {
@@ -33,8 +49,8 @@ const AffiliateDashboard = {
         }
     },
 
-    async loadData() {
-        this.showLoading(true);
+    async loadData(showLoading = true) {
+        if (showLoading) this.showLoading(true);
         
         try {
             const result = await App.api(`affiliate.php?action=get_affiliate_info&user_id=${this.currentUserId}`);
@@ -51,14 +67,14 @@ const AffiliateDashboard = {
                 } else {
                     this.showBecomeAffiliate();
                 }
-            } else {
+            } else if (showLoading) {
                 this.showAlert('Error: ' + result.message, 'danger');
             }
         } catch (error) {
             console.error('Error loading affiliate data:', error);
-            this.showAlert('Error loading affiliate data', 'danger');
+            if (showLoading) this.showAlert('Error loading affiliate data', 'danger');
         } finally {
-            this.showLoading(false);
+            if (showLoading) this.showLoading(false);
         }
     },
 

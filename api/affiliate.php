@@ -205,6 +205,21 @@ if ($method === 'GET') {
             $affiliate = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($affiliate) {
+                // Self-healing: Sync stats from detail tables to summary table
+                try {
+                    // Sync referral count
+                    $stmtSync = $conn->prepare("UPDATE affiliate_users SET referral_count = (SELECT COUNT(*) FROM affiliate_referrals WHERE affiliate_id = ?) WHERE id = ?");
+                    $stmtSync->execute([$affiliate['id'], $affiliate['id']]);
+                    
+                    // Sync total earnings (from confirmed referrals)
+                    $stmtSync = $conn->prepare("UPDATE affiliate_users SET total_earnings = (SELECT IFNULL(SUM(commission_earned), 0) FROM affiliate_referrals WHERE affiliate_id = ? AND status = 'confirmed') WHERE id = ?");
+                    $stmtSync->execute([$affiliate['id'], $affiliate['id']]);
+                    
+                    // Reload affiliate data after sync
+                    $stmt->execute([$userId]);
+                    $affiliate = $stmt->fetch(PDO::FETCH_ASSOC);
+                } catch (Exception $e) {}
+
                 // Dynamically fix old affiliate links if necessary
                 $correctLink = generateAffiliateLink($affiliate['affiliate_code']);
                 if ($affiliate['affiliate_link'] !== $correctLink) {
@@ -437,6 +452,10 @@ if ($method === 'GET') {
                 VALUES (?, ?, ?, 'pending')
             ");
             $stmt->execute([$affiliate['id'], $referredUserId, $referralCode]);
+            
+            // Update referral count in affiliate_users
+            $stmt = $conn->prepare("UPDATE affiliate_users SET referral_count = referral_count + 1 WHERE id = ?");
+            $stmt->execute([$affiliate['id']]);
             
             // Update user record with referral info
             $stmt = $conn->prepare("
