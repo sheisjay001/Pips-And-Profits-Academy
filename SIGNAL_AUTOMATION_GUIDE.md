@@ -29,8 +29,10 @@ Since MetaTrader doesn't have a built-in JSON reader, you need a "Receiver EA" (
     *   Restart MetaTrader or right-click **Experts** in the Navigator and click **Refresh**.
 
 #### **C. Link your Feed**
-1.  Go to your Academy **Admin Dashboard > Global Settings**.
-2.  Copy your unique **Signal Feed URL** (e.g., `https://.../api/signals.php?action=feed`).
+1.  **Get your URL**:
+    *   **Students**: Go to your **Signals Dashboard** and click the **"Connect Account"** button in the Auto-Trade card.
+    *   **Admins**: Go to your **Admin Dashboard > Global Settings**.
+2.  Copy your unique **Signal Feed URL**.
 3.  In MetaTrader, drag the **Signal Receiver EA** onto any chart (H1 timeframe recommended).
 4.  In the EA's **Inputs** tab:
     *   Find the field labeled **"Signal URL"** or **"JSON Feed"**.

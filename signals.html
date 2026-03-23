@@ -116,7 +116,7 @@
 
                 <!-- Stats Row -->
                 <div class="row g-4 mb-4">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="card border-0 shadow-sm h-100">
                             <div class="card-body p-4">
                                 <h6 class="text-muted text-uppercase small fw-bold">Win Rate</h6>
@@ -124,11 +124,24 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="card border-0 shadow-sm h-100">
                             <div class="card-body p-4">
                                 <h6 class="text-muted text-uppercase small fw-bold">Active Trades</h6>
                                 <h2 class="fw-bold text-primary mb-0" id="activeTradesCount">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100 bg-purple text-white">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="text-white text-opacity-75 text-uppercase small fw-bold mb-0">Auto-Trade (MT4/5)</h6>
+                                    <i class="fa-solid fa-robot"></i>
+                                </div>
+                                <button class="btn btn-sm btn-light text-purple fw-bold w-100" onclick="showMT4ConnectModal()">
+                                    <i class="fa-solid fa-link me-1"></i> Connect Account
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -162,6 +175,40 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- MT4 Connect Modal -->
+    <div class="modal fade" id="mt4ConnectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-purple text-white">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-robot me-2"></i>Connect to MetaTrader 4/5</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-secondary small">Follow these steps to bridge academy signals directly to your trading account for free.</p>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase">1. Your Signal Feed URL</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-sm bg-light" id="studentSignalFeedUrl" readonly value="Loading...">
+                            <button class="btn btn-purple btn-sm" onclick="App.copyToClipboard('studentSignalFeedUrl')">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted mt-1 d-block">Paste this into your Signal Receiver EA settings.</small>
+                    </div>
+
+                    <div class="alert alert-info py-2 px-3 border-0 rounded-3">
+                        <h6 class="fw-bold mb-1 small"><i class="fa-solid fa-info-circle me-1"></i>Setup Guide</h6>
+                        <p class="small mb-0">Don't have a receiver EA? Check the <a href="SIGNAL_AUTOMATION_GUIDE.md" target="_blank" class="fw-bold text-decoration-none">Automation Guide</a> for setup instructions.</p>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>
@@ -224,6 +271,12 @@
                 }
             }
         });
+
+        function showMT4ConnectModal() {
+            const feedUrl = window.location.origin + window.location.pathname.replace('signals.html', 'api/signals.php?action=feed');
+            document.getElementById('studentSignalFeedUrl').value = feedUrl;
+            new bootstrap.Modal(document.getElementById('mt4ConnectModal')).show();
+        }
 
         async function renderSignals(filter) {
             const allSignals = await App.getSignals();
