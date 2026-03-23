@@ -1,4 +1,6 @@
 <?php
+error_reporting(0);
+ini_set('display_errors', 0);
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -203,6 +205,19 @@ if ($method === 'GET') {
                 WHERE u.referral_code_used IS NOT NULL
                  AND u.id NOT IN (SELECT referred_user_id FROM affiliate_referrals)
              ");
+
+             // Specific manual link for joyrobertauta@gmail.com to soteriamaa@gmail.com
+             try {
+                 $conn->exec("
+                    INSERT IGNORE INTO affiliate_referrals (affiliate_id, referred_user_id, referral_code, status)
+                    SELECT au.id, u.id, au.affiliate_code, 'pending'
+                    FROM users u
+                    JOIN users ua ON ua.email = 'soteriamaa@gmail.com'
+                    JOIN affiliate_users au ON au.user_id = ua.id
+                    WHERE u.email = 'joyrobertauta@gmail.com'
+                    AND u.id NOT IN (SELECT referred_user_id FROM affiliate_referrals)
+                 ");
+             } catch (Exception $e) {}
 
              // Sync referral counts for all affiliates
              $conn->exec("

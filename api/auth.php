@@ -213,12 +213,9 @@ if ($action === 'register') {
                         $stmtUpdate = $conn->prepare("UPDATE affiliate_users SET referral_count = referral_count + 1 WHERE id = ?");
                         $stmtUpdate->execute([$affiliate['id']]);
                         
-                        // Update user record (ensure columns exist first or ignore if missing)
-                        try {
-                            $conn->exec("UPDATE users SET referred_by_affiliate_id = " . $affiliate['id'] . ", referral_code_used = '" . $referralCode . "' WHERE id = " . $userId);
-                        } catch (Exception $e) {
-                            // Columns might be missing, we'll fix this in the migration block
-                        }
+                        // Update user record with prepared statement
+                        $stmtUserUpdate = $conn->prepare("UPDATE users SET referred_by_affiliate_id = ?, referral_code_used = ? WHERE id = ?");
+                        $stmtUserUpdate->execute([$affiliate['id'], $referralCode, $userId]);
                     }
                 }
             } catch (Exception $e) {
