@@ -74,14 +74,21 @@ if ($action === 'upload') {
     }
 
     $header = fgetcsv($handle);
+    if (!$header) {
+        echo json_encode(['success' => false, 'message' => 'Empty CSV file or invalid format']);
+        exit;
+    }
     $trades_imported = 0;
 
     // Map headers to indices
     $mapping = [];
     foreach ($header as $index => $col) {
         $col = strtolower(trim($col));
-        if ($col === 'ticket') $mapping['ticket'] = $index;
-        if (strpos($col, 'open time') !== false) $mapping['open_time'] = $index;
+        if ($col === 'ticket' || $col === 'order') $mapping['ticket'] = $index;
+        if (strpos($col, 'open time') !== false || strpos($col, 'time') !== false) {
+             if (!isset($mapping['open_time'])) $mapping['open_time'] = $index;
+             else $mapping['close_time'] = $index;
+        }
         if ($col === 'type') $mapping['type'] = $index;
         if ($col === 'size' || $col === 'volume' || $col === 'lots') $mapping['lots'] = $index;
         if ($col === 'item' || $col === 'symbol') $mapping['symbol'] = $index;
@@ -91,6 +98,15 @@ if ($action === 'upload') {
         if (strpos($col, 'close time') !== false) $mapping['close_time'] = $index;
         if (strpos($col, 'close price') !== false || ($col === 'price' && isset($mapping['open_price']))) $mapping['close_price'] = $index;
         if ($col === 'profit') $mapping['profit'] = $index;
+    }
+
+    // Heuristic for MT5 if headers are missing or differently named
+    if (!isset($mapping['open_time']) && count($header) >= 10) {
+        $mapping = [
+            'ticket' => 0, 'open_time' => 1, 'type' => 2, 'lots' => 3, 
+            'symbol' => 4, 'open_price' => 5, 'sl' => 6, 'tp' => 7, 
+            'close_time' => 8, 'close_price' => 9, 'profit' => count($header)-1
+        ];
     }
 
     // Clear previous history
@@ -184,16 +200,22 @@ if ($action === 'upload') {
     // 1. Friday Bias
     if (isset($stats['day_stats']['Friday'])) {
         $f = $stats['day_stats']['Friday'];
-        $win_rate = ($f['wins'] + $f['losses'] > 0) ? ($f['wins'] / ($f['wins'] + $f['losses'])) * 100 : 0;
-        if ($win_rate < 40 && ($f['wins'] + $f['losses'] > 3)) {
-            $stats['biases'][] = "You have a low win rate (" . round($win_rate) . "%) on Fridays. Consider avoiding trading before the weekend.";
+        $total_f = $f['wins'] + $f['losses'];
+        if ($total_f > 0) {
+            $win_rate = ($f['wins'] / $total_f) * 100;
+            if ($win_rate < 40 && $total_f > 3) {
+                $stats['biases'][] = "You have a low win rate (" . round($win_rate) . "%) on Fridays. Consider avoiding trading before the weekend.";
+            }
         }
     }
 
     // 2. Overtrading (e.g., > 10 trades a day)
-    $trades_per_day = $stats['total_trades'] / count($stats['day_stats']);
-    if ($trades_per_day > 8) {
-        $stats['biases'][] = "You average " . round($trades_per_day, 1) . " trades per day. This suggests potential overtrading or lack of patience.";
+    $num_days = count($stats['day_stats']);
+    if ($num_days > 0) {
+        $trades_per_day = $stats['total_trades'] / $num_days;
+        if ($trades_per_day > 8) {
+            $stats['biases'][] = "You average " . round($trades_per_day, 1) . " trades per day. This suggests potential overtrading or lack of patience.";
+        }
     }
 
     // 3. Late Night / Early Morning Bias

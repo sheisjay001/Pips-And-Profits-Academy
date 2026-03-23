@@ -261,7 +261,7 @@
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    alert('An error occurred during analysis.');
+                    alert('An error occurred during analysis. Details: ' + error.message);
                 } finally {
                     document.getElementById('loadingSpinner').style.display = 'none';
                 }
