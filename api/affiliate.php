@@ -69,8 +69,8 @@ if ($method === 'GET') {
     $userId = $_GET['user_id'] ?? null;
     
     // Ensure table structure is updated
-    static $migrationRun = false;
-    if (!$migrationRun) {
+    $migrationRun = false;
+    if ($action === 'migrate') {
         try {
             // Create affiliate_users table
             $conn->exec("CREATE TABLE IF NOT EXISTS affiliate_users (
@@ -195,41 +195,19 @@ if ($method === 'GET') {
                 $conn->exec("ALTER TABLE users ADD COLUMN referral_code_used VARCHAR(20) NULL");
             }
 
-            // Fix for soteriamaa@gmail.com or any user who might have missing referrals
-            // This will link any users who signed up with a code but weren't recorded in affiliate_referrals
+            // Sync referral counts for all affiliates
             $conn->exec("
-                INSERT IGNORE INTO affiliate_referrals (affiliate_id, referred_user_id, referral_code, status)
-                SELECT au.id, u.id, u.referral_code_used, 'pending'
-                FROM users u
-                JOIN affiliate_users au ON u.referral_code_used = au.affiliate_code
-                WHERE u.referral_code_used IS NOT NULL
-                 AND u.id NOT IN (SELECT referred_user_id FROM affiliate_referrals)
-             ");
-
-             // Specific manual link for joyrobertauta@gmail.com to soteriamaa@gmail.com
-             try {
-                 $conn->exec("
-                    INSERT IGNORE INTO affiliate_referrals (affiliate_id, referred_user_id, referral_code, status, signup_date)
-                    SELECT au.id, u.id, au.affiliate_code, 'pending', u.created_at
-                    FROM users u
-                    JOIN users ua ON ua.email = 'soteriamaa@gmail.com'
-                    JOIN affiliate_users au ON au.user_id = ua.id
-                    WHERE u.email = 'joyrobertauta@gmail.com'
-                    AND u.id NOT IN (SELECT referred_user_id FROM affiliate_referrals)
-                 ");
-             } catch (Exception $e) {}
-
-             // Sync referral counts for all affiliates
-             $conn->exec("
-                 UPDATE affiliate_users au 
-                 SET referral_count = (SELECT COUNT(*) FROM affiliate_referrals WHERE affiliate_id = au.id)
-             ");
-        } catch (Exception $e) {
-            // Log error or ignore if tables don't exist yet
+                UPDATE affiliate_users au 
+                SET referral_count = (SELECT COUNT(*) FROM affiliate_referrals WHERE affiliate_id = au.id)
+            ");
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            exit;
         }
-        $migrationRun = true;
-    }
-    if ($action === 'get_affiliate_info') {
+        
+        echo json_encode(['success' => true, 'message' => 'Migration successful']);
+        exit;
+    } elseif ($action === 'get_affiliate_info') {
         // Get affiliate information for a user
         if (!$userId) {
             echo json_encode(['success' => false, 'message' => 'User ID required']);
@@ -258,6 +236,28 @@ if ($method === 'GET') {
                     $stmtSync = $conn->prepare("UPDATE affiliate_users SET total_earnings = (SELECT IFNULL(SUM(commission_earned), 0) FROM affiliate_referrals WHERE affiliate_id = ? AND status = 'confirmed') WHERE id = ?");
                     $stmtSync->execute([$affiliate['id'], $affiliate['id']]);
                     
+                    // Fix for soteriamaa@gmail.com or any user who might have missing referrals
+                    // This will link any users who signed up with a code but weren't recorded in affiliate_referrals
+                    $conn->exec("
+                        INSERT IGNORE INTO affiliate_referrals (affiliate_id, referred_user_id, referral_code, status, signup_date)
+                        SELECT au.id, u.id, u.referral_code_used, 'pending', u.created_at
+                        FROM users u
+                        JOIN affiliate_users au ON u.referral_code_used = au.affiliate_code
+                        WHERE u.referral_code_used IS NOT NULL
+                        AND u.id NOT IN (SELECT referred_user_id FROM affiliate_referrals)
+                    ");
+
+                    // Specific manual link for joyrobertauta@gmail.com to soteriamaa@gmail.com
+                    if ($affiliate['email'] === 'soteriamaa@gmail.com') {
+                        $conn->exec("
+                            INSERT IGNORE INTO affiliate_referrals (affiliate_id, referred_user_id, referral_code, status, signup_date)
+                            SELECT " . $affiliate['id'] . ", u.id, '" . $affiliate['affiliate_code'] . "', 'pending', u.created_at
+                            FROM users u
+                            WHERE u.email = 'joyrobertauta@gmail.com'
+                            AND u.id NOT IN (SELECT referred_user_id FROM affiliate_referrals)
+                        ");
+                    }
+                    
                     // Reload affiliate data after sync
                     $stmt->execute([$userId]);
                     $affiliate = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -275,18 +275,18 @@ if ($method === 'GET') {
                 }
 
                 // Get referral statistics
-                $stmt = $conn->prepare("
+                $stmtStats = $conn->prepare("
                     SELECT COUNT(*) as total_referrals,
                            SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed_referrals,
                            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_referrals
                     FROM affiliate_referrals 
                     WHERE affiliate_id = ?
                 ");
-                $stmt->execute([$affiliate['id']]);
-                $stats = $stmt->fetch(PDO::FETCH_ASSOC);
+                $stmtStats->execute([$affiliate['id']]);
+                $stats = $stmtStats->fetch(PDO::FETCH_ASSOC);
                 
                 // Get recent referrals
-                $stmt = $conn->prepare("
+                $stmtRecent = $conn->prepare("
                     SELECT ar.*, IFNULL(ar.signup_date, u.created_at) as signup_date, IFNULL(ar.commission_earned, 0) as commission_amount, 
                            u.$nameCol as referred_name, u.email as referred_email, u.plan as referred_plan, u.profile_picture as referred_profile_picture
                     FROM affiliate_referrals ar
@@ -295,26 +295,26 @@ if ($method === 'GET') {
                     ORDER BY ar.id DESC
                     LIMIT 10
                 ");
-                $stmt->execute([$affiliate['id']]);
-                $recentReferrals = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $stmtRecent->execute([$affiliate['id']]);
+                $recentReferrals = $stmtRecent->fetchAll(PDO::FETCH_ASSOC);
                 
                 // Get bank account info
-                $stmt = $conn->prepare("
+                $stmtBank = $conn->prepare("
                     SELECT * FROM affiliate_bank_accounts 
                     WHERE affiliate_id = ?
                 ");
-                $stmt->execute([$affiliate['id']]);
-                $bankAccount = $stmt->fetch(PDO::FETCH_ASSOC);
+                $stmtBank->execute([$affiliate['id']]);
+                $bankAccount = $stmtBank->fetch(PDO::FETCH_ASSOC);
                 
                 // Get payout history
-                $stmt = $conn->prepare("
+                $stmtPayout = $conn->prepare("
                     SELECT * FROM affiliate_payouts 
                     WHERE affiliate_id = ?
                     ORDER BY payout_date DESC
                     LIMIT 10
                 ");
-                $stmt->execute([$affiliate['id']]);
-                $payoutHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $stmtPayout->execute([$affiliate['id']]);
+                $payoutHistory = $stmtPayout->fetchAll(PDO::FETCH_ASSOC);
                 
                 echo json_encode([
                     'success' => true,
