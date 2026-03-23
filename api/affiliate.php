@@ -70,13 +70,78 @@ if ($method === 'GET') {
     static $migrationRun = false;
     if (!$migrationRun) {
         try {
+            // Create affiliate_users table
+            $conn->exec("CREATE TABLE IF NOT EXISTS affiliate_users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL UNIQUE,
+                affiliate_code VARCHAR(20) NOT NULL UNIQUE,
+                affiliate_link VARCHAR(255) NOT NULL,
+                commission_rate DECIMAL(5, 2) DEFAULT 50.00,
+                status ENUM('active', 'pending', 'inactive') DEFAULT 'pending',
+                total_earnings DECIMAL(10, 2) DEFAULT 0.00,
+                current_balance DECIMAL(10, 2) DEFAULT 0.00,
+                referral_count INT DEFAULT 0,
+                click_count INT DEFAULT 0,
+                total_withdrawn DECIMAL(10, 2) DEFAULT 0.00,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )");
+
+            // Create affiliate_referrals table
+            $conn->exec("CREATE TABLE IF NOT EXISTS affiliate_referrals (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                affiliate_id INT NOT NULL,
+                referred_user_id INT NOT NULL UNIQUE,
+                referral_code VARCHAR(20) NOT NULL,
+                status ENUM('pending', 'confirmed', 'rejected') DEFAULT 'pending',
+                commission_earned DECIMAL(10, 2) DEFAULT 0.00,
+                signup_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (affiliate_id) REFERENCES affiliate_users(id) ON DELETE CASCADE,
+                FOREIGN KEY (referred_user_id) REFERENCES users(id) ON DELETE CASCADE
+            )");
+
+            // Create affiliate_bank_accounts table
+            $conn->exec("CREATE TABLE IF NOT EXISTS affiliate_bank_accounts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                affiliate_id INT NOT NULL UNIQUE,
+                bank_name VARCHAR(100) NOT NULL,
+                account_name VARCHAR(100) NOT NULL,
+                account_number VARCHAR(50) NOT NULL,
+                routing_number VARCHAR(50),
+                swift_code VARCHAR(50),
+                country VARCHAR(100) NOT NULL,
+                currency VARCHAR(10) DEFAULT 'USD',
+                is_verified TINYINT(1) DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (affiliate_id) REFERENCES affiliate_users(id) ON DELETE CASCADE
+            )");
+
+            // Create affiliate_payouts table
+            $conn->exec("CREATE TABLE IF NOT EXISTS affiliate_payouts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                affiliate_id INT NOT NULL,
+                amount DECIMAL(10, 2) NOT NULL,
+                status ENUM('pending', 'processed', 'failed') DEFAULT 'pending',
+                payout_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                processed_date TIMESTAMP NULL,
+                transaction_id VARCHAR(100),
+                FOREIGN KEY (affiliate_id) REFERENCES affiliate_users(id) ON DELETE CASCADE
+            )");
+
             // Helper function to check if column exists
             $checkColumn = function($conn, $table, $column) {
-                $stmt = $conn->prepare("SHOW COLUMNS FROM `$table` LIKE ?");
-                $stmt->execute([$column]);
-                return $stmt->fetch() !== false;
+                try {
+                    $stmt = $conn->prepare("SHOW COLUMNS FROM `$table` LIKE ?");
+                    $stmt->execute([$column]);
+                    return $stmt->fetch() !== false;
+                } catch (Exception $e) {
+                    return false;
+                }
             };
 
+            // Add missing columns if tables already existed
             if (!$checkColumn($conn, 'affiliate_users', 'click_count')) {
                 $conn->exec("ALTER TABLE affiliate_users ADD COLUMN click_count INT DEFAULT 0");
             }
@@ -124,6 +189,17 @@ if ($method === 'GET') {
             $affiliate = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($affiliate) {
+                // Dynamically fix old affiliate links if necessary
+                $correctLink = generateAffiliateLink($affiliate['affiliate_code']);
+                if ($affiliate['affiliate_link'] !== $correctLink) {
+                    $affiliate['affiliate_link'] = $correctLink;
+                    // Silently update database
+                    try {
+                        $stmtUpdate = $conn->prepare("UPDATE affiliate_users SET affiliate_link = ? WHERE id = ?");
+                        $stmtUpdate->execute([$correctLink, $affiliate['id']]);
+                    } catch (Exception $e) {}
+                }
+
                 // Get referral statistics
                 $stmt = $conn->prepare("
                     SELECT COUNT(*) as total_referrals,
@@ -137,7 +213,7 @@ if ($method === 'GET') {
                 
                 // Get recent referrals
                 $stmt = $conn->prepare("
-                    SELECT ar.*, u.name as referred_name, u.email as referred_email, u.signup_date
+                    SELECT ar.*, u.$nameCol as referred_name, u.email as referred_email, u.signup_date
                     FROM affiliate_referrals ar
                     JOIN users u ON ar.referred_user_id = u.id
                     WHERE ar.affiliate_id = ?
@@ -159,7 +235,7 @@ if ($method === 'GET') {
                 $stmt = $conn->prepare("
                     SELECT * FROM affiliate_payouts 
                     WHERE affiliate_id = ?
-                    ORDER BY created_at DESC
+                    ORDER BY payout_date DESC
                     LIMIT 10
                 ");
                 $stmt->execute([$affiliate['id']]);
@@ -177,7 +253,7 @@ if ($method === 'GET') {
                 echo json_encode(['success' => true, 'affiliate' => null]);
             }
         } catch (PDOException $e) {
-            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage(), 'error_info' => $e->errorInfo]);
         }
     } elseif ($action === 'check_referral_code') {
         // Check if referral code is valid
