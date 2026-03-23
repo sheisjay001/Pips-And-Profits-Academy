@@ -197,7 +197,6 @@ if ($action === 'register') {
         
         // Track referral if code provided
         if ($referralCode) {
-            require_once 'affiliate.php';
             $affiliateData = [
                 'action' => 'track_referral',
                 'user_id' => $userId,
@@ -205,11 +204,17 @@ if ($action === 'register') {
             ];
             
             // Make internal API call to track referral
-            $ch = curl_init('http://' . $_SERVER['HTTP_HOST'] . '/api/affiliate.php');
+            $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') 
+                       || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+            $protocol = $isHttps ? 'https' : 'http';
+            $apiUrl = $protocol . '://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['SCRIPT_NAME']) . '/affiliate.php';
+            
+            $ch = curl_init($apiUrl);
             curl_setopt($ch, CURLOPT_POST, 1);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($affiliateData));
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // For local/XAMPP environments
             curl_exec($ch);
             curl_close($ch);
         }

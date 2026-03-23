@@ -35,6 +35,15 @@ function getPostParams() {
 
 // Calculate commission based on payment amount and user plan
 function calculateCommission($conn, $affiliateId, $paymentAmount, $referredUserId) {
+    // Check if referred user is 'pro' or 'elite'
+    $stmt = $conn->prepare("SELECT plan FROM users WHERE id = ?");
+    $stmt->execute([$referredUserId]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$user || !in_array($user['plan'], ['pro', 'elite'])) {
+        return 0; // Only pro and elite plans generate commission
+    }
+
     // Get affiliate's commission rate
     $stmt = $conn->prepare("SELECT commission_rate FROM affiliate_users WHERE id = ?");
     $stmt->execute([$affiliateId]);

@@ -164,20 +164,6 @@ if ($method === 'GET') {
         }
         
         try {
-            // Check if affiliate_users table exists
-            try {
-                $conn->query("SELECT 1 FROM affiliate_users LIMIT 1");
-            } catch (PDOException $e) {
-                // Table doesn't exist, return a friendly message instead of a crash
-                echo json_encode([
-                    'success' => true, 
-                    'affiliate' => null, 
-                    'message' => 'Database tables not setup yet. Please run migration.',
-                    'setup_required' => true
-                ]);
-                exit;
-            }
-
             $nameCol = getUserNameColumn($conn);
             $stmt = $conn->prepare("
                 SELECT au.*, u.$nameCol as name, u.email 
