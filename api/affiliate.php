@@ -127,6 +127,18 @@ if ($method === 'GET') {
                 payout_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 processed_date TIMESTAMP NULL,
                 transaction_id VARCHAR(100),
+                notes TEXT,
+                FOREIGN KEY (affiliate_id) REFERENCES affiliate_users(id) ON DELETE CASCADE
+            )");
+
+            // Create affiliate_transactions table (needed for admin history)
+            $conn->exec("CREATE TABLE IF NOT EXISTS affiliate_transactions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                affiliate_id INT NOT NULL,
+                transaction_type ENUM('commission', 'withdrawal', 'adjustment') NOT NULL,
+                amount DECIMAL(10, 2) NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (affiliate_id) REFERENCES affiliate_users(id) ON DELETE CASCADE
             )");
 
@@ -150,6 +162,9 @@ if ($method === 'GET') {
             }
             if (!$checkColumn($conn, 'affiliate_bank_accounts', 'updated_at')) {
                 $conn->exec("ALTER TABLE affiliate_bank_accounts ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            }
+            if (!$checkColumn($conn, 'affiliate_payouts', 'notes')) {
+                $conn->exec("ALTER TABLE affiliate_payouts ADD COLUMN notes TEXT");
             }
         } catch (Exception $e) {
             // Log error or ignore if tables don't exist yet
@@ -199,7 +214,7 @@ if ($method === 'GET') {
                 
                 // Get recent referrals
                 $stmt = $conn->prepare("
-                    SELECT ar.*, u.$nameCol as referred_name, u.email as referred_email, u.signup_date
+                    SELECT ar.*, ar.commission_earned as commission_amount, u.$nameCol as referred_name, u.email as referred_email, u.signup_date
                     FROM affiliate_referrals ar
                     JOIN users u ON ar.referred_user_id = u.id
                     WHERE ar.affiliate_id = ?
@@ -376,16 +391,16 @@ if ($method === 'GET') {
         }
         
         try {
-            // Get affiliate info
+            // Get affiliate info (allow pending affiliates to track signups, but they won't earn yet)
             $stmt = $conn->prepare("
-                SELECT id, user_id FROM affiliate_users 
-                WHERE affiliate_code = ? AND status = 'active'
+                SELECT id, user_id, status FROM affiliate_users 
+                WHERE affiliate_code = ? AND status IN ('active', 'pending')
             ");
             $stmt->execute([$referralCode]);
             $affiliate = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if (!$affiliate) {
-                echo json_encode(['success' => false, 'message' => 'Invalid referral code']);
+                echo json_encode(['success' => false, 'message' => 'Invalid or inactive referral code']);
                 exit;
             }
             

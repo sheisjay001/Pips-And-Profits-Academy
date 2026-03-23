@@ -40,8 +40,8 @@ function calculateCommission($conn, $affiliateId, $paymentAmount, $referredUserI
     $stmt->execute([$referredUserId]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    if (!$user || !in_array($user['plan'], ['pro', 'elite'])) {
-        return 0; // Only pro and elite plans generate commission
+    if (!$user || !in_array($user['plan'], ['pro', 'elite', 'premium'])) {
+        return 0; // Only pro and elite/premium plans generate commission
     }
 
     // Get affiliate's commission rate
