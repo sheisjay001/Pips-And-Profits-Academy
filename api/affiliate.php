@@ -70,12 +70,28 @@ if ($method === 'GET') {
     static $migrationRun = false;
     if (!$migrationRun) {
         try {
-            $conn->exec("ALTER TABLE affiliate_users ADD COLUMN IF NOT EXISTS click_count INT DEFAULT 0");
-            $conn->exec("ALTER TABLE affiliate_users ADD COLUMN IF NOT EXISTS total_withdrawn DECIMAL(10, 2) DEFAULT 0.00");
-            $conn->exec("ALTER TABLE affiliate_bank_accounts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
-        } catch (Exception $e) {}
+            // Helper function to check if column exists
+            $checkColumn = function($conn, $table, $column) {
+                $stmt = $conn->prepare("SHOW COLUMNS FROM `$table` LIKE ?");
+                $stmt->execute([$column]);
+                return $stmt->fetch() !== false;
+            };
+
+            if (!$checkColumn($conn, 'affiliate_users', 'click_count')) {
+                $conn->exec("ALTER TABLE affiliate_users ADD COLUMN click_count INT DEFAULT 0");
+            }
+            if (!$checkColumn($conn, 'affiliate_users', 'total_withdrawn')) {
+                $conn->exec("ALTER TABLE affiliate_users ADD COLUMN total_withdrawn DECIMAL(10, 2) DEFAULT 0.00");
+            }
+            if (!$checkColumn($conn, 'affiliate_bank_accounts', 'updated_at')) {
+                $conn->exec("ALTER TABLE affiliate_bank_accounts ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            }
+        } catch (Exception $e) {
+            // Log error or ignore if tables don't exist yet
+        }
         $migrationRun = true;
     }
+    if ($action === 'get_affiliate_info') {
         // Get affiliate information for a user
         if (!$userId) {
             echo json_encode(['success' => false, 'message' => 'User ID required']);

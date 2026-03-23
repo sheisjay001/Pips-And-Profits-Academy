@@ -40,6 +40,9 @@
                 <a href="community.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
                     <i class="fa-brands fa-telegram me-2"></i> Community
                 </a>
+                <a href="affiliate.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
+                    <i class="fa-solid fa-chart-line me-2"></i> Affiliate Program
+                </a>
                 <a href="settings.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3 mt-5">
                     <i class="fa-solid fa-gear me-2"></i> Settings
                 </a>
@@ -211,12 +214,14 @@
                     `;
                 }
             }
-            const user = App.getCurrentUser();
+            
             if (user) {
                 const navUserName = document.getElementById('navUserName');
                 const navUserAvatar = document.getElementById('navUserAvatar');
                 if (navUserName) navUserName.textContent = user.name;
-                if (navUserAvatar) navUserAvatar.src = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff`;
+                if (navUserAvatar) {
+                    navUserAvatar.src = user.profile_picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff`;
+                }
             }
         });
 

@@ -12,19 +12,29 @@
 <body class="bg-light">
     <div class="d-flex" id="wrapper">
         <!-- Sidebar -->
-        <div class="bg-purple text-white" id="sidebar-wrapper">
-            <div class="sidebar-heading text-center py-4 primary-text fs-4 fw-bold border-bottom border-white border-opacity-25">
-                <img src="images/logo.jpg" alt="Logo" width="40" class="rounded-circle me-2"> PPA
+        <div class="bg-purple text-white border-end" id="sidebar-wrapper">
+            <div class="sidebar-heading border-bottom bg-purple-dark fw-bold d-flex align-items-center p-3">
+                <img src="images/logo.jpg" alt="Logo" width="30" height="30" class="me-2 rounded-circle">
+                Pips & Profit
             </div>
-            <div class="list-group list-group-flush my-3">
-                <a href="dashboard.html" class="list-group-item list-group-item-action bg-transparent text-white"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a>
-                <a href="courses.html" class="list-group-item list-group-item-action bg-transparent text-white"><i class="fas fa-graduation-cap me-2"></i>My Courses</a>
-                <a href="signals.html" class="list-group-item list-group-item-action bg-transparent text-white"><i class="fas fa-chart-line me-2"></i>Signals</a>
+            <div class="list-group list-group-flush">
+                <a href="dashboard.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
+                    <i class="fa-solid fa-gauge me-2"></i> Dashboard
+                </a>
+                <a href="courses.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
+                    <i class="fa-solid fa-graduation-cap me-2"></i> My Courses
+                </a>
+                <a href="signals.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
+                    <i class="fa-solid fa-signal me-2"></i> Signals <span class="badge bg-danger rounded-pill float-end">New</span>
+                </a>
                 <a href="tools.html" class="list-group-item list-group-item-action bg-purple text-white border-0 active p-3">
                     <i class="fa-solid fa-tools me-2"></i> Trading Tools
                 </a>
                 <a href="community.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
                     <i class="fa-brands fa-telegram me-2"></i> Community
+                </a>
+                <a href="affiliate.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3">
+                    <i class="fa-solid fa-chart-line me-2"></i> Affiliate Program
                 </a>
                 <a href="settings.html" class="list-group-item list-group-item-action bg-purple text-white border-0 p-3 mt-5">
                     <i class="fa-solid fa-gear me-2"></i> Settings
@@ -36,11 +46,43 @@
         </div>
 
         <!-- Page Content -->
-        <div id="page-content-wrapper">
-            <nav class="navbar navbar-expand-lg navbar-light bg-white py-4 px-4 shadow-sm">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-align-left text-purple fs-4 me-3" id="sidebarToggle"></i>
-                    <h2 class="fs-4 m-0 text-purple">Trading Tools</h2>
+        <div id="page-content-wrapper" class="w-100">
+            
+            <!-- Top Navigation -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm" style="position: relative; z-index: 1050;">
+                <div class="container-fluid">
+                    <button class="btn btn-purple btn-sm" id="sidebarToggle"><i class="fa-solid fa-bars"></i></button>
+                    
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul class="navbar-nav ms-auto mt-2 mt-lg-0 align-items-center">
+                            <li class="nav-item dropdown me-3">
+                                <a class="nav-link text-secondary" href="#" role="button" data-bs-toggle="dropdown">
+                                    <i class="fa-solid fa-bell fa-lg"></i>
+                                    <span class="position-absolute top-20 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end border-0 shadow">
+                                    <li><a class="dropdown-item" href="signals.html">New Signal: EUR/USD Buy</a></li>
+                                    <li><a class="dropdown-item" href="https://t.me/+M5LJCAlpJhw1MDk0" target="_blank">Live Session starting in 15m</a></li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                    <img src="https://ui-avatars.com/api/?name=Trader+Joe&background=6f42c1&color=fff" alt="User" class="rounded-circle me-2" width="32" height="32" id="navUserAvatar">
+                                    <span class="fw-bold text-dark" id="navUserName">Trader Joe</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end border-0 shadow">
+                                    <li><a class="dropdown-item" href="settings.html">Profile</a></li>
+                                    <li><a class="dropdown-item" href="settings.html#billing">Billing</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="App.logout()">Logout</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </nav>
 
@@ -58,13 +100,13 @@
                                     <div class="tradingview-widget-container__widget"></div>
                                     <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
                                     {
-                                    "width": "100%",
-                                    "height": "600",
-                                    "colorTheme": "light",
-                                    "isTransparent": false,
-                                    "locale": "en",
-                                    "importanceFilter": "0,1",
-                                    "currencyFilter": "USD,EUR,GBP,JPY,AUD,CAD,CHF,NZD,CNY"
+                                        "width": "100%",
+                                        "height": "600",
+                                        "colorTheme": "light",
+                                        "isTransparent": false,
+                                        "locale": "en",
+                                        "importanceFilter": "-1,0,1",
+                                        "currencyFilter": "USD,EUR,GBP,JPY,AUD,CAD,CHF,NZD,CNY"
                                     }
                                     </script>
                                 </div>
@@ -188,9 +230,24 @@
     </div>
 
     <script src="js/script.js"></script>
-    <script src="js/app.js?v=1.1"></script>
+    <script src="js/app.js"></script>
     <script>
-        App.checkAuth();
+        document.addEventListener('DOMContentLoaded', () => {
+            App.checkAuth();
+            updateUserInfo();
+        });
+
+        function updateUserInfo() {
+            const user = App.getCurrentUser();
+            if (user) {
+                const navUserName = document.getElementById('navUserName');
+                const navUserAvatar = document.getElementById('navUserAvatar');
+                if (navUserName) navUserName.textContent = user.name;
+                if (navUserAvatar) {
+                    navUserAvatar.src = user.profile_picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff`;
+                }
+            }
+        }
 
         function toggleCalcMode() {
             const mode = document.querySelector('input[name="calcMode"]:checked').value;
