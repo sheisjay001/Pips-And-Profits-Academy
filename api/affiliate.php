@@ -68,9 +68,8 @@ if ($method === 'GET') {
     $action = $_GET['action'] ?? '';
     $userId = $_GET['user_id'] ?? null;
     
-    // Ensure table structure is updated
-    static $migrationRun = false;
-    if (!$migrationRun) {
+    // Migration endpoint
+    if ($action === 'migrate') {
         try {
             // Create affiliate_users table
             $conn->exec("CREATE TABLE IF NOT EXISTS affiliate_users (
@@ -195,20 +194,31 @@ if ($method === 'GET') {
                 $conn->exec("ALTER TABLE users ADD COLUMN referral_code_used VARCHAR(20) NULL");
             }
 
+            // Link Joy to Soteriamaa if not already linked
+            try {
+                $conn->exec("
+                    INSERT IGNORE INTO affiliate_referrals (affiliate_id, referred_user_id, referral_code, status, signup_date)
+                    SELECT au.id, u.id, au.affiliate_code, 'pending', u.created_at
+                    FROM users u
+                    JOIN users ua ON ua.email = 'soteriamaa@gmail.com'
+                    JOIN affiliate_users au ON au.user_id = ua.id
+                    WHERE u.email = 'joyrobertauta@gmail.com'
+                    AND u.id NOT IN (SELECT referred_user_id FROM affiliate_referrals)
+                ");
+            } catch (Exception $e) {}
+
             // Sync referral counts for all affiliates
             $conn->exec("
                 UPDATE affiliate_users au 
                 SET referral_count = (SELECT COUNT(*) FROM affiliate_referrals WHERE affiliate_id = au.id)
             ");
-        } catch (Exception $e) {
-            // Log error or ignore if tables don't exist yet
-        }
-        $migrationRun = true;
-    }
 
-    if ($action === 'migrate') {
-        echo json_encode(['success' => true, 'message' => 'Migration successful']);
-        exit;
+            echo json_encode(['success' => true, 'message' => 'Migration successful. Joy linked to Soteriamaa.']);
+            exit;
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'message' => 'Migration failed: ' . $e->getMessage()]);
+            exit;
+        }
     } elseif ($action === 'get_affiliate_info') {
         // Get affiliate information for a user
         if (!$userId) {
