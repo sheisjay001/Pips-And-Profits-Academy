@@ -79,25 +79,28 @@ const AffiliateDashboard = {
     },
 
     showSetupRequired() {
-        document.getElementById('mainContent').innerHTML = `
-            <div class="text-center py-5">
-                <div class="card border-0 shadow-sm mx-auto" style="max-width: 600px;">
-                    <div class="card-body p-5">
-                        <i class="fa-solid fa-database fa-4x text-warning mb-4"></i>
-                        <h2 class="fw-bold">System Setup in Progress</h2>
-                        <p class="text-muted mb-4">The affiliate system is currently being configured on this server. Please check back shortly.</p>
-                        <div class="alert alert-info small">
-                            <i class="fa-solid fa-info-circle me-2"></i>
-                            Admin: Please ensure you have run the database migration scripts.
+        const elMain = document.getElementById('mainContent');
+        if (elMain) {
+            elMain.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="card border-0 shadow-sm mx-auto" style="max-width: 600px;">
+                        <div class="card-body p-5">
+                            <i class="fa-solid fa-database fa-4x text-warning mb-4"></i>
+                            <h2 class="fw-bold">System Setup in Progress</h2>
+                            <p class="text-muted mb-4">The affiliate system is currently being configured on this server. Please check back shortly.</p>
+                            <div class="alert alert-info small">
+                                <i class="fa-solid fa-info-circle me-2"></i>
+                                Admin: Please ensure you have run the database migration scripts.
+                            </div>
+                            <button class="btn btn-purple mt-3" onclick="location.reload()">
+                                <i class="fa-solid fa-sync me-2"></i>Refresh Page
+                            </button>
                         </div>
-                        <button class="btn btn-purple mt-3" onclick="location.reload()">
-                            <i class="fa-solid fa-sync me-2"></i>Refresh Page
-                        </button>
                     </div>
                 </div>
-            </div>
-        `;
-        document.getElementById('mainContent').style.display = 'block';
+            `;
+            elMain.style.display = 'block';
+        }
     },
 
     showDashboard() {
@@ -106,9 +109,13 @@ const AffiliateDashboard = {
             return;
         }
 
-        document.getElementById('becomeAffiliateSection').style.display = 'none';
-        document.getElementById('affiliateDashboard').style.display = 'block';
-        document.getElementById('mainContent').style.display = 'block';
+        const elBecome = document.getElementById('becomeAffiliateSection');
+        const elDash = document.getElementById('affiliateDashboard');
+        const elMain = document.getElementById('mainContent');
+
+        if (elBecome) elBecome.style.display = 'none';
+        if (elDash) elDash.style.display = 'block';
+        if (elMain) elMain.style.display = 'block';
         
         // Update affiliate code and link
         const codeEl = document.getElementById('affiliateCode');
@@ -125,43 +132,60 @@ const AffiliateDashboard = {
     },
 
     showPendingApproval() {
-        document.getElementById('becomeAffiliateSection').style.display = 'none';
-        document.getElementById('affiliateDashboard').style.display = 'none';
-        document.getElementById('mainContent').innerHTML = `
-            <div class="text-center py-5">
-                <div class="card border-0 shadow-sm mx-auto" style="max-width: 600px;">
-                    <div class="card-body p-5">
-                        <i class="fa-solid fa-clock fa-4x text-warning mb-4"></i>
-                        <h2 class="fw-bold">Application Pending</h2>
-                        <p class="text-muted mb-4">Thank you for applying to the affiliate program! Your application is currently being reviewed by our administration team.</p>
-                        <div class="alert alert-warning small">
-                            <i class="fa-solid fa-info-circle me-2"></i>
-                            Once approved, you will receive your unique affiliate code and referral link here.
+        const elBecome = document.getElementById('becomeAffiliateSection');
+        const elDash = document.getElementById('affiliateDashboard');
+        const elMain = document.getElementById('mainContent');
+
+        if (elBecome) elBecome.style.display = 'none';
+        if (elDash) elDash.style.display = 'none';
+        if (elMain) {
+            elMain.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="card border-0 shadow-sm mx-auto" style="max-width: 600px;">
+                        <div class="card-body p-5">
+                            <i class="fa-solid fa-clock fa-4x text-warning mb-4"></i>
+                            <h2 class="fw-bold">Application Pending</h2>
+                            <p class="text-muted mb-4">Thank you for applying to the affiliate program! Your application is currently being reviewed by our administration team.</p>
+                            <div class="alert alert-warning small">
+                                <i class="fa-solid fa-info-circle me-2"></i>
+                                Once approved, you will receive your unique affiliate code and referral link here.
+                            </div>
+                            <button class="btn btn-purple mt-3" onclick="location.reload()">
+                                <i class="fa-solid fa-sync me-2"></i>Check Status
+                            </button>
                         </div>
-                        <button class="btn btn-purple mt-3" onclick="location.reload()">
-                            <i class="fa-solid fa-sync me-2"></i>Check Status
-                        </button>
                     </div>
                 </div>
-            </div>
-        `;
-        document.getElementById('mainContent').style.display = 'block';
+            `;
+            elMain.style.display = 'block';
+        }
     },
 
     showBecomeAffiliate() {
-        document.getElementById('becomeAffiliateSection').style.display = 'block';
-        document.getElementById('affiliateDashboard').style.display = 'none';
-        document.getElementById('mainContent').style.display = 'block';
+        const elBecome = document.getElementById('becomeAffiliateSection');
+        const elDash = document.getElementById('affiliateDashboard');
+        const elMain = document.getElementById('mainContent');
+
+        if (elBecome) elBecome.style.display = 'block';
+        if (elDash) elDash.style.display = 'none';
+        if (elMain) elMain.style.display = 'block';
     },
 
     updateStatistics() {
         const stats = this.affiliateData.stats;
         const affiliate = this.affiliateData.affiliate;
         
-        document.getElementById('totalReferrals').textContent = stats.total_referrals || 0;
-        document.getElementById('totalEarnings').textContent = '$' + (parseFloat(affiliate.total_earnings) || 0).toFixed(2);
-        document.getElementById('currentBalance').textContent = '$' + (parseFloat(affiliate.current_balance) || 0).toFixed(2);
-        document.getElementById('pendingReferrals').textContent = stats.pending_referrals || 0;
+        const elTotalRef = document.getElementById('totalReferrals');
+        const elTotalEarn = document.getElementById('totalEarnings');
+        const elCurrBal = document.getElementById('currentBalance');
+        const elConfirmedRef = document.getElementById('confirmedReferrals');
+        const elPendingRef = document.getElementById('pendingReferrals');
+
+        if (elTotalRef) elTotalRef.textContent = stats.total_referrals || 0;
+        if (elTotalEarn) elTotalEarn.textContent = '$' + (parseFloat(affiliate.total_earnings) || 0).toFixed(2);
+        if (elCurrBal) elCurrBal.textContent = '$' + (parseFloat(affiliate.current_balance) || 0).toFixed(2);
+        if (elConfirmedRef) elConfirmedRef.textContent = stats.confirmed_referrals || 0;
+        if (elPendingRef) elPendingRef.textContent = stats.pending_referrals || 0;
 
         // Update Click Count and Conversion Rate if elements exist
         const clickCountEl = document.getElementById('clickCount');
