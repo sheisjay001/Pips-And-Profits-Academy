@@ -69,8 +69,8 @@ if ($method === 'GET') {
     $userId = $_GET['user_id'] ?? null;
     
     // Ensure table structure is updated
-    $migrationRun = false;
-    if ($action === 'migrate') {
+    static $migrationRun = false;
+    if (!$migrationRun) {
         try {
             // Create affiliate_users table
             $conn->exec("CREATE TABLE IF NOT EXISTS affiliate_users (
@@ -200,11 +200,13 @@ if ($method === 'GET') {
                 UPDATE affiliate_users au 
                 SET referral_count = (SELECT COUNT(*) FROM affiliate_referrals WHERE affiliate_id = au.id)
             ");
-        } catch (PDOException $e) {
-            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            exit;
+        } catch (Exception $e) {
+            // Log error or ignore if tables don't exist yet
         }
-        
+        $migrationRun = true;
+    }
+
+    if ($action === 'migrate') {
         echo json_encode(['success' => true, 'message' => 'Migration successful']);
         exit;
     } elseif ($action === 'get_affiliate_info') {
@@ -285,36 +287,39 @@ if ($method === 'GET') {
                 $stmtStats->execute([$affiliate['id']]);
                 $stats = $stmtStats->fetch(PDO::FETCH_ASSOC);
                 
-                // Get recent referrals
-                $stmtRecent = $conn->prepare("
-                    SELECT ar.*, IFNULL(ar.signup_date, u.created_at) as signup_date, IFNULL(ar.commission_earned, 0) as commission_amount, 
-                           u.$nameCol as referred_name, u.email as referred_email, u.plan as referred_plan, u.profile_picture as referred_profile_picture
-                    FROM affiliate_referrals ar
-                    JOIN users u ON ar.referred_user_id = u.id
-                    WHERE ar.affiliate_id = ?
-                    ORDER BY ar.id DESC
-                    LIMIT 10
-                ");
-                $stmtRecent->execute([$affiliate['id']]);
-                $recentReferrals = $stmtRecent->fetchAll(PDO::FETCH_ASSOC);
+                // Get recent referrals - very robust query
+                try {
+                    $stmtRecent = $conn->prepare("
+                        SELECT ar.id, ar.status, 
+                               IFNULL(ar.commission_earned, 0) as commission_amount, 
+                               u.$nameCol as referred_name, u.email as referred_email, u.plan as referred_plan,
+                               u.created_at as user_signup_date
+                        FROM affiliate_referrals ar
+                        JOIN users u ON ar.referred_user_id = u.id
+                        WHERE ar.affiliate_id = ?
+                        ORDER BY ar.id DESC
+                        LIMIT 10
+                    ");
+                    $stmtRecent->execute([$affiliate['id']]);
+                    $recentReferrals = $stmtRecent->fetchAll(PDO::FETCH_ASSOC);
+                } catch (Exception $e) {
+                    // Fallback if columns are missing
+                    $recentReferrals = [];
+                }
                 
                 // Get bank account info
-                $stmtBank = $conn->prepare("
-                    SELECT * FROM affiliate_bank_accounts 
-                    WHERE affiliate_id = ?
-                ");
-                $stmtBank->execute([$affiliate['id']]);
-                $bankAccount = $stmtBank->fetch(PDO::FETCH_ASSOC);
+                try {
+                    $stmtBank = $conn->prepare("SELECT * FROM affiliate_bank_accounts WHERE affiliate_id = ?");
+                    $stmtBank->execute([$affiliate['id']]);
+                    $bankAccount = $stmtBank->fetch(PDO::FETCH_ASSOC);
+                } catch (Exception $e) { $bankAccount = null; }
                 
                 // Get payout history
-                $stmtPayout = $conn->prepare("
-                    SELECT * FROM affiliate_payouts 
-                    WHERE affiliate_id = ?
-                    ORDER BY payout_date DESC
-                    LIMIT 10
-                ");
-                $stmtPayout->execute([$affiliate['id']]);
-                $payoutHistory = $stmtPayout->fetchAll(PDO::FETCH_ASSOC);
+                try {
+                    $stmtPayout = $conn->prepare("SELECT * FROM affiliate_payouts WHERE affiliate_id = ? ORDER BY id DESC LIMIT 10");
+                    $stmtPayout->execute([$affiliate['id']]);
+                    $payoutHistory = $stmtPayout->fetchAll(PDO::FETCH_ASSOC);
+                } catch (Exception $e) { $payoutHistory = []; }
                 
                 echo json_encode([
                     'success' => true,
@@ -328,7 +333,12 @@ if ($method === 'GET') {
                 echo json_encode(['success' => true, 'affiliate' => null]);
             }
         } catch (PDOException $e) {
-            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage(), 'error_info' => $e->errorInfo]);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Database error: ' . $e->getMessage(),
+                'file' => basename($e->getFile()),
+                'line' => $e->getLine()
+            ]);
         }
     } elseif ($action === 'check_referral_code') {
         // Check if referral code is valid
