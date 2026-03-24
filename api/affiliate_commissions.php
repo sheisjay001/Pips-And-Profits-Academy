@@ -33,9 +33,9 @@ function getPostParams() {
     return json_decode($input, true) ?? [];
 }
 
-// Calculate commission based on payment amount and user plan
+// Calculate commission based on payment amount and purchased plan
 function calculateCommission($conn, $affiliateId, $paymentAmount, $referredUserId) {
-    // Check if referred user is 'pro' or 'elite'
+    // Check what plan the referred user purchased
     $stmt = $conn->prepare("SELECT plan FROM users WHERE id = ?");
     $stmt->execute([$referredUserId]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -44,16 +44,17 @@ function calculateCommission($conn, $affiliateId, $paymentAmount, $referredUserI
         return 0; // Only pro and elite/premium plans generate commission
     }
 
-    // Get affiliate's commission rate
-    $stmt = $conn->prepare("SELECT commission_rate FROM affiliate_users WHERE id = ?");
-    $stmt->execute([$affiliateId]);
-    $affiliate = $stmt->fetch(PDO::FETCH_ASSOC);
+    // Commission rates based on purchased plan (not affiliate's status)
+    $purchasedPlan = $user['plan'];
     
-    if (!$affiliate) {
-        return 0;
+    if ($purchasedPlan === 'pro') {
+        $commissionRate = 30; // 30% commission for Pro plan purchases
+    } elseif ($purchasedPlan === 'elite' || $purchasedPlan === 'premium') {
+        $commissionRate = 20; // 20% commission for Elite/Premium plan purchases
+    } else {
+        return 0; // No commission for other plans
     }
     
-    $commissionRate = $affiliate['commission_rate'];
     $commissionAmount = ($paymentAmount * $commissionRate) / 100;
     
     return $commissionAmount;
@@ -141,9 +142,22 @@ if ($method === 'POST') {
             $stmt = $conn->prepare("
                 INSERT INTO affiliate_transactions 
                 (affiliate_id, referral_id, transaction_type, amount, description, payment_id, created_at)
-                VALUES (?, ?, 'commission', ?, 'Commission from payment', ?, NOW())
+                VALUES (?, ?, 'commission', ?, ?, ?, NOW())
             ");
-            $stmt->execute([$referral['affiliate_id'], $referral['referral_id'], $commissionAmount, $paymentId]);
+            
+            // Get plan name for description
+            $stmt2 = $conn->prepare("SELECT plan FROM users WHERE id = ?");
+            $stmt2->execute([$referredUserId]);
+            $userPlan = $stmt2->fetch(PDO::FETCH_ASSOC);
+            
+            $planDescription = '';
+            if ($userPlan['plan'] === 'pro') {
+                $planDescription = 'Commission from Pro plan sale (30%)';
+            } elseif ($userPlan['plan'] === 'elite' || $userPlan['plan'] === 'premium') {
+                $planDescription = 'Commission from Elite/Premium plan sale (20%)';
+            }
+            
+            $stmt->execute([$referral['affiliate_id'], $referral['referral_id'], $commissionAmount, $planDescription, $paymentId]);
             
             $conn->commit();
             
