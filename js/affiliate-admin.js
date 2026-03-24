@@ -140,7 +140,6 @@ const AffiliateAdmin = {
                     </div>
                 </td>
                 <td><code>${aff.affiliate_code}</code></td>
-                <td>${aff.commission_rate}%</td>
                 <td>$${(parseFloat(aff.total_earnings) || 0).toFixed(2)}</td>
                 <td>$${(parseFloat(aff.current_balance) || 0).toFixed(2)}</td>
                 <td>${aff.referral_count || 0}</td>
@@ -353,16 +352,16 @@ const AffiliateAdmin = {
                                 <code>${affiliate.affiliate_code}</code>
                             </div>
                             <div class="col-6">
-                                <label class="text-muted small d-block">Commission Rate</label>
-                                <strong>${affiliate.commission_rate}%</strong>
-                            </div>
-                            <div class="col-6">
                                 <label class="text-muted small d-block">Total Earnings</label>
-                                <strong>$${parseFloat(affiliate.total_earnings).toFixed(2)}</strong>
+                                <strong>$${(parseFloat(affiliate.total_earnings) || 0).toFixed(2)}</strong>
                             </div>
                             <div class="col-6">
                                 <label class="text-muted small d-block">Current Balance</label>
-                                <strong>$${parseFloat(affiliate.current_balance).toFixed(2)}</strong>
+                                <strong>$${(parseFloat(affiliate.current_balance) || 0).toFixed(2)}</strong>
+                            </div>
+                            <div class="col-6">
+                                <label class="text-muted small d-block">Referral Count</label>
+                                <strong>${affiliate.referral_count || 0}</strong>
                             </div>
                         </div>
 
