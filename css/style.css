@@ -376,6 +376,37 @@ footer a:hover {
     #sidebarToggle {
         margin-right: 0.5rem;
     }
+
+    /* Mobile Offerings Section */
+    .icon-box {
+        width: 60px;
+        height: 60px;
+    }
+
+    .icon-box i {
+        font-size: 1.5rem;
+    }
+
+    /* Mobile Navigation Buttons */
+    .navbar .d-flex {
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .navbar .d-flex .btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* Mobile Footer */
+    footer .row {
+        text-align: center;
+    }
+
+    footer .d-flex {
+        justify-content: center;
+    }
 }
 
  
