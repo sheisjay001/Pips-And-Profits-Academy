@@ -281,6 +281,7 @@
                                     <tr>
                                         <th class="border-0 ps-4">Name</th>
                                         <th class="border-0">Email</th>
+                                        <th class="border-0">WhatsApp Phone</th>
                                         <th class="border-0">Role</th>
                                         <th class="border-0">Plan</th>
                                         <th class="border-0">Action</th>
@@ -700,7 +701,10 @@
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer d-none">
+                <div class="modal-footer" id="newSignalModalFooter">
+                    <button id="broadcastWhatsAppBtn" class="btn btn-success w-100">
+                        <i class="fa-brands fa-whatsapp me-2"></i> Broadcast to Community
+                    </button>
                 </div>
             </div>
         </div>
@@ -903,6 +907,31 @@
 
             // Handle New Signal Modal Form
             const newSignalModalForm = document.getElementById('newSignalModalForm');
+            const newSignalModalFooter = document.getElementById('newSignalModalFooter');
+            const broadcastWhatsAppBtn = document.getElementById('broadcastWhatsAppBtn');
+            let lastPostedSignal = null;
+            
+            // Hide footer initially
+            if (newSignalModalFooter) {
+                newSignalModalFooter.style.display = 'none';
+            }
+            
+            // Reset footer when modal opens
+            const newSignalModalEl = document.getElementById('newSignalModal');
+            newSignalModalEl.addEventListener('show.bs.modal', () => {
+                if (newSignalModalFooter) newSignalModalFooter.style.display = 'none';
+                lastPostedSignal = null;
+            });
+            
+            // Broadcast button click handler
+            if (broadcastWhatsAppBtn) {
+                broadcastWhatsAppBtn.addEventListener('click', () => {
+                    if (lastPostedSignal) {
+                        broadcastSignalToCommunity(lastPostedSignal);
+                    }
+                });
+            }
+            
             if (newSignalModalForm) {
                 newSignalModalForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
@@ -915,11 +944,10 @@
                         const res = await App.addSignal(signalData);
                         if (res && res.success) {
                             alert('Signal Posted Successfully!');
-                            newSignalModalForm.reset();
                             
-                            // Close modal
-                            const modal = bootstrap.Modal.getInstance(document.getElementById('newSignalModal'));
-                            modal.hide();
+                            // Store last posted signal and show broadcast button
+                            lastPostedSignal = res.signal;
+                            newSignalModalFooter.style.display = 'flex';
                             
                             // Refresh lists
                             renderAdminSignals();
@@ -1161,6 +1189,60 @@
             }
         };
 
+        // --- WhatsApp Broadcast Helper Functions ---
+        const COMMUNITY_LINK = "https://chat.whatsapp.com/IWmIfOcRDiAB8I1gCtGoVr";
+        
+        function generateSignalText(signal) {
+            const pair = signal.pair;
+            const type = signal.type || signal.type;
+            const entry = signal.entry || signal.entry_price;
+            const sl = signal.sl || signal.stop_loss;
+            const tp = signal.tp || signal.take_profit;
+            const status = signal.status || 'Running';
+            const typeEmoji = type === 'BUY' ? '🟢' : '🔴';
+            
+            return `
+📊 *━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*
+📊 *PPA SIGNAL ALERT*
+📊 *━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*
+
+💱 *Pair:* ${pair}
+${typeEmoji} *Action:* ${type}
+💰 *Entry:* ${entry}
+🛑 *Stop Loss:* ${sl}
+🎯 *Take Profit:* ${tp}
+📈 *Status:* ${status}
+
+*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*
+📊 Check the dashboard for full analysis charts!
+📊 *━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*
+`;
+        }
+        
+        async function broadcastSignalToCommunity(signal) {
+            const text = generateSignalText(signal);
+            try {
+                await navigator.clipboard.writeText(text);
+                alert("Signal text copied to clipboard! Opening community group...");
+                window.open(COMMUNITY_LINK, "_blank");
+            } catch (err) {
+                console.error("Failed to copy text: ", err);
+                alert("Failed to copy text. Please copy manually:\n\n" + text);
+                window.open(COMMUNITY_LINK, "_blank");
+            }
+        }
+        
+        window.broadcastSignalFromList = function(encodedSignalJson) {
+            try {
+                const signalJson = decodeURIComponent(encodedSignalJson);
+                const signal = JSON.parse(signalJson);
+                broadcastSignalToCommunity(signal);
+            } catch (err) {
+                console.error("Failed to parse signal data: ", err);
+                alert("Failed to broadcast this signal. Please try again.");
+            }
+        }
+        
         // --- Signal Management ---
         async function renderAdminSignals() {
             const signals = await App.getSignals();
@@ -1176,7 +1258,10 @@
             // Assuming signals are returned in order or we sort them
             signals.reverse();
 
-            tbody.innerHTML = signals.map(s => `
+            tbody.innerHTML = signals.map(s => {
+                // We need to stringify the signal to pass it to the onclick handler
+                const signalJson = encodeURIComponent(JSON.stringify(s));
+                return `
                 <tr>
                     <td class="ps-4 fw-bold">${s.pair}</td>
                     <td><span class="badge ${s.type === 'BUY' ? 'bg-success' : 'bg-danger'}">${s.type}</span></td>
@@ -1185,10 +1270,11 @@
                     <td class="text-success">${s.take_profit || s.tp}</td>
                     <td><span class="badge ${s.status === 'Running' ? 'bg-primary' : s.status === 'Won' ? 'bg-success' : s.status === 'Lost' ? 'bg-danger' : 'bg-secondary'}">${s.status}</span></td>
                     <td>
+                        <button class="btn btn-sm btn-success me-1" title="Broadcast to Community" onclick="broadcastSignalFromList('${signalJson}')"><i class="fa-brands fa-whatsapp"></i></button>
                         <button class="btn btn-sm btn-light text-danger" onclick="deleteSignal(${s.id})"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         window.deleteSignal = async function(id) {
@@ -1219,6 +1305,7 @@
                         </div>
                     </td>
                     <td>${user.email}</td>
+                    <td>${user.phone || '-'}</td>
                     <td><span class="badge ${user.role === 'admin' ? 'bg-danger' : 'bg-primary'}">${user.role}</span></td>
                     <td>
                         <select class="form-select form-select-sm w-auto" onchange="upgradeUser(${user.id}, this.value)" ${user.role === 'admin' ? 'disabled' : ''}>

@@ -160,6 +160,7 @@ if ($action === 'csrf') {
 if ($action === 'register') {
     $name = $data->name;
     $email = $data->email;
+    $phone = $data->phone ?? null;
     $password = $data->password;
     $referralCode = $data->referral_code ?? null;
 
@@ -191,8 +192,8 @@ if ($action === 'register') {
     } catch (Exception $e) {
         $verification_token = md5(uniqid((string)mt_rand(), true));
     }
-    $stmt = $conn->prepare("INSERT INTO users (name, email, password_hash, role, plan, email_verified, verification_token, verification_sent_at) VALUES (?, ?, ?, ?, ?, 0, ?, NOW())");
-    if ($stmt->execute([$name, $email, $password_hash, $role, $plan, $verification_token])) {
+    $stmt = $conn->prepare("INSERT INTO users (name, email, phone, password_hash, role, plan, email_verified, verification_token, verification_sent_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?, NOW())");
+    if ($stmt->execute([$name, $email, $phone, $password_hash, $role, $plan, $verification_token])) {
         $userId = $conn->lastInsertId();
         
         // Track referral if code provided
@@ -354,20 +355,21 @@ if ($action === 'register') {
     $id = $data->id;
     $name = $data->name;
     $email = $data->email;
+    $phone = $data->phone ?? null;
     $bio = $data->bio ?? '';
     $profile_picture = $data->profile_picture ?? null;
 
     if ($profile_picture) {
-        $stmt = $conn->prepare("UPDATE users SET name = ?, email = ?, bio = ?, profile_picture = ? WHERE id = ?");
-        $params = [$name, $email, $bio, $profile_picture, $id];
+        $stmt = $conn->prepare("UPDATE users SET name = ?, email = ?, phone = ?, bio = ?, profile_picture = ? WHERE id = ?");
+        $params = [$name, $email, $phone, $bio, $profile_picture, $id];
     } else {
-        $stmt = $conn->prepare("UPDATE users SET name = ?, email = ?, bio = ? WHERE id = ?");
-        $params = [$name, $email, $bio, $id];
+        $stmt = $conn->prepare("UPDATE users SET name = ?, email = ?, phone = ?, bio = ? WHERE id = ?");
+        $params = [$name, $email, $phone, $bio, $id];
     }
 
     if ($stmt->execute($params)) {
          // Fetch updated user
-         $stmt = $conn->prepare("SELECT id, name, email, role, plan, profile_picture, bio, created_at FROM users WHERE id = ?");
+         $stmt = $conn->prepare("SELECT id, name, email, phone, role, plan, profile_picture, bio, created_at FROM users WHERE id = ?");
          $stmt->execute([$id]);
          $updatedUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -604,7 +606,7 @@ if ($action === 'register') {
         echo json_encode(['success' => false, 'message' => 'Not logged in']);
         exit;
     }
-    $stmt = $conn->prepare("SELECT id, name, email, role, plan, profile_picture, bio, COALESCE(email_verified, 0) as email_verified, created_at FROM users WHERE id = ?");
+    $stmt = $conn->prepare("SELECT id, name, email, phone, role, plan, profile_picture, bio, COALESCE(email_verified, 0) as email_verified, created_at FROM users WHERE id = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $u = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($u) {
@@ -617,7 +619,7 @@ if ($action === 'register') {
         echo json_encode(['success' => false, 'message' => 'Not logged in']);
         exit;
     }
-    $stmt = $conn->prepare("SELECT id, name, email, role, plan, profile_picture, bio, COALESCE(email_verified, 0) as email_verified, created_at FROM users WHERE id = ?");
+    $stmt = $conn->prepare("SELECT id, name, email, phone, role, plan, profile_picture, bio, COALESCE(email_verified, 0) as email_verified, created_at FROM users WHERE id = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $u = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($u) {

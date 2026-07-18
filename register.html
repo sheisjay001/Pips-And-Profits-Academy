@@ -38,6 +38,14 @@
                     </div>
                 </div>
                 <div class="mb-3">
+                    <label class="form-label small fw-bold">Phone Number (WhatsApp)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="fas fa-phone text-muted"></i></span>
+                        <input type="tel" class="form-control" name="phone" placeholder="+2348012345678" required>
+                    </div>
+                    <div class="form-text text-muted small">Include your country code (e.g., +234 for Nigeria)</div>
+                </div>
+                <div class="mb-3">
                     <label class="form-label small fw-bold">Password</label>
                     <div class="input-group">
                         <span class="input-group-text bg-white"><i class="fas fa-lock text-muted"></i></span>
@@ -100,11 +108,12 @@
             e.preventDefault();
             const name = e.target.name.value;
             const email = e.target.email.value;
+            const phone = e.target.phone.value;
             const password = e.target.password.value;
             const referralCode = e.target.referral_code.value;
 
             try {
-                const result = await App.register(name, email, password, referralCode);
+                const result = await App.register(name, email, phone, password, referralCode);
                 if (result.success) {
                     alert('Registration successful! Please check your email to verify your account.');
                     window.location.href = 'login.html';

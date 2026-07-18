@@ -103,6 +103,12 @@
                                             <input type="email" class="form-control" id="settingsEmail">
                                         </div>
                                     </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-12">
+                                            <label class="form-label small fw-bold">WhatsApp Phone Number</label>
+                                            <input type="tel" class="form-control" id="settingsPhone">
+                                        </div>
+                                    </div>
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Bio</label>
                                         <textarea class="form-control" id="settingsBio" rows="3"></textarea>
@@ -419,10 +425,11 @@
             e.preventDefault();
             const name = document.getElementById('settingsFullName').value;
             const email = document.getElementById('settingsEmail').value;
+            const phone = document.getElementById('settingsPhone').value;
             const bio = document.getElementById('settingsBio').value;
 
             if (name && email) {
-                const result = await App.updateUserProfile(name, email, bio);
+                const result = await App.updateUserProfile(name, email, phone, bio);
                 if (result.success) {
                     alert('Profile updated successfully!');
                     window.location.reload();
@@ -487,6 +494,7 @@
                  if (settingsProfileImage) settingsProfileImage.src = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff&size=128`;
                  if (settingsFullName) settingsFullName.value = user.name;
                  if (settingsEmail) settingsEmail.value = user.email;
+                 if (document.getElementById('settingsPhone')) document.getElementById('settingsPhone').value = user.phone || '';
                  if (settingsBio) settingsBio.value = user.bio || '';
                  if (planBadge) {
                      let label = 'Free Member';

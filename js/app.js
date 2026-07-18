@@ -164,10 +164,10 @@ const App = {
     },
 
     // --- Authentication ---
-    async register(name, email, password, referralCode = null) {
+    async register(name, email, phone, password, referralCode = null) {
         const data = {
             action: 'register',
-            name, email, password
+            name, email, phone, password
         };
         
         if (referralCode) {
@@ -214,20 +214,21 @@ const App = {
         localStorage.setItem(this.KEYS.CURRENT_USER, JSON.stringify(user));
     },
 
-    async updateUserProfile(name, email, bio) {
+    async updateUserProfile(name, email, phone, bio) {
         const currentUser = this.getCurrentUser();
         if (!currentUser) return;
 
         const result = await this.api('auth.php', 'POST', {
             action: 'update_profile',
             id: currentUser.id,
-            name, email, bio
+            name, email, phone, bio
         });
 
         if (result.success) {
             // Update local session
             currentUser.name = name;
             currentUser.email = email;
+            currentUser.phone = phone;
             currentUser.bio = bio;
             this.setCurrentUser(currentUser);
         }
@@ -376,14 +377,14 @@ const App = {
     },
 
     // --- Profile Management ---
-    async updateUserProfile(name, email, bio) {
+    async updateUserProfile(name, email, phone, bio) {
         const currentUser = this.getCurrentUser();
         if (!currentUser) return;
 
         const result = await this.api('auth.php', 'POST', {
             action: 'update_profile',
             id: currentUser.id,
-            name, email, bio,
+            name, email, phone, bio,
             profile_picture: currentUser.profile_picture
         });
 
@@ -393,6 +394,7 @@ const App = {
             } else {
                 currentUser.name = name;
                 currentUser.email = email;
+                currentUser.phone = phone;
                 currentUser.bio = bio;
                 this.setCurrentUser(currentUser);
             }
