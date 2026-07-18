@@ -101,6 +101,8 @@ try {
 
         // Map headers to indices
         $mapping = [];
+        error_log("Upload called with user_id: $user_id");
+        error_log("CSV Header: " . json_encode($header));
         foreach ($header as $index => $col) {
             $col = strtolower(trim($col));
             if ($col === 'ticket' || $col === 'order') $mapping['ticket'] = $index;
@@ -112,12 +114,13 @@ try {
             if ($col === 'size' || $col === 'volume' || $col === 'lots') $mapping['lots'] = $index;
             if ($col === 'item' || $col === 'symbol') $mapping['symbol'] = $index;
             if (strpos($col, 'open price') !== false || ($col === 'price' && !isset($mapping['open_price']))) $mapping['open_price'] = $index;
-            if (strpos($col, 's / l') !== false || $col === 'sl' || $col === 's/l') $mapping['sl'] = $index;
-            if (strpos($col, 't / p') !== false || $col === 'tp' || $col === 't/p') $mapping['tp'] = $index;
+            if (strpos($col, 's / l') !== false || $col === 'sl' || $col === 's/l' || strpos($col, 'stop loss') !== false) $mapping['sl'] = $index;
+            if (strpos($col, 't / p') !== false || $col === 'tp' || $col === 't/p' || strpos($col, 'take profit') !== false) $mapping['tp'] = $index;
             if (strpos($col, 'close time') !== false) $mapping['close_time'] = $index;
             if (strpos($col, 'close price') !== false || ($col === 'price' && isset($mapping['open_price']))) $mapping['close_price'] = $index;
-            if ($col === 'profit') $mapping['profit'] = $index;
+            if ($col === 'profit' || strpos($col, 'profit') !== false || strpos($col, 'net profit') !== false) $mapping['profit'] = $index;
         }
+        error_log("Mapping after processing: " . json_encode($mapping));
 
         // Heuristic for MT5 if headers are missing or differently named
         if (!isset($mapping['open_time']) && count($header) >= 10) {
@@ -131,8 +134,13 @@ try {
         // Clear previous history
         $conn->prepare("DELETE FROM trade_history WHERE user_id = ?")->execute([$user_id]);
 
+        $rows_processed = 0;
         while (($data = fgetcsv($handle)) !== FALSE) {
+            $rows_processed++;
             if (count($data) < 5) continue;
+            if ($rows_processed <= 3) {
+                error_log("CSV Row $rows_processed: " . json_encode($data));
+            }
 
             $ticket = $data[$mapping['ticket'] ?? 0] ?? '';
             $open_time = $data[$mapping['open_time'] ?? 1] ?? '';
@@ -145,6 +153,10 @@ try {
             $close_time = $data[$mapping['close_time'] ?? 8] ?? '';
             $close_price = floatval($data[$mapping['close_price'] ?? 9] ?? 0);
             $profit = floatval($data[$mapping['profit'] ?? count($data)-1] ?? 0);
+            
+            if ($rows_processed <= 3) {
+                error_log("Parsed Row $rows_processed - profit: $profit, type: $type, symbol: $symbol");
+            }
 
             if (empty($ticket) || empty($open_time) || empty($close_time)) continue;
 
@@ -223,6 +235,14 @@ try {
         $stmt = $conn->prepare($query);
         $stmt->execute($params);
         $trades = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Debug logs
+        error_log("Analyze called with user_id: $user_id, period: $period");
+        error_log("Number of trades found: " . count($trades));
+        if (!empty($trades)) {
+            error_log("First trade: " . json_encode($trades[0]));
+            error_log("Last trade: " . json_encode($trades[count($trades)-1]));
+        }
 
         if (empty($trades)) {
             echo json_encode(['success' => false, 'message' => 'No trade history found for this period. Please upload a CSV first.']);
