@@ -92,11 +92,25 @@ try {
             exit;
         }
 
-        $header = fgetcsv($handle);
+        // Try to auto-detect delimiter: first check comma, then semicolon
+        $delimiters = [',', ';'];
+        $header = null;
+        $chosen_delimiter = ',';
+        foreach ($delimiters as $d) {
+            rewind($handle);
+            $test_header = fgetcsv($handle, 0, $d);
+            if ($test_header && count($test_header) >= 5) {
+                $header = $test_header;
+                $chosen_delimiter = $d;
+                break;
+            }
+        }
+        
         if (!$header) {
             echo json_encode(['success' => false, 'message' => 'Empty CSV file or invalid format']);
             exit;
         }
+        error_log("Using delimiter: " . $chosen_delimiter);
         $trades_imported = 0;
 
         // Map headers to indices
@@ -134,8 +148,10 @@ try {
         // Clear previous history
         $conn->prepare("DELETE FROM trade_history WHERE user_id = ?")->execute([$user_id]);
 
+        rewind($handle); // Rewind to start of file after reading header
+        fgetcsv($handle, 0, $chosen_delimiter); // Skip header row
         $rows_processed = 0;
-        while (($data = fgetcsv($handle)) !== FALSE) {
+        while (($data = fgetcsv($handle, 0, $chosen_delimiter)) !== FALSE) {
             $rows_processed++;
             if (count($data) < 5) continue;
             if ($rows_processed <= 3) {
