@@ -380,6 +380,7 @@
         }
 
         async function loadAnalysis(period) {
+            console.log('Loading analysis for period:', period);
             document.getElementById('reportPlaceholder').style.display = 'none';
             document.getElementById('reportContent').style.display = 'none';
             document.getElementById('loadingSpinner').style.display = 'block';
@@ -389,9 +390,11 @@
                     credentials: 'include'
                 });
                 const analyzeData = await analyzeRes.json();
+                console.log('Analyze response:', analyzeData);
 
                 if (analyzeData.success) {
                     currentReport = analyzeData.report;
+                    console.log('Current report:', currentReport);
                     renderReport(analyzeData.report);
                 } else {
                     alert(analyzeData.message);
@@ -409,16 +412,21 @@
         }
 
         function renderReport(report) {
+            console.log('Rendering report:', report);
             document.getElementById('periodSection').style.display = 'block';
             document.getElementById('reportContent').style.display = 'block';
 
             // --- Trading Overview Stats ---
             const winRate = report.total_trades > 0 ? (report.wins / report.total_trades * 100).toFixed(1) : 0;
+            console.log('Win rate:', winRate);
+            console.log('Total trades:', report.total_trades);
+            console.log('Total profit:', report.total_profit);
+            console.log('Profit factor:', report.profit_factor);
             document.getElementById('statWinRate').textContent = winRate + '%';
             document.getElementById('statTotalTrades').textContent = report.total_trades;
             document.getElementById('statNetProfit').textContent = (report.total_profit >= 0 ? '$' : '-$') + Math.abs(report.total_profit).toFixed(2);
             document.getElementById('statNetProfit').className = 'fw-bold ' + (report.total_profit >= 0 ? 'text-success' : 'text-danger');
-            document.getElementById('statProfitFactor').textContent = report.profit_factor === Infinity ? '∞' : report.profit_factor.toFixed(2);
+            document.getElementById('statProfitFactor').textContent = report.profit_factor == 1e9 ? '∞' : report.profit_factor.toFixed(2);
 
             // --- Clarity Card ---
             document.getElementById('statMaxDrawdown').textContent = '-$' + Math.abs(report.max_drawdown).toFixed(2);

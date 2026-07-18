@@ -135,22 +135,41 @@ try {
         error_log("CSV Header: " . json_encode($header));
         foreach ($header as $index => $col) {
             $col = strtolower(trim($col));
-            if ($col === 'ticket' || $col === 'order') $mapping['ticket'] = $index;
-            if (strpos($col, 'open time') !== false || strpos($col, 'time') !== false) {
-                 if (!isset($mapping['open_time'])) $mapping['open_time'] = $index;
-                 else $mapping['close_time'] = $index;
+            if ($col === 'ticket' || $col === 'order' || strpos($col, 'ticket') !== false) $mapping['ticket'] = $index;
+            if (strpos($col, 'open time') !== false || (strpos($col, 'time') !== false && !isset($mapping['open_time']))) {
+                 $mapping['open_time'] = $index;
             }
-            if ($col === 'type') $mapping['type'] = $index;
-            if ($col === 'size' || $col === 'volume' || $col === 'lots') $mapping['lots'] = $index;
-            if ($col === 'item' || $col === 'symbol') $mapping['symbol'] = $index;
-            if (strpos($col, 'open price') !== false || ($col === 'price' && !isset($mapping['open_price']))) $mapping['open_price'] = $index;
-            if (strpos($col, 's / l') !== false || $col === 'sl' || $col === 's/l' || strpos($col, 'stop loss') !== false) $mapping['sl'] = $index;
-            if (strpos($col, 't / p') !== false || $col === 'tp' || $col === 't/p' || strpos($col, 'take profit') !== false) $mapping['tp'] = $index;
-            if (strpos($col, 'close time') !== false) $mapping['close_time'] = $index;
-            if (strpos($col, 'close price') !== false || ($col === 'price' && isset($mapping['open_price']))) $mapping['close_price'] = $index;
-            if ($col === 'profit' || strpos($col, 'profit') !== false || strpos($col, 'net profit') !== false) $mapping['profit'] = $index;
+            if (strpos($col, 'close time') !== false) {
+                 $mapping['close_time'] = $index;
+            }
+            if ($col === 'type' || strpos($col, 'type') !== false) $mapping['type'] = $index;
+            if ($col === 'size' || $col === 'volume' || $col === 'lots' || strpos($col, 'lots') !== false || strpos($col, 'volume') !== false) $mapping['lots'] = $index;
+            if ($col === 'item' || $col === 'symbol' || strpos($col, 'symbol') !== false) $mapping['symbol'] = $index;
+            if (strpos($col, 'open price') !== false || strpos($col, 'openprice') !== false || ($col === 'price' && !isset($mapping['open_price']))) $mapping['open_price'] = $index;
+            if (strpos($col, 's / l') !== false || $col === 'sl' || $col === 's/l' || strpos($col, 'stop loss') !== false || strpos($col, 'stoploss') !== false) $mapping['sl'] = $index;
+            if (strpos($col, 't / p') !== false || $col === 'tp' || $col === 't/p' || strpos($col, 'take profit') !== false || strpos($col, 'takeprofit') !== false) $mapping['tp'] = $index;
+            if (strpos($col, 'close price') !== false || strpos($col, 'closeprice') !== false || ($col === 'price' && isset($mapping['open_price']))) $mapping['close_price'] = $index;
+            if (strpos($col, 'profit') !== false || strpos($col, 'net profit') !== false || strpos($col, 'netprofit') !== false || strpos($col, 'p/l') !== false || strpos($col, 'pl') !== false) $mapping['profit'] = $index;
         }
         error_log("Mapping after processing: " . json_encode($mapping));
+        
+        // If we still don't have a mapping (e.g., no headers), let's use MT4/MT5 default positions
+        if (empty($mapping) || count($mapping) < 3) {
+            $mapping = [
+                'ticket' => 0,
+                'open_time' => 1,
+                'type' => 2,
+                'lots' => 3,
+                'symbol' => 4,
+                'open_price' => 5,
+                'sl' => 6,
+                'tp' => 7,
+                'close_time' => 8,
+                'close_price' => 9,
+                'profit' => count($header) - 1 // Last column is usually profit
+            ];
+            error_log("Using default MT4/MT5 mapping: " . json_encode($mapping));
+        }
 
         // Heuristic for MT5 if headers are missing or differently named
         if (!isset($mapping['open_time']) && count($header) >= 10) {
@@ -170,7 +189,7 @@ try {
         while (($data = fgetcsv($handle, 0, $chosen_delimiter)) !== FALSE) {
             $rows_processed++;
             if (count($data) < 5) continue;
-            if ($rows_processed <= 3) {
+            if ($rows_processed <= 5) {
                 error_log("CSV Row $rows_processed: " . json_encode($data));
             }
 
@@ -186,18 +205,23 @@ try {
             $close_price = clean_numeric($data[$mapping['close_price'] ?? 9] ?? 0);
             $profit = clean_numeric($data[$mapping['profit'] ?? count($data)-1] ?? 0);
             
-            if ($rows_processed <= 3) {
-                error_log("Parsed Row $rows_processed - profit: $profit, type: $type, symbol: $symbol");
+            if ($rows_processed <= 5) {
+                error_log("Parsed Row $rows_processed - profit: $profit, type: $type, symbol: $symbol, open_time: $open_time, close_time: $close_time");
             }
 
             if (empty($ticket) || empty($open_time) || empty($close_time)) continue;
 
             // Calculate metrics
-            // Replace dots with dashes for better compatibility with strtotime
+            // Try multiple date formats for strtotime
             $open_ts = strtotime(str_replace('.', '-', $open_time));
+            if (!$open_ts) $open_ts = strtotime($open_time); // Try original format
             $close_ts = strtotime(str_replace('.', '-', $close_time));
+            if (!$close_ts) $close_ts = strtotime($close_time);
             
-            if (!$open_ts || !$close_ts) continue;
+            if (!$open_ts || !$close_ts) {
+                error_log("Skipping row $rows_processed: invalid date - open_time: $open_time, close_time: $close_time");
+                continue;
+            }
 
             // Ensure duration is non-negative and handle massive gaps
             $duration_mins = round(abs($close_ts - $open_ts) / 60);
@@ -215,15 +239,20 @@ try {
                 $pips = $diff * 10000; // Simplified
             }
 
-            $stmt = $conn->prepare("INSERT INTO trade_history (user_id, ticket, symbol, type, lots, open_time, open_price, close_time, close_price, sl, tp, profit, pips, duration_minutes, day_of_week, hour_of_day, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([
-                $user_id, $ticket, $symbol, $type, $lots, 
-                date('Y-m-d H:i:s', $open_ts), $open_price, 
-                date('Y-m-d H:i:s', $close_ts), $close_price, 
-                $sl, $tp, $profit, $pips, $duration_mins, $day, $hour, NULL
-            ]);
-            $trades_imported++;
+            try {
+                $stmt = $conn->prepare("INSERT INTO trade_history (user_id, ticket, symbol, type, lots, open_time, open_price, close_time, close_price, sl, tp, profit, pips, duration_minutes, day_of_week, hour_of_day, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([
+                    $user_id, $ticket, $symbol, $type, $lots, 
+                    date('Y-m-d H:i:s', $open_ts), $open_price, 
+                    date('Y-m-d H:i:s', $close_ts), $close_price, 
+                    $sl, $tp, $profit, $pips, $duration_mins, $day, $hour, NULL
+                ]);
+                $trades_imported++;
+            } catch (Exception $e) {
+                error_log("Failed to insert row $rows_processed: " . $e->getMessage());
+            }
         }
+        error_log("Total trades imported: $trades_imported");
         fclose($handle);
 
         echo json_encode(['success' => true, 'message' => "Imported $trades_imported trades successfully."]);
@@ -505,6 +534,11 @@ try {
         } else {
             echo $jsonOutput;
         }
+    } elseif ($action === 'debug') {
+        $stmt = $conn->prepare("SELECT * FROM trade_history WHERE user_id = ? LIMIT 10");
+        $stmt->execute([$user_id]);
+        $trades = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['success' => true, 'trades' => $trades]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Invalid or missing action']);
     }
