@@ -457,6 +457,15 @@ try {
         }
         $stats['biases'] = $biases;
 
+        // Debug log stats
+        error_log("Calculated stats: " . json_encode([
+            'total_trades' => $stats['total_trades'],
+            'wins' => $stats['wins'],
+            'losses' => $stats['losses'],
+            'total_profit' => $stats['total_profit'],
+            'profit_factor' => $stats['profit_factor']
+        ]));
+
         // Encode JSON properly, handle any potential issues
         $jsonOutput = json_encode(['success' => true, 'report' => $stats]);
         if ($jsonOutput === false) {
