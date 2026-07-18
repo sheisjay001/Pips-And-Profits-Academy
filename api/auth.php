@@ -35,6 +35,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once 'db_connect.php';
 
+// Auto-migrate users table to ensure all required columns exist
+try {
+    // Add phone column if missing
+    $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20) AFTER email");
+    // Add bio column if missing
+    $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT AFTER phone");
+    // Add profile_picture column if missing
+    $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture VARCHAR(255) AFTER bio");
+    // Add plan column if missing
+    $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan VARCHAR(20) DEFAULT 'free' AFTER profile_picture");
+    // Add email_verified column if missing
+    $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified TINYINT(1) DEFAULT 0 AFTER plan");
+    // Add verification_token column if missing
+    $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255) AFTER email_verified");
+    // Add verification_sent_at column if missing
+    $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_sent_at TIMESTAMP NULL AFTER verification_token");
+    // Add referred_by_affiliate_id column if missing
+    $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by_affiliate_id INT NULL AFTER verification_sent_at");
+    // Add referral_code_used column if missing
+    $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code_used VARCHAR(50) NULL AFTER referred_by_affiliate_id");
+} catch (PDOException $e) {
+    // Ignore errors if columns already exist
+}
+
 // CLI Support: Read from stdin if php://input is empty (common in PowerShell pipes)
 $input = file_get_contents("php://input");
 // Handle Multipart Form Data (File Uploads)
