@@ -1,6 +1,8 @@
 <?php
-error_reporting(0);
+// Enable error logging but don't display them to the user
+error_reporting(E_ALL);
 ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 header('Content-Type: application/json');
 
 // CORS Handling
@@ -20,8 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-require_once 'session_config.php';
-require_once 'db_connect.php';
+try {
+    require_once 'session_config.php';
+    require_once 'db_connect.php';
+} catch (Exception $e) {
+    echo json_encode(['success' => false, 'message' => 'Initialization Error: ' . $e->getMessage()]);
+    exit;
+}
 
 try {
     // CSRF Validation for POST requests (Upload)
@@ -68,7 +75,7 @@ try {
         $conn->exec("ALTER TABLE trade_history MODIFY COLUMN duration_minutes BIGINT");
     } catch (Exception $e) {}
     try {
-        $conn->exec("ALTER TABLE trade_history ADD COLUMN notes TEXT AFTER hour_of_day");
+        $conn->exec("ALTER TABLE trade_history ADD COLUMN IF NOT EXISTS notes TEXT AFTER hour_of_day");
     } catch (Exception $e) {}
 
     if ($action === 'upload') {
@@ -228,8 +235,8 @@ try {
             'wins' => 0,
             'losses' => 0,
             'total_profit' => 0,
-            'max_profit' => -INF,
-            'max_loss' => INF,
+            'max_profit' => -1e9, // Use a large negative number instead of -INF
+            'max_loss' => 1e9, // Use a large positive number instead of INF
             'avg_profit' => 0,
             'avg_win' => 0,
             'avg_loss' => 0,
@@ -304,7 +311,7 @@ try {
         $stats['avg_profit'] = $stats['total_trades'] > 0 ? $stats['total_profit'] / $stats['total_trades'] : 0;
         $stats['avg_win'] = $stats['wins'] > 0 ? $gross_profit / $stats['wins'] : 0;
         $stats['avg_loss'] = $stats['losses'] > 0 ? -($gross_loss / $stats['losses']) : 0;
-        $stats['profit_factor'] = $gross_loss > 0 ? $gross_profit / $gross_loss : ($gross_profit > 0 ? INF : 0);
+        $stats['profit_factor'] = $gross_loss > 0 ? $gross_profit / $gross_loss : ($gross_profit > 0 ? 1e9 : 0);
         $stats['max_drawdown'] = $max_drawdown;
         $stats['peak_equity'] = $peak_equity;
         $stats['current_equity'] = $current_equity;
@@ -325,7 +332,7 @@ try {
             'trading_against_trend' => 0
         ];
 
-        $avg_lots = array_sum(array_column($last_50, 'lots')) / count($last_50);
+        $avg_lots = count($last_50) > 0 ? array_sum(array_column($last_50, 'lots')) / count($last_50) : 0;
         foreach ($last_50 as $t) {
             $profit = floatval($t['profit']);
             $lots = floatval($t['lots']);
@@ -352,15 +359,20 @@ try {
         $stats['last_50_stats'] = $last_50_stats;
 
         // --- Most/Least Profitable Sessions & Pairs ---
-        $sessions = $stats['hour_stats'];
-        usort($sessions, function($a, $b) { return $b['profit'] <=> $a['profit']; });
-        $stats['most_profitable_session'] = !empty($sessions) ? array_key_first($stats['hour_stats']) : 'N/A';
-        $stats['least_profitable_session'] = !empty($sessions) ? array_key_last($stats['hour_stats']) : 'N/A';
+        // Fix: To get the actual keys, we need to keep the original array
+        $sessionKeys = array_keys($stats['hour_stats']);
+        usort($sessionKeys, function($a, $b) use ($stats) {
+            return $stats['hour_stats'][$b]['profit'] <=> $stats['hour_stats'][$a]['profit'];
+        });
+        $stats['most_profitable_session'] = !empty($sessionKeys) ? $sessionKeys[0] : 'N/A';
+        $stats['least_profitable_session'] = !empty($sessionKeys) ? end($sessionKeys) : 'N/A';
 
-        $pairs = $stats['pair_stats'];
-        usort($pairs, function($a, $b) { return $b['profit'] <=> $a['profit']; });
-        $stats['most_profitable_pair'] = !empty($pairs) ? array_key_first($stats['pair_stats']) : 'N/A';
-        $stats['least_profitable_pair'] = !empty($pairs) ? array_key_last($stats['pair_stats']) : 'N/A';
+        $pairKeys = array_keys($stats['pair_stats']);
+        usort($pairKeys, function($a, $b) use ($stats) {
+            return $stats['pair_stats'][$b]['profit'] <=> $stats['pair_stats'][$a]['profit'];
+        });
+        $stats['most_profitable_pair'] = !empty($pairKeys) ? $pairKeys[0] : 'N/A';
+        $stats['least_profitable_pair'] = !empty($pairKeys) ? end($pairKeys) : 'N/A';
 
         // --- Last Reward Analysis ---
         $last_trade = end($trades);
@@ -425,11 +437,17 @@ try {
         }
         $stats['biases'] = $biases;
 
-        echo json_encode(['success' => true, 'report' => $stats]);
+        // Encode JSON properly, handle any potential issues
+        $jsonOutput = json_encode(['success' => true, 'report' => $stats]);
+        if ($jsonOutput === false) {
+            echo json_encode(['success' => false, 'message' => 'JSON encoding error: ' . json_last_error_msg()]);
+        } else {
+            echo $jsonOutput;
+        }
     } else {
         echo json_encode(['success' => false, 'message' => 'Invalid or missing action']);
     }
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Analysis Error: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Analysis Error: ' . $e->getMessage() . ' File: ' . $e->getFile() . ' Line: ' . $e->getLine()]);
 }
 ?>
