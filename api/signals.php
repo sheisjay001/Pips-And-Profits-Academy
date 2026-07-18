@@ -1,6 +1,14 @@
 <?php
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+// CORS Handling (match session_config.php style)
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if ($origin) {
+    header("Access-Control-Allow-Origin: $origin");
+    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Max-Age: 86400');
+} else {
+    header('Access-Control-Allow-Origin: *');
+}
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
 header('X-Content-Type-Options: nosniff');
@@ -8,27 +16,7 @@ header('X-Frame-Options: SAMEORIGIN');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header("Content-Security-Policy: default-src 'self' https: data:; img-src 'self' https: data:; script-src 'self' https:; style-src 'self' https: 'unsafe-inline'; connect-src 'self' https:; frame-ancestors 'self';");
 
-session_set_cookie_params([
-    'lifetime' => 0,
-    'path' => '/',
-    'domain' => '',
-    'secure' => isset($_SERVER['HTTPS']),
-    'httponly' => true,
-    'samesite' => 'Lax'
-]);
-session_start();
-
-// CLI fallback for testing
-if (php_sapi_name() === 'cli') {
-    if (!isset($_SERVER['REQUEST_METHOD'])) {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-    }
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
-}
-
+require_once 'session_config.php';
 require_once 'db_connect.php';
 
 // Load Termii config if available
@@ -124,11 +112,7 @@ if ($method === 'GET') {
     echo json_encode($signals);
 
 } elseif ($method === 'POST') {
-    $csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-    if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-        echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
-        exit;
-    }
+    validate_csrf();
     $input = file_get_contents("php://input");
     if (empty($input) && php_sapi_name() === 'cli') {
         $input = file_get_contents("php://stdin");
