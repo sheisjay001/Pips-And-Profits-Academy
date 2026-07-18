@@ -5,6 +5,22 @@ ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 header('Content-Type: application/json');
 
+// Helper function to clean numeric values (remove currency symbols, handle comma decimals)
+function clean_numeric($value) {
+    if (empty($value)) return 0;
+    // Remove all non-numeric characters except ., - and ,
+    $cleaned = preg_replace('/[^0-9\.,\-]/', '', $value);
+    // If there's a comma and no dot, assume comma is decimal separator
+    if (strpos($cleaned, ',') !== false && strpos($cleaned, '.') === false) {
+        $cleaned = str_replace(',', '.', $cleaned);
+    }
+    // If both comma and dot are present, assume comma is thousands separator
+    elseif (strpos($cleaned, ',') !== false && strpos($cleaned, '.') !== false) {
+        $cleaned = str_replace(',', '', $cleaned);
+    }
+    return floatval($cleaned);
+}
+
 // CORS Handling
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 if ($origin) {
@@ -161,14 +177,14 @@ try {
             $ticket = $data[$mapping['ticket'] ?? 0] ?? '';
             $open_time = $data[$mapping['open_time'] ?? 1] ?? '';
             $type = strtoupper($data[$mapping['type'] ?? 2] ?? '');
-            $lots = floatval($data[$mapping['lots'] ?? 3] ?? 0);
+            $lots = clean_numeric($data[$mapping['lots'] ?? 3] ?? 0);
             $symbol = $data[$mapping['symbol'] ?? 4] ?? '';
-            $open_price = floatval($data[$mapping['open_price'] ?? 5] ?? 0);
-            $sl = floatval($data[$mapping['sl'] ?? 6] ?? 0);
-            $tp = floatval($data[$mapping['tp'] ?? 7] ?? 0);
+            $open_price = clean_numeric($data[$mapping['open_price'] ?? 5] ?? 0);
+            $sl = clean_numeric($data[$mapping['sl'] ?? 6] ?? 0);
+            $tp = clean_numeric($data[$mapping['tp'] ?? 7] ?? 0);
             $close_time = $data[$mapping['close_time'] ?? 8] ?? '';
-            $close_price = floatval($data[$mapping['close_price'] ?? 9] ?? 0);
-            $profit = floatval($data[$mapping['profit'] ?? count($data)-1] ?? 0);
+            $close_price = clean_numeric($data[$mapping['close_price'] ?? 9] ?? 0);
+            $profit = clean_numeric($data[$mapping['profit'] ?? count($data)-1] ?? 0);
             
             if ($rows_processed <= 3) {
                 error_log("Parsed Row $rows_processed - profit: $profit, type: $type, symbol: $symbol");
