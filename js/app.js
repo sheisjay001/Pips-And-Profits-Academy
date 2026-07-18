@@ -224,18 +224,14 @@ const App = {
             name, email, phone, bio
         });
 
-        if (result.success) {
-            // Update local session
-            currentUser.name = name;
-            currentUser.email = email;
-            currentUser.phone = phone;
-            currentUser.bio = bio;
-            this.setCurrentUser(currentUser);
+        if (result.success && result.user) {
+            // Update local session with full user object from server
+            this.setCurrentUser(result.user);
         }
         return result;
     },
 
-    checkAuth() {
+    async checkAuth() {
         const user = this.getCurrentUser();
         if (!user) {
             window.location.href = 'login.html';
@@ -245,6 +241,16 @@ const App = {
         // Redirect admin to admin dashboard if on user dashboard
         if (user.role === 'admin' && window.location.pathname.includes('dashboard.html')) {
             window.location.href = 'admin-dashboard.html';
+        }
+        
+        // Refresh user data from server to get latest email_verified status
+        try {
+            const result = await this.api('auth.php', 'POST', { action: 'me' });
+            if (result.success && result.user) {
+                this.setCurrentUser(result.user);
+            }
+        } catch (e) {
+            console.error('Failed to refresh user data:', e);
         }
     },
 

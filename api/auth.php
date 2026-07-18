@@ -46,7 +46,7 @@ try {
     // Add plan column if missing
     $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan VARCHAR(20) DEFAULT 'free' AFTER profile_picture");
     // Add email_verified column if missing
-    $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified TINYINT(1) DEFAULT 0 AFTER plan");
+    $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified TINYINT(1) DEFAULT 1 AFTER plan");
     // Add verification_token column if missing
     $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255) AFTER email_verified");
     // Add verification_sent_at column if missing
@@ -55,6 +55,8 @@ try {
     $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by_affiliate_id INT NULL AFTER verification_sent_at");
     // Add referral_code_used column if missing
     $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code_used VARCHAR(50) NULL AFTER referred_by_affiliate_id");
+    // Set email_verified to 1 for existing users who don't have it set yet
+    $conn->exec("UPDATE users SET email_verified = 1 WHERE email_verified IS NULL OR email_verified = 0");
 } catch (PDOException $e) {
     // Ignore errors if columns already exist
 }
@@ -393,7 +395,7 @@ if ($action === 'register') {
 
     if ($stmt->execute($params)) {
          // Fetch updated user
-         $stmt = $conn->prepare("SELECT id, name, email, phone, role, plan, profile_picture, bio, created_at FROM users WHERE id = ?");
+         $stmt = $conn->prepare("SELECT id, name, email, phone, role, plan, profile_picture, bio, COALESCE(email_verified, 1) as email_verified, created_at FROM users WHERE id = ?");
          $stmt->execute([$id]);
          $updatedUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
