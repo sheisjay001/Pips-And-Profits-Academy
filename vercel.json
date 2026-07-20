@@ -1,8 +1,16 @@
 {
     "functions": {
-        "api/*.php": {
-            "runtime": "vercel-php@0.7.1"
-        }
+        "api/auditor.php": { "runtime": "vercel-php@0.7.1" },
+        "api/auth.php": { "runtime": "vercel-php@0.7.1" },
+        "api/signals.php": { "runtime": "vercel-php@0.7.1" },
+        "api/affiliate.php": { "runtime": "vercel-php@0.7.1" },
+        "api/affiliate-admin.php": { "runtime": "vercel-php@0.7.1" },
+        "api/affiliate_commissions.php": { "runtime": "vercel-php@0.7.1" },
+        "api/payments.php": { "runtime": "vercel-php@0.7.1" },
+        "api/paystack_init.php": { "runtime": "vercel-php@0.7.1" },
+        "api/courses.php": { "runtime": "vercel-php@0.7.1" },
+        "api/tickets.php": { "runtime": "vercel-php@0.7.1" },
+        "api/mentorship.php": { "runtime": "vercel-php@0.7.1" }
     },
     "routes": [
         {
