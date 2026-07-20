@@ -93,6 +93,18 @@ try {
     try {
         $conn->exec("ALTER TABLE trade_history ADD COLUMN IF NOT EXISTS notes TEXT AFTER hour_of_day");
     } catch (Exception $e) {}
+    
+    // Self-healing: Create user trading settings table
+    $conn->exec("CREATE TABLE IF NOT EXISTS user_trading_settings (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL UNIQUE,
+        initial_balance DECIMAL(15, 2) DEFAULT 10000.00,
+        max_drawdown_percent DECIMAL(5, 2) DEFAULT 10.00,
+        daily_drawdown_percent DECIMAL(5, 2) DEFAULT 5.00,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )");
 
     if ($action === 'upload') {
         if (!isset($_FILES['trade_file'])) {
@@ -297,6 +309,36 @@ try {
         $stmt->execute($params);
         $trades = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Get user trading settings
+        $settingsQuery = "SELECT * FROM user_trading_settings WHERE user_id = ?";
+        $settingsStmt = $conn->prepare($settingsQuery);
+        $settingsStmt->execute([$user_id]);
+        $userSettings = $settingsStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$userSettings) {
+            // Create default settings
+            $defaultSettings = [
+                'initial_balance' => 10000.00,
+                'max_drawdown_percent' => 10.00,
+                'daily_drawdown_percent' => 5.00
+            ];
+            try {
+                $insertStmt = $conn->prepare("INSERT INTO user_trading_settings (user_id, initial_balance, max_drawdown_percent, daily_drawdown_percent) VALUES (?, ?, ?, ?)");
+                $insertStmt->execute([$user_id, $defaultSettings['initial_balance'], $defaultSettings['max_drawdown_percent'], $defaultSettings['daily_drawdown_percent']]);
+            } catch (PDOException $e) {
+                // Ignore if insert fails (maybe another request created it already)
+                error_log("Failed to insert user trading settings: " . $e->getMessage());
+                // Try to get again
+                $settingsStmt->execute([$user_id]);
+                $userSettings = $settingsStmt->fetch(PDO::FETCH_ASSOC);
+                if (!$userSettings) {
+                    $userSettings = $defaultSettings;
+                }
+            }
+            if (!$userSettings) {
+                $userSettings = $defaultSettings;
+            }
+        }
+
         // Debug logs
         error_log("Analyze called with user_id: $user_id, period: $period");
         error_log("Number of trades found: " . count($trades));
@@ -326,14 +368,21 @@ try {
             'hour_stats' => [],
             'pair_stats' => [],
             'biases' => [],
-            'trades' => $trades
+            'trades' => $trades,
+            'initial_balance' => $userSettings['initial_balance'],
+            'max_drawdown_percent' => $userSettings['max_drawdown_percent'],
+            'daily_drawdown_percent' => $userSettings['daily_drawdown_percent'],
+            'current_drawdown' => 0,
+            'max_drawdown_money' => 0,
+            'remaining_room_max' => 0,
+            'remaining_room_daily' => 0
         ];
 
         $gross_profit = 0;
         $gross_loss = 0;
         $equity_curve = [];
-        $current_equity = 0;
-        $peak_equity = 0;
+        $current_equity = $userSettings['initial_balance'];
+        $peak_equity = $userSettings['initial_balance'];
         $max_drawdown = 0;
 
         foreach ($trades as $t) {
@@ -397,6 +446,37 @@ try {
         $stats['peak_equity'] = $peak_equity;
         $stats['current_equity'] = $current_equity;
         $stats['equity_curve'] = $equity_curve;
+        
+        // Calculate current drawdown
+        $stats['current_drawdown'] = $peak_equity - $current_equity;
+        
+        // Calculate max drawdown money and daily drawdown money
+        $stats['max_drawdown_money'] = ($stats['max_drawdown_percent'] / 100) * $stats['initial_balance'];
+        
+        // Calculate remaining room for max drawdown
+        $stats['remaining_room_max'] = max(0, $stats['max_drawdown_money'] - $stats['current_drawdown']);
+        
+        // Calculate daily drawdown money and remaining room for daily drawdown
+        // For daily drawdown, we need to find the equity at the start of the current trading day
+        $dailyPeakToday = $stats['initial_balance'];
+        $today = date('Y-m-d');
+        
+        // Find today's peak equity
+        $currentEquityForDaily = $stats['initial_balance'];
+        foreach ($trades as $t) {
+            $profit = floatval($t['profit']);
+            $tradeDate = date('Y-m-d', strtotime($t['open_time']));
+            
+            if ($tradeDate == $today) {
+                $currentEquityForDaily += $profit;
+                if ($currentEquityForDaily > $dailyPeakToday) {
+                    $dailyPeakToday = $currentEquityForDaily;
+                }
+            }
+        }
+        
+        $dailyDrawdownMoney = ($stats['daily_drawdown_percent'] / 100) * $dailyPeakToday;
+        $stats['remaining_room_daily'] = max(0, $dailyDrawdownMoney - ($dailyPeakToday - $currentEquityForDaily));
 
         // --- Last 50 Trades Analysis ---
         $last_50 = array_slice(array_reverse($trades), 0, 50);
@@ -539,6 +619,59 @@ try {
         $stmt->execute([$user_id]);
         $trades = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode(['success' => true, 'trades' => $trades]);
+    } elseif ($action === 'get_trading_settings') {
+        // Get user trading settings
+        $settingsQuery = "SELECT * FROM user_trading_settings WHERE user_id = ?";
+        $settingsStmt = $conn->prepare($settingsQuery);
+        $settingsStmt->execute([$user_id]);
+        $userSettings = $settingsStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$userSettings) {
+            // Return default settings
+            $userSettings = [
+                'initial_balance' => 10000.00,
+                'max_drawdown_percent' => 10.00,
+                'daily_drawdown_percent' => 5.00
+            ];
+        }
+        
+        echo json_encode(['success' => true, 'settings' => $userSettings]);
+    } elseif ($action === 'update_trading_settings') {
+        // Update user trading settings
+        $input = json_decode(file_get_contents('php://input'));
+        $initialBalance = $input->initial_balance ?? null;
+        $maxDrawdownPercent = $input->max_drawdown_percent ?? null;
+        $dailyDrawdownPercent = $input->daily_drawdown_percent ?? null;
+        
+        // Get current settings
+        $settingsQuery = "SELECT * FROM user_trading_settings WHERE user_id = ?";
+        $settingsStmt = $conn->prepare($settingsQuery);
+        $settingsStmt->execute([$user_id]);
+        $userSettings = $settingsStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($userSettings) {
+            // Update existing
+            $updateStmt = $conn->prepare("UPDATE user_trading_settings SET 
+                initial_balance = COALESCE(?, initial_balance),
+                max_drawdown_percent = COALESCE(?, max_drawdown_percent),
+                daily_drawdown_percent = COALESCE(?, daily_drawdown_percent)
+                WHERE user_id = ?");
+            $updateStmt->execute([$initialBalance, $maxDrawdownPercent, $dailyDrawdownPercent, $user_id]);
+        } else {
+            // Insert new
+            $insertStmt = $conn->prepare("INSERT INTO user_trading_settings (user_id, initial_balance, max_drawdown_percent, daily_drawdown_percent) VALUES (?, ?, ?, ?)");
+            $insertStmt->execute([
+                $user_id,
+                $initialBalance ?? 10000.00,
+                $maxDrawdownPercent ?? 10.00,
+                $dailyDrawdownPercent ?? 5.00
+            ]);
+        }
+        
+        // Get updated settings
+        $settingsStmt->execute([$user_id]);
+        $updatedSettings = $settingsStmt->fetch(PDO::FETCH_ASSOC);
+        echo json_encode(['success' => true, 'message' => 'Settings updated', 'settings' => $updatedSettings]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Invalid or missing action']);
     }

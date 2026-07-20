@@ -43,7 +43,7 @@ try {
     $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT AFTER phone");
     // Add profile_picture column if missing
     $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture VARCHAR(255) AFTER bio");
-    // Add plan column if missing
+    // Add plan column if missing - update to support new plans: basic, pro, reaganova
     $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan VARCHAR(20) DEFAULT 'free' AFTER profile_picture");
     // Add email_verified column if missing
     $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified TINYINT(1) DEFAULT 1 AFTER plan");
@@ -55,10 +55,92 @@ try {
     $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by_affiliate_id INT NULL AFTER verification_sent_at");
     // Add referral_code_used column if missing
     $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code_used VARCHAR(50) NULL AFTER referred_by_affiliate_id");
+    // Add is_mentor column if missing
+    $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_mentor TINYINT(1) DEFAULT 0 AFTER role");
     // Set email_verified to 1 for existing users who don't have it set yet
     $conn->exec("UPDATE users SET email_verified = 1 WHERE email_verified IS NULL OR email_verified = 0");
 } catch (PDOException $e) {
     // Ignore errors if columns already exist
+}
+
+// Auto-create new tables for mentor/student platform and pricing plans
+try {
+    // Create mentor_students table
+    $conn->exec("CREATE TABLE IF NOT EXISTS mentor_students (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        mentor_id INT NOT NULL,
+        student_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (mentor_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_mentor_student (mentor_id, student_id)
+    )");
+
+    // Create courses table
+    $conn->exec("CREATE TABLE IF NOT EXISTS courses (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        mentor_id INT NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        video_url VARCHAR(255),
+        thumbnail_url VARCHAR(255),
+        price DECIMAL(10, 2) DEFAULT 0.00,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (mentor_id) REFERENCES users(id) ON DELETE CASCADE
+    )");
+
+    // Create course_enrollments table
+    $conn->exec("CREATE TABLE IF NOT EXISTS course_enrollments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        course_id INT NOT NULL,
+        student_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+        FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+    )");
+
+    // Create student_messages table
+    $conn->exec("CREATE TABLE IF NOT EXISTS student_messages (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        sender_id INT NOT NULL,
+        receiver_id INT NOT NULL,
+        message TEXT NOT NULL,
+        is_read TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+    )");
+
+    // Create pricing_plans table
+    $conn->exec("CREATE TABLE IF NOT EXISTS pricing_plans (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(50) NOT NULL UNIQUE,
+        price DECIMAL(10, 2) NOT NULL,
+        description TEXT,
+        features TEXT,
+        is_active TINYINT(1) DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    // Insert default pricing plans (for mentors)
+    $stmt = $conn->prepare("INSERT IGNORE INTO pricing_plans (name, price, description, features) VALUES (?, ?, ?, ?)");
+    $stmt->execute(['basic', 10000.00, 'Basic Plan - Host up to 10 students', 'Host up to 10 students, Basic course hosting, Signals']);
+    $stmt->execute(['pro', 25000.00, 'Pro Plan - Host up to 50 students', 'Host up to 50 students, Pro course hosting, Priority signals']);
+    $stmt->execute(['reaganova', 75000.00, 'Reaganova Plan - Unlimited students', 'Unlimited students, All features, Priority support']);
+    
+    // Create mentor_subscriptions table
+    $conn->exec("CREATE TABLE IF NOT EXISTS mentor_subscriptions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        mentor_id INT NOT NULL,
+        plan_id INT NOT NULL,
+        start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        end_date TIMESTAMP NULL,
+        is_active TINYINT(1) DEFAULT 1,
+        FOREIGN KEY (mentor_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (plan_id) REFERENCES pricing_plans(id) ON DELETE CASCADE
+    )");
+} catch (PDOException $e) {
+    // Ignore errors if tables already exist
 }
 
 // CLI Support: Read from stdin if php://input is empty (common in PowerShell pipes)

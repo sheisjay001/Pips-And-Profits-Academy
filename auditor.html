@@ -181,22 +181,77 @@
                             <div class="card border-0 shadow-sm p-4 bg-gradient text-white" style="background: linear-gradient(135deg, #6f42c1 0%, #8a2be2 100%);">
                                 <h5 class="fw-bold mb-3"><i class="fa-solid fa-shield-alt me-2"></i> Clarity Card: Risk & Drawdown</h5>
                                 <div class="row">
-                                    <div class="col-md-4">
-                                        <small class="opacity-75 text-uppercase">Max Drawdown</small>
-                                        <h4 class="fw-bold mt-1" id="statMaxDrawdown">$0.00</h4>
+                                    <div class="col-md-3">
+                                        <small class="opacity-75 text-uppercase">Initial Balance</small>
+                                        <h4 class="fw-bold mt-1" id="statInitialBalance">$0.00</h4>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
+                                        <small class="opacity-75 text-uppercase">Current Balance</small>
+                                        <h4 class="fw-bold mt-1" id="statCurrentEquity">$0.00</h4>
+                                    </div>
+                                    <div class="col-md-3">
                                         <small class="opacity-75 text-uppercase">Peak Equity</small>
                                         <h4 class="fw-bold mt-1" id="statPeakEquity">$0.00</h4>
                                     </div>
-                                    <div class="col-md-4">
-                                        <small class="opacity-75 text-uppercase">Current Equity</small>
-                                        <h4 class="fw-bold mt-1" id="statCurrentEquity">$0.00</h4>
+                                    <div class="col-md-3">
+                                        <small class="opacity-75 text-uppercase">Current Drawdown</small>
+                                        <h4 class="fw-bold mt-1" id="statCurrentDrawdown">$0.00</h4>
+                                    </div>
+                                </div>
+                                <div class="row mt-4">
+                                    <div class="col-md-6">
+                                        <small class="opacity-75 text-uppercase">Room Left (Max DD)</small>
+                                        <h4 class="fw-bold mt-1" id="statRemainingRoomMax">$0.00</h4>
+                                        <small class="opacity-50">Limit: <span id="statMaxDDLimit">10%</span></small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="opacity-75 text-uppercase">Room Left (Daily DD)</small>
+                                        <h4 class="fw-bold mt-1" id="statRemainingRoomDaily">$0.00</h4>
+                                        <small class="opacity-50">Limit: <span id="statDailyDDLimit">5%</span></small>
                                     </div>
                                 </div>
                                 <div class="mt-3 p-3 bg-white bg-opacity-10 rounded-3">
                                     <p class="mb-0 small"><i class="fa-solid fa-info-circle me-2"></i> Your drawdown suggests you have <span class="fw-bold" id="drawdownMessage">healthy risk management</span>.</p>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trading Settings -->
+                    <div class="row g-4 mb-4" id="tradingSettingsSection" style="display: none;">
+                        <div class="col-md-12">
+                            <div class="card border-0 shadow-sm p-4">
+                                <h5 class="fw-bold text-purple mb-4"><i class="fa-solid fa-sliders me-2"></i> Trading Settings</h5>
+                                <form id="tradingSettingsForm">
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label for="initialBalanceInput" class="form-label">Initial Balance</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" class="form-control" id="initialBalanceInput" step="0.01" min="0" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="maxDrawdownInput" class="form-label">Max Drawdown (%)</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="maxDrawdownInput" step="0.01" min="0" max="100" required>
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="dailyDrawdownInput" class="form-label">Daily Drawdown (%)</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="dailyDrawdownInput" step="0.01" min="0" max="100" required>
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4">
+                                        <button type="submit" class="btn btn-purple fw-bold">
+                                            <i class="fa-solid fa-save me-2"></i> Save Settings
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -314,6 +369,7 @@
             }
             const user = App.getCurrentUser();
             if (user) {
+                // Update navbar user details
                 const navUserName = document.getElementById('navUserName');
                 const navUserAvatar = document.getElementById('navUserAvatar');
                 if (navUserName) navUserName.textContent = user.name;
@@ -321,6 +377,9 @@
                     navUserAvatar.src = user.profile_picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6f42c1&color=fff`;
                 }
             }
+
+            // Load trading settings
+            loadTradingSettings();
 
             // Upload form handler
             const uploadForm = document.getElementById('uploadForm');
@@ -340,7 +399,64 @@
                     await loadAnalysis(period);
                 });
             });
+
+            // Trading settings form handler
+            const tradingSettingsForm = document.getElementById('tradingSettingsForm');
+            tradingSettingsForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await updateTradingSettings();
+            });
         });
+
+        async function loadTradingSettings() {
+            try {
+                const response = await fetch('api/auditor.php?action=get_trading_settings', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const settings = data.settings;
+                    document.getElementById('initialBalanceInput').value = settings.initial_balance;
+                    document.getElementById('maxDrawdownInput').value = settings.max_drawdown_percent;
+                    document.getElementById('dailyDrawdownInput').value = settings.daily_drawdown_percent;
+                    document.getElementById('tradingSettingsSection').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading trading settings:', error);
+            }
+        }
+
+        async function updateTradingSettings() {
+            try {
+                const csrfToken = localStorage.getItem('ppa_csrf_token') || App.getCookie('ppa_csrf_token');
+                const response = await fetch('api/auditor.php?action=update_trading_settings', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
+                    },
+                    body: JSON.stringify({
+                        initial_balance: parseFloat(document.getElementById('initialBalanceInput').value),
+                        max_drawdown_percent: parseFloat(document.getElementById('maxDrawdownInput').value),
+                        daily_drawdown_percent: parseFloat(document.getElementById('dailyDrawdownInput').value)
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('Trading settings saved successfully!');
+                    // Re-analyze to update stats with new settings
+                    const activePeriodBtn = document.querySelector('[data-period].active');
+                    const period = activePeriodBtn ? activePeriodBtn.dataset.period : 'all';
+                    await loadAnalysis(period);
+                } else {
+                    alert('Failed to save trading settings: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error updating trading settings:', error);
+                alert('Error saving trading settings');
+            }
+        }
 
         async function uploadAndAnalyze(period) {
             const fileInput = document.getElementById('trade_file');
@@ -429,11 +545,16 @@
             document.getElementById('statProfitFactor').textContent = report.profit_factor == 1e9 ? '∞' : report.profit_factor.toFixed(2);
 
             // --- Clarity Card ---
-            document.getElementById('statMaxDrawdown').textContent = '-$' + Math.abs(report.max_drawdown).toFixed(2);
-            document.getElementById('statPeakEquity').textContent = '$' + report.peak_equity.toFixed(2);
+            document.getElementById('statInitialBalance').textContent = '$' + report.initial_balance.toFixed(2);
             document.getElementById('statCurrentEquity').textContent = '$' + report.current_equity.toFixed(2);
+            document.getElementById('statPeakEquity').textContent = '$' + report.peak_equity.toFixed(2);
+            document.getElementById('statCurrentDrawdown').textContent = '-$' + Math.abs(report.current_drawdown).toFixed(2);
+            document.getElementById('statRemainingRoomMax').textContent = '$' + report.remaining_room_max.toFixed(2);
+            document.getElementById('statRemainingRoomDaily').textContent = '$' + report.remaining_room_daily.toFixed(2);
+            document.getElementById('statMaxDDLimit').textContent = report.max_drawdown_percent + '%';
+            document.getElementById('statDailyDDLimit').textContent = report.daily_drawdown_percent + '%';
             
-            const drawdownPercent = report.peak_equity > 0 ? (report.max_drawdown / report.peak_equity * 100).toFixed(1) : 0;
+            const drawdownPercent = report.peak_equity > 0 ? (report.current_drawdown / report.peak_equity * 100).toFixed(1) : 0;
             let drawdownMsg = 'healthy risk management';
             if (drawdownPercent > 30) drawdownMsg = 'high risk exposure - consider reducing position sizes';
             else if (drawdownPercent > 15) drawdownMsg = 'moderate risk - keep an eye on drawdowns';
